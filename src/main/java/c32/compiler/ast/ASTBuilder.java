@@ -5,6 +5,9 @@ import c32.compiler.ast.expr.*;
 import c32.compiler.ast.operator.BinaryExprTree;
 import c32.compiler.ast.operator.BinaryOperator;
 import c32.compiler.ast.statement.IfStatement;
+import c32.compiler.ast.statement.VariableDeclarationStatementTree;
+import c32.compiler.ast.type.StructTypeTree;
+import c32.compiler.ast.type.TypeDynamicArrayTree;
 import c32.compiler.ast.type.TypeTree;
 import c32.compiler.tokenizer.Token;
 import c32.compiler.tokenizer.TokenType;
@@ -46,11 +49,10 @@ public class ASTBuilder {
 		List<String> modifiers = readModifiers(unit);
 		if (token.type == TokenType.EOF) return false;
 		if (token.type == TokenType.IDENTIFIER || isKeywordType(token.text)) {
-			TypeTree type = unit.getType(token.text);
+			TypeTree type = parseType(unit);
 			if (type == null) {
 				throw new UnexpectedTokenException(token,"type expected");
 			}
-			token = nextToken();
 			if (seeNextToken().type == TokenType.OPENROUND) {
 				//function
 				unit.addFunction(
@@ -61,7 +63,7 @@ public class ASTBuilder {
 				return true;
 			}
 			//field
-			VariableDeclarationTree field = parseVariableDeclaration(unit,null,type,Modifiers.parseModifiers(modifiers,FunctionImplTree.availableVariableMod));
+			VariableDeclarationStatementTree field = parseVariableDeclaration(unit,null,type,Modifiers.parseModifiers(modifiers,FunctionImplTree.availableVariableMod));
 			unit.addField(field);
 			return true;
 		}
@@ -78,6 +80,22 @@ public class ASTBuilder {
 		throw new UnexpectedTokenException(token);
 	}
 
+	private TypeTree parseType(CompilationUnitTree unit) {
+		if (token.type != TokenType.IDENTIFIER && !isKeywordType(token.text)) {
+			throw new UnexpectedTokenException(token,"type expected");
+		}
+		TypeTree type = unit.getType(token.text);
+		token = nextToken();
+		while (token.type == TokenType.OPENSQUARE) {
+			type = TypeDynamicArrayTree.get(type);
+			token = nextToken();
+			if (token.type != TokenType.CLOSESQUARE)
+				throw new UnexpectedTokenException(token,']');
+			token = nextToken();
+		}
+		return type;
+	}
+
 
 	private boolean parseStructDeclaration(CompilationUnitTree unit /* token = keyword("struct") */) {
 		token = nextToken();
@@ -90,15 +108,14 @@ public class ASTBuilder {
 			throw new UnexpectedTokenException(token,'{');
 		}
 		token = nextToken();
-		List<VariableDeclarationTree> fields = new ArrayList<>();
+		List<VariableDeclarationStatementTree> fields = new ArrayList<>();
 		while (token.type != TokenType.CLOSE) {
 			List<String> modifiers = readModifiers(unit);
 			if (token.type != TokenType.IDENTIFIER && !isKeywordType(token.text)) {
 				throw new UnexpectedTokenException(token,"field type expected");
 			}
-			TypeTree type = unit.getType(token.text);
-			token = nextToken();
-			fields.add(parseVariableDeclaration(unit,null,type,Modifiers.parseModifiers(modifiers,StructTypeTree.availableVariableMod)));
+			TypeTree type = parseType(unit);
+			fields.add(parseVariableDeclaration(unit,null,type,Modifiers.parseModifiers(modifiers, StructTypeTree.availableVariableMod)));
 			if (token.type != TokenType.ENDLINE) {
 				throw new UnexpectedTokenException(token,';');
 			}
@@ -127,8 +144,7 @@ public class ASTBuilder {
 		if (token.type != TokenType.IDENTIFIER && !isKeywordType(token.text)) {
 			throw new UnexpectedTokenException(token,"type expected");
 		}
-		TypeTree type = unit.getType(token.text);
-		token = nextToken();
+		TypeTree type = parseType(unit);
 		if (token.type != TokenType.ENDLINE)
 			throw new UnexpectedTokenException(token,';');
 		unit.addTypename(typename,type);
@@ -145,7 +161,7 @@ public class ASTBuilder {
 			throw new UnexpectedTokenException(token,'(');
 		}
 		token = nextToken();
-		ArrayList<VariableDeclarationTree> args = new ArrayList<>(8);
+		ArrayList<VariableDeclarationStatementTree> args = new ArrayList<>(8);
 		while (token.type != TokenType.CLOSEROUND) {
 			List<String> argMod = readModifiers(unit);
 			args.add(parseArgument(unit,argMod));
@@ -155,7 +171,7 @@ public class ASTBuilder {
 				continue;
 			}
 		}
-		return new FunctionDeclarationTree(fname,args.toArray(new VariableDeclarationTree[0]),retType,Modifiers.parseModifiers(modifiers,unit.availableFunctionModifiers()));
+		return new FunctionDeclarationTree(fname,args.toArray(new VariableDeclarationStatementTree[0]),retType,Modifiers.parseModifiers(modifiers,unit.availableFunctionModifiers()));
 	}
 
 	private FunctionDeclarationTree parseFunctionImplementation(CompilationUnitTree unit, FunctionDeclarationTree declaration) {
@@ -175,19 +191,18 @@ public class ASTBuilder {
 		return declaration;
 	}
 
-	private VariableDeclarationTree parseArgument(CompilationUnitTree unit, List<String> modifiers) {
-		TypeTree type = unit.getType(token.text);
-		token = nextToken();
+	private VariableDeclarationStatementTree parseArgument(CompilationUnitTree unit, List<String> modifiers) {
+		TypeTree type = parseType(unit);
 		if (token.type != TokenType.IDENTIFIER) {
 			throw new UnexpectedTokenException(token,"identifier expected");
 		}
 		String name = token.text;
 
 
-		return new VariableDeclarationTree(type,name, Modifiers.parseModifiers(modifiers,FunctionDeclarationTree.availableVariableMod));
+		return new VariableDeclarationStatementTree(type,name, Modifiers.parseModifiers(modifiers,FunctionDeclarationTree.availableVariableMod));
 	}
 
-	private VariableDeclarationTree parseVariableDeclaration(CompilationUnitTree unit, FunctionDeclarationTree context, TypeTree type, Modifiers modifiers) {
+	private VariableDeclarationStatementTree parseVariableDeclaration(CompilationUnitTree unit, FunctionDeclarationTree context, TypeTree type, Modifiers modifiers) {
 		String varname = token.text;
 		token = nextToken();
 		ExprTree init = null;
@@ -198,7 +213,7 @@ public class ASTBuilder {
 		if (token.type != TokenType.ENDLINE)
 			throw new UnexpectedTokenException(token, ';');
 
-		return new VariableDeclarationTree(type, varname, init, modifiers);
+		return new VariableDeclarationStatementTree(type, varname, init, modifiers);
 	}
 
 
@@ -239,23 +254,23 @@ public class ASTBuilder {
 			}
 		} else if (token.type == TokenType.KEYWORD) {
 			if (isKeywordType(token.text)) {
-				TypeTree type = context.getType(unit,token.text);
-				token = nextToken();
+				TypeTree type = parseType(unit);
 				return context.getImpl().declareVariable(parseVariableDeclaration(unit,context,type,Modifiers.parseModifiers(modifiers,FunctionImplTree.availableVariableMod)));
 			}
 			switch (token.text) {
 				case "return": {
+					Token keyword = token;
 					if (context.getReturnType() == TypeTree.VOID) {
 						token = nextToken();
 						if (token.type != TokenType.ENDLINE)
 							throw new UnexpectedTokenException(token,"';' expected");
-						return new ReturnTree(null);
+						return new ReturnStatementTree(keyword,null,token);
 					}
 					token = nextToken();
 					ExprTree ret = parseExpr(unit,context,context.getReturnType());
 					if (token.type != TokenType.ENDLINE)
 						throw new UnexpectedTokenException(token,"';' expected");
-					return new ReturnTree(ret);
+					return new ReturnStatementTree(keyword,ret, token);
 				}
 				case "if": {
 					Token ifToken = token;
@@ -263,7 +278,9 @@ public class ASTBuilder {
 					if (token.type != TokenType.OPENROUND) {
 						throw new UnexpectedTokenException(token,"'(' expected");
 					}
+					Token openr = token;
 					ExprTree assert_ = parseExpr(unit,context,TypeTree.BOOL);
+					Token closer = token;
 					StatementTree statementTree = parseStatement(unit,context);
 					return new IfStatement(ifToken,assert_,statementTree);
 				}
@@ -287,13 +304,15 @@ public class ASTBuilder {
 				return parseNumberExpr(retType);
 			case CHARS:
 				return parseCharExpr(retType);
+			case STRING:
+				return parseStringExpr(retType);
 			case IDENTIFIER:
 				return parseIdentifierExpr(unit,context,retType);
 			case KEYWORD:
 				if (token.text.equals("true")) {
-					return BoolExprTree.TRUE;
+					return new BoolLiterallExprTree(true,token);
 				} else if (token.text.equals("false")) {
-					return BoolExprTree.FALSE;
+					return new BoolLiterallExprTree(false,token);
 				}
 			case OPENROUND:
 				return parseParentExpr(unit,context,retType);
@@ -301,6 +320,16 @@ public class ASTBuilder {
 				return parseInitializer(unit,context,retType);
 		}
 		throw new UnexpectedTokenException(token,"primary expression expected");
+	}
+
+	private ExprTree parseStringExpr(TypeTree retType) {
+		if (retType == null)
+			retType = TypeDynamicArrayTree.get(TypeTree.CHAR);
+		if (token.type != TokenType.STRING) {
+			throw new UnexpectedTokenException(token,"String literal expected");
+		}
+		ExprTree str = new StringLiteralExprTree(token,retType);
+		return str;
 	}
 
 	private ExprTree parseCharExpr(TypeTree retType) {
@@ -327,8 +356,8 @@ public class ASTBuilder {
 			/*if (token.type != TokenType.OPERATOR) {
 				throw new UnexpectedTokenException(token,"operator expected");
 			}*/
-			String operator = token.text;
-			int tokenPriority = BinaryOperator.getPriority(operator);
+			Token operator = token;
+			int tokenPriority = BinaryOperator.getPriority(operator.text);
 			if (tokenPriority < priority) {
 				return lhs;
 			}
@@ -344,7 +373,7 @@ public class ASTBuilder {
 				rhs = parseBinOpRhs(unit,context,retType,tokenPriority+1,rhs);
 			}
 
-			lhs = new BinaryExprTree(lhs,rhs, BinaryOperator.getOperator(operator));
+			lhs = new BinaryExprTree(lhs,rhs, BinaryOperator.getOperator(operator.text),operator);
 			continue;
 		}
 	}
@@ -363,15 +392,15 @@ public class ASTBuilder {
 			throw new UnexpectedTokenException(token,"identifier expected");
 		String name = token.text;
 		if (seeNextToken().type != TokenType.OPENROUND) {
-			VariableDeclarationTree variable = context.getVariable(name);
+			VariableDeclarationStatementTree variable = context.getVariable(name);
 			if (variable.getType() instanceof StructTypeTree && seeNextToken().type == TokenType.OPERATOR && seeNextToken().text.equals(".")) {
-				token = nextToken();//eat '.'
+				Token operator = nextToken();//eat '.'
 				StructTypeTree struct = (StructTypeTree) variable.getType();
 				token = nextToken();
 				if (token.type != TokenType.IDENTIFIER)
 					throw new UnexpectedTokenException(token,"field name expected");
-				VariableDeclarationTree field = struct.getVariable(token.text);
-				return new BinaryExprTree(new VariableExprTree(variable),new VariableExprTree(field),BinaryOperator.SELECT,retType);
+				VariableDeclarationStatementTree field = struct.getVariable(token.text);
+				return new BinaryExprTree(new VariableExprTree(variable),new VariableExprTree(field),BinaryOperator.SELECT,retType,operator);
 			} else if (retType != null && !variable.getType().canBeImplicitCastTo(retType)) {
 				throw new UnexpectedTokenException(token,"cannot implicit cast " + variable.getType() + " to " + retType);
 			}

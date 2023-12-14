@@ -4,6 +4,7 @@ extern void println();
 extern void println(int i);
 extern void println(char ch);
 extern void print(char ch);
+extern void println(char[] str);
 
 typename i32 = int;
 typename size_t = ulong;
@@ -25,7 +26,7 @@ struct pos {
 	int y;
 };
 
-struct b {
+struct B {
 	pos p;
 	float z;
 };
@@ -37,29 +38,16 @@ void sum(pos a, pos b) {
 //const _Allocator a_local = _Allocator.create();
 
 void main() {
-	bool b = false;
-	if(b) return;
+	println("Hello world");
 
 
-	print('H');
-	print('e');
-	print('l');
-	print('l');
-	print('o');
-	print(' ');
-	print('w');
-	print('o');
-	print('r');
-	print('l');
-	print('d');
-	print('!');
-	println();
 
 
 	pos p = {4,7};
 	p.x = 16;
 
-	//b bb = {p,4f};
+	B b = {p,4f};
+	//int bx = b.p.x;
 
 	sum(p,{10,10});
 

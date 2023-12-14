@@ -1,23 +1,23 @@
 package c32.compiler.ast.expr;
 
 import c32.compiler.ast.type.TypeTree;
+import c32.compiler.tokenizer.Token;
+import lombok.Getter;
 
-public class BoolExprTree extends ExprTree{
+public class BoolLiterallExprTree extends ExprTree {
 	private final boolean value;
-	private BoolExprTree(boolean value) {
+	@Getter
+	private final Token token;
+
+	public BoolLiterallExprTree(boolean value, Token token) {
 		super(TypeTree.BOOL);
 		this.value = value;
+		this.token = token;
 	}
 
 	public boolean getValue() {
 		return value;
 	}
-
-	public static BoolExprTree get(boolean value) {
-		return value ? TRUE : FALSE;
-	}
-
-	public static final BoolExprTree TRUE = new BoolExprTree(true), FALSE = new BoolExprTree(false);
 
 	@Override
 	public String brewJava() {

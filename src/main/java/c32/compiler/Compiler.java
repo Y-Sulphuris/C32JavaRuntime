@@ -163,11 +163,17 @@ public class Compiler {
 			}
 		});
 
+		File f = new File("c32target/generated/test/test_c32.class");
+		if (f.exists()) f.delete();
 		System.out.println("Compiling...");
 		proc("javac c32target/generated/test/test_c32.java");
 
-		System.out.println("Starting process...\n");
-		proc("java -cp c32target/generated/ test.test_c32");
+		if (f.exists()) {
+			System.out.println("Starting process...\n");
+			proc("java -cp c32target/generated/ test.test_c32");
+		} else {
+			System.out.println("Compilation error");
+		}
 	}
 	private static void proc(String cmd) throws IOException{
 		Runtime rt = Runtime.getRuntime();

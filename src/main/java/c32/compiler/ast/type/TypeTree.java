@@ -17,7 +17,7 @@ public class TypeTree implements Tree {
 	}
 
 	public String getJavaTypeName() {
-		throw new UnsupportedOperationException("no java type name");
+		return getJavaType().toString();
 	}
 	public TypeName getJavaType() {
 		throw new UnsupportedOperationException("no java type");

@@ -3,6 +3,8 @@ package c32.compiler.ast;
 import c32.compiler.Compiler;
 import c32.compiler.FunctionDeclNotFoundException;
 import c32.compiler.ast.expr.ExprTree;
+import c32.compiler.ast.statement.VariableDeclarationStatementTree;
+import c32.compiler.ast.type.StructTypeTree;
 import c32.compiler.ast.type.TypeTree;
 import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.JavaFile;
@@ -30,7 +32,7 @@ public class CompilationUnitTree implements Tree, VariableContainer, FunctionCon
 	}
 
 
-	private final List<VariableDeclarationTree> fields = new ArrayList<>();
+	private final List<VariableDeclarationStatementTree> fields = new ArrayList<>();
 
 
 	private final List<StructTypeTree> structs = new ArrayList<>();
@@ -51,7 +53,7 @@ public class CompilationUnitTree implements Tree, VariableContainer, FunctionCon
 			MethodSpec brewJava = function.brewJava();
 			if (brewJava != null) unitFile.addMethod(brewJava);
 		}
-		for (VariableDeclarationTree field : fields) {
+		for (VariableDeclarationStatementTree field : fields) {
 			for (FieldSpec fieldSpec : field.brewJavaAsField(this)) unitFile.addField(fieldSpec);
 		}
 		return Collections.singleton(JavaFile.builder(packageName,unitFile.build()).build());
@@ -122,14 +124,14 @@ public class CompilationUnitTree implements Tree, VariableContainer, FunctionCon
 	}
 
 	@Override
-	public VariableDeclarationTree getVariable(String name) {
-		for (VariableDeclarationTree field : fields) {
+	public VariableDeclarationStatementTree getVariable(String name) {
+		for (VariableDeclarationStatementTree field : fields) {
 			if (field.getVarName().equals(name)) return field;
 		}
 		throw new VariableDeclNotFoundException(this,name);
 	}
 
-	public void addField(VariableDeclarationTree var) {
+	public void addField(VariableDeclarationStatementTree var) {
 		fields.add(var);
 	}
 

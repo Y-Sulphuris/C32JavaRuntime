@@ -2,6 +2,7 @@ package c32.compiler.ast;
 
 import c32.compiler.Compiler;
 import c32.compiler.ast.expr.ExprTree;
+import c32.compiler.ast.statement.VariableDeclarationStatementTree;
 import c32.compiler.ast.type.TypeTree;
 import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.MethodSpec;
@@ -20,8 +21,8 @@ public class FunctionDeclarationTree implements Tree, VariableContainer {
 		return functionName;
 	}
 
-	private final VariableDeclarationTree[] args;
-	public VariableDeclarationTree[] getArgs() {
+	private final VariableDeclarationStatementTree[] args;
+	public VariableDeclarationStatementTree[] getArgs() {
 		return args;
 	}
 
@@ -58,7 +59,7 @@ public class FunctionDeclarationTree implements Tree, VariableContainer {
 		if (getArgs().length == 0 && getFunctionName().equals("main")) {
 			method.addParameter(ParameterSpec.builder(String[].class,"$args",Modifier.FINAL).build());
 			method.varargs(true);
-		} else for(VariableDeclarationTree arg : getArgs()) {
+		} else for(VariableDeclarationStatementTree arg : getArgs()) {
 			for (ParameterSpec parameterSpec : arg.brewJavaAsArgument()) method.addParameter(parameterSpec);
 		}
 
@@ -89,8 +90,8 @@ public class FunctionDeclarationTree implements Tree, VariableContainer {
 		availableVariableMod.add(Compiler.CONST);
 	}
 
-	public VariableDeclarationTree getVariable(String name) {
-		for (VariableDeclarationTree var : getArgs()) {
+	public VariableDeclarationStatementTree getVariable(String name) {
+		for (VariableDeclarationStatementTree var : getArgs()) {
 			if (var.getVarName().equals(name)) return var;
 		}
 		return impl.getVariable(name);
@@ -104,7 +105,7 @@ public class FunctionDeclarationTree implements Tree, VariableContainer {
 		return modifiers;
 	}
 
-	public FunctionDeclarationTree(String functionName, VariableDeclarationTree[] args, TypeTree returnType, Modifiers modifiers) {
+	public FunctionDeclarationTree(String functionName, VariableDeclarationStatementTree[] args, TypeTree returnType, Modifiers modifiers) {
 		this.functionName = functionName;
 		this.args = args;
 		this.returnType = returnType;

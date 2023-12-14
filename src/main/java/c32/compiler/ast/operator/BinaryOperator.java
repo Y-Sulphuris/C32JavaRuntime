@@ -2,7 +2,7 @@ package c32.compiler.ast.operator;
 
 import c32.compiler.CompilerException;
 import c32.compiler.ast.expr.ExprTree;
-import c32.compiler.ast.StructTypeTree;
+import c32.compiler.ast.type.StructTypeTree;
 import c32.compiler.ast.type.TypeTree;
 
 import java.util.HashMap;
@@ -27,7 +27,7 @@ class SelectBinaryOperator extends BinaryOperator {
 
 	@Override
 	public boolean isLeftValue(BinaryExprTree binaryExprTree) {
-		return binaryExprTree.operand2.isLeftValue();
+		return binaryExprTree.getOperand2().isLeftValue();
 	}
 
 	@Override

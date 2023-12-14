@@ -1,6 +1,7 @@
 package c32.compiler.ast;
 
 import c32.compiler.Compiler;
+import c32.compiler.ast.statement.VariableDeclarationStatementTree;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -8,7 +9,7 @@ import java.util.List;
 import java.util.Set;
 
 public class FunctionImplTree implements Tree, VariableContainer {
-	private final List<VariableDeclarationTree> variables = new ArrayList<>();
+	private final List<VariableDeclarationStatementTree> variables = new ArrayList<>();
 
 	final List<StatementTree> statements = new ArrayList<>();
 
@@ -27,14 +28,14 @@ public class FunctionImplTree implements Tree, VariableContainer {
 	}
 
 	@Override
-	public VariableDeclarationTree getVariable(String name) {
-		for (VariableDeclarationTree var : variables) {
+	public VariableDeclarationStatementTree getVariable(String name) {
+		for (VariableDeclarationStatementTree var : variables) {
 			if (var.getVarName().equals(name)) return var;
 		}
 		throw new VariableDeclNotFoundException(this,name);
 	}
 
-	public VariableDeclarationTree declareVariable(VariableDeclarationTree var) {
+	public VariableDeclarationStatementTree declareVariable(VariableDeclarationStatementTree var) {
 		variables.add(var);
 		return var;
 	}

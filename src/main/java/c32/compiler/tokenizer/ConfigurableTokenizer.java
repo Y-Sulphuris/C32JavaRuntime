@@ -198,8 +198,6 @@ public class ConfigurableTokenizer implements Tokenizer{
 			ch = nextChar();
 			StringBuilder builder = new StringBuilder();
 			while (ch != separators) {
-				builder.append(ch);
-				ch = nextChar();
 				if (ch == '\\') {
 					ch = nextChar();
 					switch (ch) {
@@ -231,7 +229,10 @@ public class ConfigurableTokenizer implements Tokenizer{
 							}
 						}
 					}
+				} else {
+					builder.append(ch);
 				}
+				ch = nextChar();
 			}
 			return new Token(type,builder.toString(),startpos-1,pos,line);
 		}

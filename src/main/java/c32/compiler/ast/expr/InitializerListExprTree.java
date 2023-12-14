@@ -1,7 +1,7 @@
 package c32.compiler.ast.expr;
 
-import c32.compiler.ast.StructTypeTree;
-import c32.compiler.ast.VariableDeclarationTree;
+import c32.compiler.ast.type.StructTypeTree;
+import c32.compiler.ast.statement.VariableDeclarationStatementTree;
 import c32.compiler.ast.type.TypeTree;
 
 import java.util.List;
@@ -34,7 +34,7 @@ public class InitializerListExprTree extends ExprTree {
 			StructTypeTree struct = (StructTypeTree) type;
 			if (struct.getFields().size() != inits.size()) return false;
 			int i = 0;
-			for (VariableDeclarationTree field : struct.getFields()) {
+			for (VariableDeclarationStatementTree field : struct.getFields()) {
 				if (!inits.get(i).canBeImplicitCastTo(field.getType())) return false;
 				++i;
 			}

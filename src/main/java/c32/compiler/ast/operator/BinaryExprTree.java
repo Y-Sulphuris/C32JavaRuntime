@@ -3,19 +3,27 @@ package c32.compiler.ast.operator;
 import c32.compiler.ast.expr.ExprTree;
 import c32.compiler.ast.type.PrimitiveNumericTypeTree;
 import c32.compiler.ast.type.TypeTree;
+import c32.compiler.tokenizer.Token;
+import lombok.Getter;
 
 public class BinaryExprTree extends ExprTree {
-	final ExprTree operand1, operand2;
+	@Getter
+	private final ExprTree operand1, operand2;
 	private final BinaryOperator operator;
-	public BinaryExprTree(ExprTree operand1, ExprTree operand2, BinaryOperator operator) {
+	@Getter
+	private final Token operatorToken;
+
+	public BinaryExprTree(ExprTree operand1, ExprTree operand2, BinaryOperator operator, Token operatorTok) {
 		super(operator.getReturnType(operand1,operand2));
+		this.operatorToken = operatorTok;
 		operator.checkAllowed(operand1,operand2,this.getRetType());
 		this.operand1 = operand1;
 		this.operand2 = operand2;
 		this.operator = operator;
 	}
-	public BinaryExprTree(ExprTree operand1, ExprTree operand2, BinaryOperator operator, TypeTree retType) {
+	public BinaryExprTree(ExprTree operand1, ExprTree operand2, BinaryOperator operator, TypeTree retType, Token operatorTok) {
 		super(retType);
+		this.operatorToken = operatorTok;
 		operator.checkAllowed(operand1,operand2,retType);
 		this.operand1 = operand1;
 		this.operand2 = operand2;

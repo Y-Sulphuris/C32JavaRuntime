@@ -19,7 +19,8 @@ public final class IntrinsicFunctionTable {
 				"println_int",
 				"println_float",
 				"println_long",
-				"println_double");
+				"println_double",
+				"println___array_char");
 		setOverload("java.lang.System.out.print",TypeName.VOID,
 				"print",
 				"print_byte",
