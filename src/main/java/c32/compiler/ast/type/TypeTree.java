@@ -46,7 +46,8 @@ public class TypeTree implements Tree {
 			FLOAT = new PrimitiveNumericTypeTree("float",TypeName.FLOAT, 4),
 			DOUBLE = new PrimitiveNumericTypeTree("double",TypeName.DOUBLE, 8),
 
-			BOOL = new PrimitiveTypeTree("bool",TypeName.BOOLEAN,1)
+			BOOL = new PrimitiveTypeTree("bool",TypeName.BOOLEAN,1),
+			CHAR = new PrimitiveTypeTree("char",TypeName.CHAR,2)
 
 			;
 	static {

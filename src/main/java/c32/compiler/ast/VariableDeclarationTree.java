@@ -59,6 +59,9 @@ public class VariableDeclarationTree implements StatementTree {
 		FieldSpec.Builder field = FieldSpec.builder(type.getJavaType(), varName, Modifier.PUBLIC);
 		if (container instanceof CompilationUnitTree) field.addModifiers(Modifier.STATIC);
 		if (modifiers.is_const()) field.addModifiers(Modifier.FINAL);
+		if (init != null) {
+			field.initializer(init.brewJava());
+		}
 		return Collections.singleton(field.build());
 	}
 

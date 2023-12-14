@@ -14,6 +14,8 @@ public class ReturnTree implements StatementTree {
 
 	@Override
 	public Collection<CodeBlock> brewJava() {
+		if (ret == null)
+			return Collections.singleton(CodeBlock.builder().add("return").build());
 		return Collections.singleton(CodeBlock.builder().add("return " + ret.brewJava()).build());
 	}
 }

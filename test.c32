@@ -2,6 +2,8 @@ package test;
 
 extern void println();
 extern void println(int i);
+extern void println(char ch);
+extern void print(char ch);
 
 typename i32 = int;
 typename size_t = ulong;
@@ -23,6 +25,11 @@ struct pos {
 	int y;
 };
 
+struct b {
+	pos p;
+	float z;
+};
+
 void sum(pos a, pos b) {
 	pos c = {a.x + b.x, a.y + b.y};
 }
@@ -30,16 +37,29 @@ void sum(pos a, pos b) {
 //const _Allocator a_local = _Allocator.create();
 
 void main() {
+	bool b = false;
+	if(b) return;
 
-/*
-	pos* p = new(a_local) pos;
 
-	delete(a_local) p;
-*/
+	print('H');
+	print('e');
+	print('l');
+	print('l');
+	print('o');
+	print(' ');
+	print('w');
+	print('o');
+	print('r');
+	print('l');
+	print('d');
+	print('!');
+	println();
 
 
 	pos p = {4,7};
 	p.x = 16;
+
+	//b bb = {p,4f};
 
 	sum(p,{10,10});
 

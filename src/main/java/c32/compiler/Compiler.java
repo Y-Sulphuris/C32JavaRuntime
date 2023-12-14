@@ -6,8 +6,10 @@ import c32.compiler.tokenizer.ConfigurableTokenizer;
 import c32.compiler.tokenizer.Token;
 import c32.compiler.tokenizer.Tokenizer;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.util.*;
 
@@ -117,7 +119,7 @@ public class Compiler {
 	static Tokenizer tokenizer = new ConfigurableTokenizer().addKeywords(keywords).addOperators(validOperators);
 
 
-	public static void main(String... args) {
+	public static void main(String... args) throws IOException{
 		String source = null;
 		String filename = "Main";
 		try {
@@ -160,5 +162,31 @@ public class Compiler {
 				throw new RuntimeException(e);
 			}
 		});
+
+		System.out.println("Compiling...");
+		proc("javac c32target/generated/test/test_c32.java");
+
+		System.out.println("Starting process...\n");
+		proc("java -cp c32target/generated/ test.test_c32");
+	}
+	private static void proc(String cmd) throws IOException{
+		Runtime rt = Runtime.getRuntime();
+		Process proc = rt.exec(cmd);
+
+
+		BufferedReader stdInput = new BufferedReader(new InputStreamReader(proc.getInputStream()));
+
+		BufferedReader stdError = new BufferedReader(new InputStreamReader(proc.getErrorStream()));
+
+		// Read the output from the command
+		String s = null;
+		while ((s = stdInput.readLine()) != null) {
+			System.out.println(s);
+		}
+
+		// Read any errors from the attempted command
+		while ((s = stdError.readLine()) != null) {
+			System.out.println(s);
+		}
 	}
 }

@@ -3,7 +3,7 @@ package test;
 import java.lang.String;
 
 public final class test_c32 {
-  public static final long version;
+  public static final long version = (long)4;
 
   private test_c32() {
   }
@@ -24,9 +24,24 @@ public final class test_c32 {
   }
 
   public static void main(final String... $args) {
+    boolean b = false;
+    if(b) {return;};
+    java.lang.System.out.print('H');
+    java.lang.System.out.print('e');
+    java.lang.System.out.print('l');
+    java.lang.System.out.print('l');
+    java.lang.System.out.print('o');
+    java.lang.System.out.print(' ');
+    java.lang.System.out.print('w');
+    java.lang.System.out.print('o');
+    java.lang.System.out.print('r');
+    java.lang.System.out.print('l');
+    java.lang.System.out.print('d');
+    java.lang.System.out.print('!');
+    java.lang.System.out.println();
     int _p_x = (int)4;
     int _p_y = (int)7;
     (_p_x) = ((int)16);
-    sum(_p_x,_p_y,(int)10,(int)10);
+    sum_pos_pos(_p_x,_p_y,(int)10,(int)10);
   }
 }

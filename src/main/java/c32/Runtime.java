@@ -1,6 +1,5 @@
 package c32;
 
-import c32.memory.Memory;
 import com.natives.NativesInit;
 
 public final class Runtime {

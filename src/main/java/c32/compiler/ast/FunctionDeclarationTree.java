@@ -41,7 +41,7 @@ public class FunctionDeclarationTree implements Tree, VariableContainer {
 		return impl;
 	}
 
-	String getJavaFunctionName() {
+	public String getJavaFunctionName() {
 		if (getArgs().length == 0) return getFunctionName();
 		StringBuilder builder = new StringBuilder(getFunctionName());
 		for (int i = 0; i < getArgs().length; i++) {

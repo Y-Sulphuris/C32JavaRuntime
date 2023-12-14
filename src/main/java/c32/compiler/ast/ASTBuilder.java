@@ -1,11 +1,10 @@
 package c32.compiler.ast;
 
 import c32.compiler.Compiler;
-import c32.compiler.ast.expr.ExprStatementTree;
-import c32.compiler.ast.expr.ExprTree;
-import c32.compiler.ast.expr.InitializerListExprTree;
+import c32.compiler.ast.expr.*;
 import c32.compiler.ast.operator.BinaryExprTree;
 import c32.compiler.ast.operator.BinaryOperator;
+import c32.compiler.ast.statement.IfStatement;
 import c32.compiler.ast.type.TypeTree;
 import c32.compiler.tokenizer.Token;
 import c32.compiler.tokenizer.TokenType;
@@ -246,11 +245,27 @@ public class ASTBuilder {
 			}
 			switch (token.text) {
 				case "return": {
+					if (context.getReturnType() == TypeTree.VOID) {
+						token = nextToken();
+						if (token.type != TokenType.ENDLINE)
+							throw new UnexpectedTokenException(token,"';' expected");
+						return new ReturnTree(null);
+					}
 					token = nextToken();
 					ExprTree ret = parseExpr(unit,context,context.getReturnType());
 					if (token.type != TokenType.ENDLINE)
 						throw new UnexpectedTokenException(token,"';' expected");
 					return new ReturnTree(ret);
+				}
+				case "if": {
+					Token ifToken = token;
+					token = nextToken();
+					if (token.type != TokenType.OPENROUND) {
+						throw new UnexpectedTokenException(token,"'(' expected");
+					}
+					ExprTree assert_ = parseExpr(unit,context,TypeTree.BOOL);
+					StatementTree statementTree = parseStatement(unit,context);
+					return new IfStatement(ifToken,assert_,statementTree);
 				}
 				default:
 					throw new UnexpectedTokenException(token, "illegal keyword");
@@ -270,14 +285,27 @@ public class ASTBuilder {
 		switch (token.type) {
 			case NUMBER:
 				return parseNumberExpr(retType);
+			case CHARS:
+				return parseCharExpr(retType);
 			case IDENTIFIER:
 				return parseIdentifierExpr(unit,context,retType);
+			case KEYWORD:
+				if (token.text.equals("true")) {
+					return BoolExprTree.TRUE;
+				} else if (token.text.equals("false")) {
+					return BoolExprTree.FALSE;
+				}
 			case OPENROUND:
 				return parseParentExpr(unit,context,retType);
 			case OPEN:
 				return parseInitializer(unit,context,retType);
 		}
 		throw new UnexpectedTokenException(token,"primary expression expected");
+	}
+
+	private ExprTree parseCharExpr(TypeTree retType) {
+		String text = token.text;
+		return new CharExprTree(retType,text);
 	}
 
 	private ExprTree parseInitializer(CompilationUnitTree unit, FunctionDeclarationTree context, TypeTree retType) {
