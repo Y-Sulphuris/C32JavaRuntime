@@ -50,12 +50,14 @@ public class ConfigurableTokenizer implements Tokenizer{
 			}
 		} catch (UnexpectedTokenException e) {
 			Token errorToken = e.getToken();
-			if (token.text != null) System.err.println(token.text);
-			String str = source.substring(errorToken.startpos,errorToken.endpos);
-			System.err.println("Invalid token at line: " + errorToken.line);
-			System.err.println(str);
-			for (int i = 0; i < str.length(); i++) System.err.print('~');
-			System.err.println();
+			if (errorToken != null) {
+				if (errorToken.text != null) System.err.println(errorToken.text);
+				String str = source.substring(errorToken.startpos,errorToken.endpos);
+				System.err.println("Invalid token at line: " + errorToken.line);
+				System.err.println(str);
+				for (int i = 0; i < str.length(); i++) System.err.print('~');
+				System.err.println();
+			}
 			throw e;
 		}
 
@@ -230,6 +232,7 @@ public class ConfigurableTokenizer implements Tokenizer{
 						}
 					}
 				} else {
+					if(ch == '\n') throw new UnexpectedTokenException(new Token(type,builder.toString(),startpos-1,pos,line),"Unexpected '\\n'");
 					builder.append(ch);
 				}
 				ch = nextChar();

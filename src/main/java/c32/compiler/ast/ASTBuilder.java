@@ -1,6 +1,7 @@
 package c32.compiler.ast;
 
 import c32.compiler.Compiler;
+import c32.compiler.CompilerException;
 import c32.compiler.ast.expr.*;
 import c32.compiler.ast.operator.BinaryExprTree;
 import c32.compiler.ast.operator.BinaryOperator;
@@ -19,7 +20,11 @@ public class ASTBuilder {
 	private Token[] tokens;
 	private int curTok = 0;
 	private Token nextToken() {
-		return tokens[curTok++];
+		try {
+			return tokens[curTok++];
+		} catch (ArrayIndexOutOfBoundsException e) {
+			throw new CompilerException("Где код????????");
+		}
 	}
 	private Token seeNextToken() {
 		return tokens[curTok];

@@ -18,11 +18,11 @@ public class UnexpectedTokenException extends CompilerException {
 		this(token,"'" + expected + "' expected");
 	}
 	public UnexpectedTokenException(Token token, String msg) {
-		super(token.toString() + " ("+msg+")");
+		super(token + " ("+msg+")");
 		this.token = token;
 	}
 	public UnexpectedTokenException(Token token) {
-		super(token.toString());
+		super(String.valueOf(token));
 		this.token = token;
 	}
 }

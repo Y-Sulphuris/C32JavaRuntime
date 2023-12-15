@@ -1,55 +1,8 @@
 package test;
 
-extern void println();
-extern void println(int i);
-extern void println(char ch);
-extern void print(char ch);
-extern void println(char[] str);
-
-typename i32 = int;
-typename size_t = ulong;
-
-void func(byte a, i32 b) {
-	const int i = 5 + a * 3;
-}
-
-const size_t version = 4;
-
-uint testf() {
-	uint u = 17;
-	u += 5;
-	return u;
-}
-
-struct pos {
-	int x;
-	int y;
-};
-
-struct B {
-	pos p;
-	float z;
-};
-
-void sum(pos a, pos b) {
-	pos c = {a.x + b.x, a.y + b.y};
-}
-
-//const _Allocator a_local = _Allocator.create();
+extern void println(char[] ch);
 
 void main() {
-	println("Hello world");
-
-
-
-
-	pos p = {4,7};
-	p.x = 16;
-
-	B b = {p,4f};
-	//int bx = b.p.x;
-
-	sum(p,{10,10});
-
-
+    println("Русский не работает");
 }
+

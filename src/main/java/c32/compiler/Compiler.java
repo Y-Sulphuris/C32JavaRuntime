@@ -166,11 +166,11 @@ public class Compiler {
 		File f = new File("c32target/generated/test/test_c32.class");
 		if (f.exists()) f.delete();
 		System.out.println("Compiling...");
-		proc("javac c32target/generated/test/test_c32.java");
+		proc("javac -cp target/classes/ c32target/generated/test/test_c32.java");
 
 		if (f.exists()) {
 			System.out.println("Starting process...\n");
-			proc("java -cp c32target/generated/ test.test_c32");
+			proc("java -cp c32target/generated/;target/classes/ test.test_c32");
 		} else {
 			System.out.println("Compilation error");
 		}
