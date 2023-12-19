@@ -1,8 +1,0 @@
-package test;
-
-extern void println(char[] ch);
-
-void main() {
-    println("Русский не работает");
-}
-

@@ -1,0 +1,30 @@
+const int b = 4 + 10 * 4;
+
+struct pos {
+	int x;
+	int y;
+}
+
+typename size_t = ulong, ptrdiff_t = long;
+
+bool getTrue() {
+	return true;
+}
+
+void main(const (char[]) args) {
+	if(b) {
+		exit(0);
+	}
+
+	for(;;);
+
+	B& b;
+	B = a.*b;
+	B[] b = B;
+	char[] str = "4";
+	pos p = pos(4,7);
+	char ch = args[4];
+	bool b = !getTrue();
+}
+
+int integer = 4 + 12;

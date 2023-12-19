@@ -1,7 +1,7 @@
 package c32.compiler;
 
-import c32.compiler.tokenizer.Token;
-import c32.compiler.tokenizer.TokenType;
+import c32.compiler.lexer.tokenizer.Token;
+import c32.compiler.lexer.tokenizer.TokenType;
 
 import java.util.Collection;
 
