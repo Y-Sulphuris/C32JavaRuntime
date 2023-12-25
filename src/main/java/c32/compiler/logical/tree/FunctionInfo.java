@@ -5,6 +5,9 @@ import java.util.List;
 public interface FunctionInfo extends SpaceInfo {
 	String getName();
 	TypeRefInfo getReturnType();
-	List<LocalVariableInfo> getArgs();
+	List<VariableInfo> getArgs();
 	List<TypeRefInfo> getThrowTypes();
+
+	boolean is_pure();
+	boolean is_noexcept();
 }

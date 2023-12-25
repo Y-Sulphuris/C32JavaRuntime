@@ -1,5 +1,6 @@
 package c32.compiler.logical.tree;
 
+import c32.compiler.logical.tree.expression.Expression;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 
@@ -51,6 +52,16 @@ public class TypeArrayInfo implements TypeInfo {
 	}
 
 	@Override
+	public Set<FieldInfo> getFields() {
+		return Collections.emptySet();
+	}
+
+	@Override
+	public FieldInfo addField(FieldInfo field) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
 	public boolean isAccessibleFrom(SpaceInfo namespace) {
 		return true;
 	}
@@ -63,5 +74,15 @@ public class TypeArrayInfo implements TypeInfo {
 	@Override
 	public long sizeof() {
 		return 8;
+	}
+
+	@Override
+	public Expression getDefaultValue() {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public String getCanonicalName() {
+		return elementType.getCanonicalName() + "[]";
 	}
 }

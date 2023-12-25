@@ -1,6 +1,9 @@
 package c32.compiler.codegen.java;
 
 import c32.compiler.logical.tree.*;
+import c32.compiler.logical.tree.expression.Expression;
+import c32.compiler.logical.tree.expression.NumericLiteralExpression;
+import sun.nio.cs.KOI8_U;
 
 import java.io.File;
 import java.io.IOException;
@@ -29,13 +32,47 @@ public class JavaGenerator {
 			out.println("public final class " + className + " {");
 			out.println("\tprivate " + className + "() throws java.lang.InstantiationException { throw new java.lang.InstantiationException(); }");
 			for (FunctionInfo function : space.getFunctions()) {
-				writeFunctionBody(function,out);
+				writeFunction(function,out);
 				writeFunctionNamespace(function,out);
+			}
+			for (FieldInfo field : space.getFields()) {
+				writeField(field,out);
 			}
 			out.println('}');
 			out.close();
 		} catch (IOException e) {
 			throw new RuntimeException(e);
+		}
+	}
+
+	private void writeField(FieldInfo field, PrintStream out) {
+		out.print("\tpublic static ");
+		if (field.getTypeRef().is_const()) out.print("final ");
+		out.print(getJavaTypeName(field.getTypeRef().getType()) + " " + field.getName() + ";");
+		Expression init = field.getInitializer();
+		if (init == null) init = field.getTypeRef().getType().getDefaultValue();
+		out.print("\n\tstatic {\n\t\t");
+		out.print(field.getName() + " = ");
+		writeExpression(init, out);
+		out.println(';');
+		out.println("\t}");
+		out.println();
+	}
+
+	private void writeExpression(Expression init, PrintStream out) {
+		if (init instanceof NumericLiteralExpression) {
+			out.print(((NumericLiteralExpression) init).getNumber());
+			switch (getJavaTypeName(init.getReturnType().getType())) {
+				case "long":
+					out.print("L");
+					break;
+				case "float":
+					out.print("f");
+					break;
+				case "double":
+					out.print("d");
+					break;
+			}
 		}
 	}
 
@@ -54,10 +91,10 @@ public class JavaGenerator {
 		return builder.toString();
 	}
 
-	private void writeFunctionBody(FunctionInfo function, PrintStream out) {
+	private void writeFunction(FunctionInfo function, PrintStream out) {
 		String retType = getJavaTypeName(function.getReturnType().getType());
 		out.print("\tpublic static " + retType + " " + getJavaFunctionName(function) + "(");
-		for (LocalVariableInfo arg : function.getArgs()) {
+		for (VariableInfo arg : function.getArgs()) {
 			out.print(getJavaTypeName(arg.getTypeRef().getType()) + " " + arg.getName());
 			if (arg != function.getArgs().get(function.getArgs().size()-1)) out.print(',');
 		}
@@ -68,7 +105,7 @@ public class JavaGenerator {
 	private String getJavaFunctionName(FunctionInfo function) {
 		if (function.getArgs().isEmpty()) return function.getName();
 		StringBuilder builder = new StringBuilder(function.getName());
-		for (LocalVariableInfo arg : function.getArgs()) {
+		for (VariableInfo arg : function.getArgs()) {
 			builder.append("$").append(arg.getTypeRef().getType().getName());
 		}
 		return builder.toString();

@@ -1,6 +1,7 @@
 package c32.compiler.logical.tree;
 
 import c32.compiler.except.CompilerException;
+import c32.compiler.logical.tree.expression.Expression;
 import c32.compiler.parser.ast.type.TypeKeywordElementTree;
 import lombok.Getter;
 
@@ -10,14 +11,29 @@ import java.util.Set;
 
 public interface TypeInfo extends SpaceInfo {
 	long sizeof();
+
+	Expression getDefaultValue();
+
+	default boolean canBeImplicitCastTo(TypeInfo type) {
+		return this.equals(type);
+	}
+
 	class NumericPrimitiveTypeInfo extends PrimitiveTypeInfo {
 		public NumericPrimitiveTypeInfo(String name, long size) {
 			super(name, size);
+		}
+		public UnsignedIntegerPrimitiveTypeInfo getUnsigned() {
+			return null;
 		}
 	}
 	class IntegerPrimitiveTypeInfo extends NumericPrimitiveTypeInfo {
 		public IntegerPrimitiveTypeInfo(String name, long size) {
 			super(name, size);
+		}
+
+		@Override
+		public UnsignedIntegerPrimitiveTypeInfo getUnsigned() {
+			return (UnsignedIntegerPrimitiveTypeInfo) PrimitiveTypeInfo.types.get('u'+this.getName());
 		}
 	}
 	class UnsignedIntegerPrimitiveTypeInfo extends IntegerPrimitiveTypeInfo {
@@ -32,6 +48,12 @@ public interface TypeInfo extends SpaceInfo {
 	}
 	@Getter
 	class PrimitiveTypeInfo implements TypeInfo {
+
+		@Override
+		public String toString() {
+			return "TypeInfo(" + name + ')';
+		}
+
 		private final String name;
 		private final long size;
 		private static final HashMap<String, PrimitiveTypeInfo> types = new HashMap<>();
@@ -90,6 +112,16 @@ public interface TypeInfo extends SpaceInfo {
 		}
 
 		@Override
+		public Set<FieldInfo> getFields() {
+			return Collections.emptySet();
+		}
+
+		@Override
+		public FieldInfo addField(FieldInfo field) {
+			throw new UnsupportedOperationException("cannot add field to primitive type");
+		}
+
+		@Override
 		public boolean isAccessibleFrom(SpaceInfo namespace) {
 			return true;
 		}
@@ -97,6 +129,11 @@ public interface TypeInfo extends SpaceInfo {
 		@Override
 		public long sizeof() {
 			return size;
+		}
+
+		@Override
+		public Expression getDefaultValue() {
+			throw new UnsupportedOperationException();
 		}
 	}
 }

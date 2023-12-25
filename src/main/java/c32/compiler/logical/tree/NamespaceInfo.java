@@ -12,6 +12,7 @@ public class NamespaceInfo implements SpaceInfo {
 
 	private final Set<FunctionInfo> functions = new HashSet<>();
 	private final Set<NamespaceInfo> namespaces = new HashSet<>();
+	private final Set<FieldInfo> fields = new HashSet<>();
 
 
 	@Override
@@ -24,6 +25,17 @@ public class NamespaceInfo implements SpaceInfo {
 	public NamespaceInfo addNamespace(NamespaceInfo namespace) {
 		namespaces.add(namespace);
 		return namespace;
+	}
+
+	@Override
+	public Set<FieldInfo> getFields() {
+		return fields;
+	}
+
+	@Override
+	public FieldInfo addField(FieldInfo field) {
+		fields.add(field);
+		return field;
 	}
 
 	@Override

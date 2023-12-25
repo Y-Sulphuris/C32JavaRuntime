@@ -18,6 +18,9 @@ public interface SpaceInfo extends SymbolInfo {
 	Set<NamespaceInfo> getNamespaces();
 	NamespaceInfo addNamespace(NamespaceInfo namespace);
 
+	Set<FieldInfo> getFields();
+	FieldInfo addField(FieldInfo field);
+
 	boolean isAccessibleFrom(SpaceInfo space);
 
 	default TypeRefInfo resolveType(SpaceInfo caller, TypeElementTree type) {

@@ -1,5 +1,7 @@
 package test;
 
+int i = 5;
+
 void main(char[][] i) pure {
 
 }

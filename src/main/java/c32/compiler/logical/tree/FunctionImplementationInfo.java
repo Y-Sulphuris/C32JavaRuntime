@@ -9,7 +9,11 @@ import java.util.Set;
 @Getter
 public class FunctionImplementationInfo implements FunctionInfo {
 	private final FunctionDeclarationInfo declaration;
-	private final BlockStatement implementation = new BlockStatement();
+	private BlockStatement implementation;
+
+	public void setImplementation(BlockStatement implementation) {
+		this.implementation = implementation;
+	}
 
 	public FunctionImplementationInfo(FunctionDeclarationInfo declaration) {
 		this.declaration = declaration;
@@ -41,6 +45,16 @@ public class FunctionImplementationInfo implements FunctionInfo {
 	}
 
 	@Override
+	public Set<FieldInfo> getFields() {
+		return declaration.getFields();
+	}
+
+	@Override
+	public FieldInfo addField(FieldInfo field) {
+		return declaration.addField(field);
+	}
+
+	@Override
 	public boolean isAccessibleFrom(SpaceInfo namespace) {
 		return declaration.isAccessibleFrom(namespace);
 	}
@@ -56,12 +70,22 @@ public class FunctionImplementationInfo implements FunctionInfo {
 	}
 
 	@Override
-	public List<LocalVariableInfo> getArgs() {
+	public List<VariableInfo> getArgs() {
 		return declaration.getArgs();
 	}
 
 	@Override
 	public List<TypeRefInfo> getThrowTypes() {
 		return declaration.getThrowTypes();
+	}
+
+	@Override
+	public boolean is_pure() {
+		return declaration.is_pure();
+	}
+
+	@Override
+	public boolean is_noexcept() {
+		return declaration.is_noexcept();
 	}
 }

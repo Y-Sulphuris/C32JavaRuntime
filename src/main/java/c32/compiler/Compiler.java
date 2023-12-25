@@ -196,8 +196,12 @@ public class Compiler {
 		printStream.println(mapper.writerWithDefaultPrettyPrinter().writeValueAsString(AST.toJson(mapper)));
 		printStream.close();
 
-		SpaceInfo logicalTree = new TreeBuilder().buildNamespace(Collections.singleton(AST));
-		new JavaGenerator().generate(logicalTree);
+		try {
+			SpaceInfo logicalTree = new TreeBuilder().buildNamespace(Collections.singleton(AST));
+			new JavaGenerator().generate(logicalTree);
+		} catch (CompilerException e) {
+			throw handleCompilerException(e);
+		}
 		/*AST.brewJava().forEach((file) -> {
 			try {
 				file.writeTo(new File("c32target/generated/"));
