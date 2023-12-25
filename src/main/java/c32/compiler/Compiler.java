@@ -1,6 +1,9 @@
 package c32.compiler;
 
+import c32.compiler.codegen.java.JavaGenerator;
 import c32.compiler.except.CompilerException;
+import c32.compiler.logical.TreeBuilder;
+import c32.compiler.logical.tree.SpaceInfo;
 import c32.compiler.parser.Parser;
 import c32.compiler.parser.ast.CompilationUnitTree;
 import c32.compiler.lexer.tokenizer.ConfigurableTokenizer;
@@ -21,6 +24,13 @@ public class Compiler {
 			NATIVE = "native",
 			STATIC = "static",
 			RESTRICT = "restrict",
+			PURE = "pure",
+			MUTABLE = "mutable",
+			ABSTRACT = "abstract",
+			VIRTUAL = "virtual",
+			CONSTEXPR = "constexpr",
+			OVER = "over",
+			NOEXCEPT = "noexcept",
 
 			PUBLIC = "public",
 			PROTECTED = "protected",
@@ -28,79 +38,100 @@ public class Compiler {
 			PRIVATE = "private";
 
 	public static final Set<String> modifiers = new HashSet<>();
+	public static final Set<String> postModifiers = new HashSet<>();
 	static {
-		Collections.addAll(modifiers,EXTERN,STATIC,NATIVE,PUBLIC,PROTECTED,PACKAGE,PRIVATE);
+		Collections.addAll(modifiers,
+				PUBLIC,PROTECTED,PRIVATE,
+				STATIC,
+				EXTERN,NATIVE,ABSTRACT,VIRTUAL,CONSTEXPR,OVER,
+				MUTABLE
+				);
+
+		postModifiers.addAll(modifiers);
+		Collections.addAll(postModifiers,PURE,CONST,NOEXCEPT);
 	}
 	public static final Set<String> keywords = new HashSet<>();
 	static {
 		Collections.addAll(keywords,(
+				"noexcept\n" +
+				"abstract\n" +
+				"assert\n" +
+				"auto\n" +
+				"bool\n" +
+				"break\n" +
+				"byte\n" +
+				"case\n" +
+				"catch\n" +
+				"char\n" +
+				"char32\n" +
+				"char8\n" +
+				"class\n" +
+				"concept\n" +
+				"const\n" +
+				"constexpr\n" +
+				"continue\n" +
+				"default\n" +
+				"delete\n" +
+				"do\n" +
+				"double\n" +
+				"else\n" +
+				"enum\n" +
+				"extends\n" +
+				"extern\n" +
+				"false\n" +
+				"final\n" +
+				"finally\n" +
+				"float\n" +
+				"for\n" +
+				"goto\n" +
+				"half\n" +
+				"if\n" +
+				"implements\n" +
+				"import\n" +
+				"instanceof\n" +
+				"int\n" +
+				"interface\n" +
+				"internal\n" +
+				"long\n" +
+				"mutable\n" +
+				"namespace\n" +
+				"native\n" +
+				"new\n" +
+				"null\n" +
+				"octuple\n" +
+				"operator\n" +
+				"over\n" +
+				"package\n" +
+				"private\n" +
+				"protected\n" +
+				"public\n" +
+				"pure\n" +
+				"quadruple\n" +
+				"requires\n" +
+				"restrict\n" +
+				"return\n" +
+				"short\n" +
+				"sizeof\n" +
+				"static\n" +
+				"struct\n" +
+				"super\n" +
+				"switch\n" +
 				"template\n" +
-						"typename\n" +
-						"class\n" +
-						"public\n" +
-						"protected\n" +
-						"internal\n" +
-						"private\n" +
-						RESTRICT + "\n" +
-						"final\n" +
-						CONST+"\n" +
-						STATIC+"\n" +
-						"virtual\n" +
-						"void\n" +
-						"byte\n" +
-						"short\n" +
-						"int\n" +
-						"long\n" +
-						"ubyte\n" +
-						"ushort\n" +
-						"uint\n" +
-						"ulong\n" +
-						"bool\n" +
-						"char8\n" +
-						"char\n" +
-						"char32\n" +
-						"half\n" +
-						"float\n" +
-						"double\n" +
-						"import\n" +
-						"package\n" +
-						"implicit\n" +
-						"override\n" +
-						"this\n" +
-						RETURN+"\n" +
-						"struct\n" +
-						"union\n" +
-						"assert\n" +
-						"sizeof\n" +
-						"abstract\n" +
-						"interface\n" +
-						"new\n" +
-						"delete\n" +
-						"typedef\n" +
-						"operator\n" +
-						"constexpr\n" +
-						"throw\n" +
-						"throws\n" +
-						"native\n" +
-						EXTERN+"\n" +
-						"true\n" +
-						"false\n" +
-						"if\n" +
-						"for\n" +
-						"while\n" +
-						"do\n" +
-						"try\n" +
-						"catch\n" +
-						"finally\n" +
-						"break\n" +
-						"continue\n" +
-						"switch\n" +
-						"case\n" +
-						"default\n" +
-						"instanceof\n" +
-						"super\n" +
-						"quadruple\n" +
-						"octuple").split("\n"));
+				"this\n" +
+				"throw\n" +
+				"throws\n" +
+				"true\n" +
+				"try\n" +
+				"typedef\n" +
+				"typename\n" +
+				"ubyte\n" +
+				"uint\n" +
+				"ulong\n" +
+				"union\n" +
+				"ushort\n" +
+				"virtual\n" +
+				"void\n" +
+				"while").split("\n"));
 	}
 
 	public static final String[] validOperators = ("=;" +
@@ -117,9 +148,9 @@ public class Compiler {
 	static Tokenizer tokenizer = new ConfigurableTokenizer().addKeywords(keywords).addOperators(validOperators);
 
 
+	private static String source = null;
+	private static String filename = "Main";
 	public static void main(String... args) throws IOException{
-		String source = null;
-		String filename = "Main";
 		try {
 			if (args.length == 0) throw new RuntimeException();
 			StringBuilder sourceb = new StringBuilder();
@@ -145,7 +176,7 @@ public class Compiler {
 		}
 
 
-		Collection<Token> tokens = tokenizer.tokenize(source);
+		Stack<Token> tokens = ((ConfigurableTokenizer)tokenizer).tokenize(source);
 		Preprocessor.preprocess(tokens);
 		/*
 		for (Token token : tokens) {
@@ -153,36 +184,20 @@ public class Compiler {
 		}
 		*/
 		CompilationUnitTree AST;
+		LABEL:
 		try {
 			AST = new Parser().parse(tokens,filename);
 		} catch (CompilerException e) {
-			StringBuilder msg = new StringBuilder(e.getClass().getSimpleName()).append(": ").append(e.getRawMessage()).append(" (at ")
-					.append(filename).append(':').append(e.getLocation().getStartLine()).append(')').append("\n\n");
-
-			String line = source.split("\n")[e.getLocation().getStartLine()-1];
-
-			int linePos = source.substring(0,e.getLocation().getStartPos()).lastIndexOf('\n');
-			int errStart = e.getLocation().getStartPos() - linePos;
-			int errEnd = e.getLocation().getEndPos() - linePos;
-
-			msg.append(line).append('\n');
-
-			char[] underline = new char[line.length()];
-			for (int i = 0; i < underline.length; i++) {
-				if (i >= errStart-1 && i < errEnd-1) underline[i] = '~';
-				else if (line.charAt(i) == '\t') underline[i] = '\t';
-				else underline[i] = ' ';
-			}
-
-			msg.append(underline).append('\n');
-			System.err.println(msg);
-			throw e;
+			throw handleCompilerException(e);
 		}
 		ObjectMapper mapper = new ObjectMapper();
 		File file = new File("AST.json");
 		PrintStream printStream = new PrintStream(file);
 		printStream.println(mapper.writerWithDefaultPrettyPrinter().writeValueAsString(AST.toJson(mapper)));
 		printStream.close();
+
+		SpaceInfo logicalTree = new TreeBuilder().buildNamespace(Collections.singleton(AST));
+		new JavaGenerator().generate(logicalTree);
 		/*AST.brewJava().forEach((file) -> {
 			try {
 				file.writeTo(new File("c32target/generated/"));
@@ -203,6 +218,38 @@ public class Compiler {
 			System.out.println("Compilation error");
 		}*/
 	}
+
+	private static CompilerException handleCompilerException(CompilerException e) {
+		System.err.println(getErrorDescription(e,filename,source));
+		if (e.getCause() != e && e.getCause() instanceof CompilerException) {
+			System.err.println("for:");
+			System.err.println(getErrorDescription((CompilerException) e.getCause(),filename,source));
+		}
+		return e;
+	}
+
+	private static String getErrorDescription(CompilerException e, String filename, String source) {
+		StringBuilder msg = new StringBuilder(e.getClass().getSimpleName()).append(": ").append(e.getRawMessage()).append(" (at ")
+				.append(filename).append(':').append(e.getLocation().getStartLine()).append(')').append("\n\n");
+
+		String line = source.split("\n")[e.getLocation().getStartLine()-1];
+
+		int linePos = source.substring(0,e.getLocation().getStartPos()).lastIndexOf('\n');
+		int errStart = e.getLocation().getStartPos() - linePos;
+		int errEnd = e.getLocation().getEndPos() - linePos;
+
+		msg.append(line).append('\n');
+
+		char[] underline = new char[line.length()];
+		for (int i = 0; i < underline.length; i++) {
+			if (i >= errStart-1 && i < errEnd-1) underline[i] = '~';
+			else if (line.charAt(i) == '\t') underline[i] = '\t';
+			else underline[i] = ' ';
+		}
+
+		return msg.append(underline).append('\n').toString();
+	}
+
 	private static void proc(String cmd) throws IOException{
 		Runtime rt = Runtime.getRuntime();
 		Process proc = rt.exec(cmd);

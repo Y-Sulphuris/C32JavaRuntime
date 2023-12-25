@@ -1,0 +1,49 @@
+package test;
+
+const int b = 4 + 10 * 4;
+
+struct pos {
+	int x;
+	int y;
+	namespace monitor {
+		void wait();
+	}
+}
+
+typename size_t = ulong, ptrdiff_t = long;
+
+public bool getTrue() pure {
+	return true;
+}
+
+import std.test;
+import java.lang.System.out.println = println;
+
+
+void main(const (char[]) args, int) throws IllegalArgumentException {
+	START:
+	if (b) {
+		exit(0);
+	}
+
+	struct infinity {
+		constexpr char[1024] ch;
+	}
+	for(;;) continue;
+
+	try {
+		throw Exception();
+	} catch (Exception e) {
+		println("error");
+	}
+
+
+	B& b;
+	B = a.*b;
+	int* pointer = new int(5);
+	B[] b = B;
+	char[] str = "4";
+	pos p = pos(4,7);
+	char ch = args[4];
+	bool b = !getTrue();
+}

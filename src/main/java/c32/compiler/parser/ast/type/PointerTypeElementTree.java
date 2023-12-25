@@ -2,15 +2,14 @@ package c32.compiler.parser.ast.type;
 
 import c32.compiler.Location;
 import c32.compiler.lexer.tokenizer.Token;
-import c32.compiler.parser.ast.expr.ReferenceExprTree;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-public class PointerTypeElementTree extends RuntimeTypeElementTree {
-	private final RuntimeTypeElementTree elementType;
+public class PointerTypeElementTree extends TypeElementTree {
+	private final TypeElementTree elementType;
 	private final Token star;
 
-	public PointerTypeElementTree(Token _const, Token _restrict, RuntimeTypeElementTree elementType, Token star) {
+	public PointerTypeElementTree(Token _const, Token _restrict, TypeElementTree elementType, Token star) {
 		super(_const,_restrict);
 		this.elementType = elementType;
 		this.star = star;
@@ -20,16 +19,6 @@ public class PointerTypeElementTree extends RuntimeTypeElementTree {
 	@Override
 	public Location getLocation() {
 		return Location.between(elementType.getLocation(),star.location);
-	}
-
-	@Override
-	public Token getKeyword() {
-		return elementType.getKeyword();
-	}
-
-	@Override
-	public ReferenceExprTree getTypeReference() {
-		return elementType.getTypeReference();
 	}
 
 	@Override

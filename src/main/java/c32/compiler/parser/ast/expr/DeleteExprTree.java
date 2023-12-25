@@ -2,30 +2,33 @@ package c32.compiler.parser.ast.expr;
 
 import c32.compiler.Location;
 import c32.compiler.lexer.tokenizer.Token;
-import c32.compiler.parser.ast.expr.ExprTree;
+import c32.compiler.parser.ast.Tree;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.Data;
+import org.jetbrains.annotations.Nullable;
 
 @Data
-public class ReferenceExprTree implements LValueExprTree {
-	private final Token identifier;
-
-	public ReferenceExprTree(Token identifier) {
-		this.identifier = identifier;
-	}
+public class DeleteExprTree implements ExprTree {
+	private final Token keyword;
+	@Nullable
+	private final Tree args;
+	private final ExprTree expression;
 
 	@Override
 	public Location getLocation() {
-		return identifier.location;
+		return Location.between(keyword.location,expression.getLocation());
 	}
 
 	@Override
 	public JsonNode toJson(ObjectMapper mapper) {
 		ObjectNode node = mapper.createObjectNode();
-		node.put("identifier",identifier.text);
-		node.set("location",identifier.location.toJson(mapper));
+
+		node.put("keyword",keyword.text);
+		if (args != null) node.set("args",args.toJson(mapper));
+		node.set("expression",expression.toJson(mapper));
+
 		return node;
 	}
 }

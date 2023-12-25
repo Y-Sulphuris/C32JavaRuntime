@@ -19,45 +19,58 @@ import java.util.*;
 Для каждого метода parseX:
 При входе в метод, token является первым токеном читаемой конструкции
 После завершения token равен следующему токену после читаемой конструкции
+
+Для parse_X:
+Всё то же самое, только две искорки снисходительности (после завершения token равен последнему токену читаемой конструкции)
  */
 public class Parser {
-	private Token[] tokens;
+	private Stack<Token> tokens;
 	int curTok = 0;
 	Token nextToken() {
 		try {
-			return tokens[curTok++];
+			return tokens.get(curTok++);
 		} catch (ArrayIndexOutOfBoundsException e) {
 			throw new CompilerException(null,"Где код????????");
 		}
 	}
 	private Token currentToken() {
-		return tokens[curTok-1];
+		return tokens.get(curTok-1);
 	}
 
 	Token seeNextToken() {
-		return tokens[curTok];
+		return tokens.get(curTok);
 	}
 	Token token;
 
-	public CompilationUnitTree parse(Collection<Token> tokens, String filename) {
-		this.tokens = tokens.toArray(new Token[0]);
+
+	private PackageTree packageTree = null;
+	private List<DeclarationTree<?>> declarations;
+	public CompilationUnitTree parse(Stack<Token> tokens, String filename) {
+		this.tokens = tokens;
 		token = nextToken();
-		List<DeclarationTree<?>> declarations = new ArrayList<>();
+		this.declarations = new ArrayList<>();
 		while (token.type != TokenType.EOF) {
 			declarations.add(parseDeclaration());
 		}
-		return new CompilationUnitTree(filename,declarations);
+		return new CompilationUnitTree(filename,packageTree,declarations);
 	}
 	private DeclarationTree<?> parseDeclaration() {
 		Location startLocation = token.location;
-		List<Token> modifiers = readModifiers();
-		switch (token.text) {
-			case "struct":
-				return parseStructDeclaration(modifiers,startLocation);
+		List<ModifierTree> modifiers = readModifiers();
+		if (token.text.equals(Compiler.PACKAGE)) {
+			if (packageTree == null && declarations.isEmpty())
+				packageTree = parsePackage(modifiers,startLocation);
+		}
+		if (token.type == TokenType.KEYWORD) switch (token.text) {
 			case "typename":
 				return parseTypenameDeclaration(modifiers,startLocation);
+			case "import":
+				return parseImportDeclaration(modifiers,startLocation);
+			case "struct":
+			case "namespace":
+				return parseNamespaceDeclaration(modifiers,token.text,startLocation);
 		}
-		RuntimeTypeElementTree type = parseTypeElement();
+		TypeElementTree type = parseTypeElement();
 		List<DeclaratorTree> declarators = new ArrayList<>();
 		while (token.type != TokenType.ENDLINE) {
 			declarators.add(parseDeclarator());
@@ -78,7 +91,63 @@ public class Parser {
 				Location.between(startLocation,endLine == null ? declarators.get(declarators.size() - 1).getLocation() : endLine.location));
 	}
 
-	private TypenameDeclarationTree parseTypenameDeclaration(List<Token> modifiers, Location startLocation) {
+	private PackageTree parsePackage(List<ModifierTree> modifiers, Location startLocation) {
+		Token keyword = assertAndNext(Compiler.PACKAGE);
+		StaticElementReferenceTree name = parseStaticElementReference();
+		Token endLine = assertAndNext(TokenType.ENDLINE);
+		return new PackageTree(modifiers,keyword,name,endLine,Location.between(startLocation,endLine.location));
+	}
+
+	private NamespaceDeclaration parseNamespaceDeclaration(List<ModifierTree> modifiers, String namespaceTypeKeyword, Location startLocation) {
+		Token keyword = assertAndNext(namespaceTypeKeyword);
+		List<NamespaceDeclarator> declarators = new ArrayList<>();
+		do {
+			declarators.add(parseNamespace());
+		} while (token.text.equals(","));
+		return new NamespaceDeclaration(modifiers,declarators,Location.between(startLocation,token.location),keyword);
+	}
+
+	private NamespaceDeclarator parseNamespace() {
+		Token name = null;
+		if (token.type == TokenType.IDENTIFIER) {
+			name = token;
+			token = nextToken();
+		}
+		Token open = assertAndNext(TokenType.OPEN);
+		List<DeclarationTree<?>> declarations = new ArrayList<>();
+		while (token.type != TokenType.CLOSE) {
+			declarations.add(parseDeclaration());
+		}
+		Token close = token;
+		token = nextToken();
+		return new NamespaceDeclarator(name,open,declarations,close);
+	}
+
+	private ImportDeclarationTree parseImportDeclaration(List<ModifierTree> modifiers, Location startLocation) {
+		Token keyword = assertAndNext("import");
+		List<ImportDeclaratorTree> declarators = new ArrayList<>();
+		while (token.type != TokenType.ENDLINE) declarators.add(parseImportDeclarator());
+		Token endLine = token;
+		token = nextToken();
+		return new ImportDeclarationTree(modifiers,keyword,declarators,endLine,Location.between(startLocation,endLine.location));
+	}
+
+	private ImportDeclaratorTree parseImportDeclarator() {
+		StaticElementReferenceTree name = parseStaticElementReference();
+		if (token.text.equals("=")) {
+			Token assign = token;
+			token = nextToken();
+			Token alias = assertAndNext(TokenType.IDENTIFIER);
+			return new ImportDeclaratorTree(alias,name,assign,Location.between(name.getLocation(),alias.location));
+		}
+		if (token.text.equals(",")) {
+			token = nextToken();
+		}
+		return new ImportDeclaratorTree(null,name,null,name.getLocation());
+
+	}
+
+	private TypenameDeclarationTree parseTypenameDeclaration(List<ModifierTree> modifiers, Location startLocation) {
 		if (!token.text.equals("typename")) {
 			throw new UnexpectedTokenException(token,"'typename' expected");
 		}
@@ -111,36 +180,6 @@ public class Parser {
 		return new TypenameDeclaratorTree(name,assign,type,Location.between(name.location,type.getLocation()));
 	}
 
-	private DeclarationTree<?> parseStructDeclaration(List<Token> modifiers, Location startLocation) {
-		if (!token.text.equals("struct")) {
-			throw new UnexpectedTokenException(token,"'struct' expected");
-		}
-		Token keyword = token;
-		List<StructDeclaratorTree> declarators = new ArrayList<>();
-		token = nextToken();
-		do {
-			declarators.add(parseStruct());
-		} while (token.text.equals(","));
-		return new StructDeclarationTree(modifiers,declarators,Location.between(startLocation,token.location),keyword);
-	}
-
-	private StructDeclaratorTree parseStruct() {
-		Token name = null;
-		if (token.type == TokenType.IDENTIFIER) {
-			name = token;
-			token = nextToken();
-		}
-		Token open = assertToken(TokenType.OPEN);
-		token = nextToken();
-		List<DeclarationTree<?>> declarations = new ArrayList<>();
-		while (token.type != TokenType.CLOSE) {
-			declarations.add(parseDeclaration());
-		}
-		Token close = token;
-		token = nextToken();
-		return new StructDeclaratorTree(name,open,declarations,close);
-	}
-
 	private DeclaratorTree parseDeclarator() {
 		if (seeNextToken().type == TokenType.OPENROUND) {
 			return parseFunctionDeclarator();
@@ -152,13 +191,32 @@ public class Parser {
 		Token name = assertToken(TokenType.IDENTIFIER,"function name");
 		token = nextToken();
 		ParameterListTree parameterList = parseParameterList();
+		List<ModifierTree> postModifiers = readPostModifiers();
+		ThrowsTree throwsTree = null;
+		if (token.text.equals("throws")) {
+			throwsTree = parseThrows();
+		}
 
-		FunctionDeclaratorTree declarator = new FunctionDeclaratorTree(name, parameterList);
+		FunctionDeclaratorTree declarator = new FunctionDeclaratorTree(name, parameterList, postModifiers,throwsTree);
 		if (token.type == TokenType.OPEN) {
 			BlockStatementTree block = parseBlockStatement();
 			return new FunctionDefinitionTree(declarator,block,Location.between(name.location,block.getLocation()));
 		}
 		return declarator;
+	}
+
+	private ThrowsTree parseThrows() {
+		Token keyword = assertAndNext("throws");
+		List<TypeElementTree> exceptionTypes = new ArrayList<>();
+		while(token.type == TokenType.IDENTIFIER) {
+			exceptionTypes.add(parseTypeElement());
+			if (token.text.equals(",")) {
+				token = nextToken();
+				continue;
+			}
+			break;
+		}
+		return new ThrowsTree(keyword,exceptionTypes);
 	}
 
 	private StatementTree parseStatement() {
@@ -177,26 +235,31 @@ public class Parser {
 						return parseDoWhileStatement();
 					case "for":
 						return parseForStatement();
-					/*case "goto":
+					case "goto":
 						return parseGotoStatement();
 					case "break":
 						return parseBreakStatement();
 					case "continue":
 						return parseContinueStatement();
-					case "switch":
-						return parseSwitchStatement();
 					case "try":
 						return parseTryCatchFinallyStatement();
 					case "throw":
 						return parseThrowStatement();
-					case "assert":
-						return parseAssertStatement();*/
+					/*case "assert":
+						return parseAssertStatement();
+					case "switch":
+						return parseSwitchStatement();*/
 				}
 				break;
 			case ENDLINE:
 				return parseNopStatement();
+			case IDENTIFIER:
+				if (seeNextToken().text.equals(":"))
+					return parseLabelStatement();
+				break;
 		}
 		int oldTok = curTok;
+		CompilerException notAnExpression = null;
 		try {
 			return parseDeclarationStatement();
 			/*ExprTree expr = parseExpr();
@@ -219,22 +282,78 @@ public class Parser {
 				token = nextToken();
 				return new ExpressionStatementTree(expr);
 			}*/
-		} catch (UnexpectedTokenException ignored) {
-			//not an expression
+		} catch (UnexpectedTokenException e) {
+			notAnExpression = e;
 		}
 		curTok = oldTok;
 		token = currentToken();
 
-		return parseExpressionStatement();
+		try {
+			return parseExpressionStatement();
+		} catch (CompilerException e) {
+			e.initCause(notAnExpression);
+			throw e;
+		}
 	}
 
-	private StatementTree parseNopStatement() {
-		Token endLine = assertToken(TokenType.ENDLINE);
-		token = nextToken();
+	private ThrowStatement parseThrowStatement() {
+		Token keyword = assertAndNext("throw");
+		ExprTree throwExpr = parseExpr();
+		Token endLine = assertAndNext(TokenType.ENDLINE);
+		return new ThrowStatement(keyword,throwExpr,endLine);
+	}
+
+	private TryCatchFinallyStatementTree parseTryCatchFinallyStatement() {
+		Token tryKeyword = assertAndNext("try");
+		StatementTree tryBlock = parseStatement();
+		List<TryCatchFinallyStatementTree.CatchBlock> catches = new ArrayList<>();
+		while (token.text.equals("catch")) {
+			Token catchKeyword = assertAndNext("catch");
+			ParameterListTree exceptions = parseParameterList();
+			StatementTree catchBlock = parseStatement();
+			catches.add(new TryCatchFinallyStatementTree.CatchBlock(catchKeyword,exceptions,catchBlock));
+		}
+		Token finallyKeyword = null;
+		StatementTree finallyBlock = null;
+		if (token.text.equals("finally")) {
+			finallyKeyword = token;
+			token = nextToken();
+			finallyBlock = parseStatement();
+		}
+		return new TryCatchFinallyStatementTree(tryKeyword,tryBlock,catches,finallyKeyword,finallyBlock);
+	}
+
+	private ContinueStatement parseContinueStatement() {
+		Token keyword = assertAndNext("continue");
+		Token endLine = assertAndNext(TokenType.ENDLINE);
+		return new ContinueStatement(keyword,endLine);
+	}
+
+	private BreakStatement parseBreakStatement() {
+		Token keyword = assertAndNext("break");
+		Token endLine = assertAndNext(TokenType.ENDLINE);
+		return new BreakStatement(keyword,endLine);
+	}
+
+	private GotoStatement parseGotoStatement() {
+		Token keyword = assertAndNext("goto");
+		Token labelName = assertAndNext(TokenType.IDENTIFIER,"label name");
+		Token endLine = assertAndNext(TokenType.ENDLINE);
+		return new GotoStatement(keyword,labelName,endLine);
+	}
+
+	private LabelStatement parseLabelStatement() {
+		Token name = assertAndNext(TokenType.IDENTIFIER);
+		Token colon = assertAndNext(":");
+		return new LabelStatement(name,colon);
+	}
+
+	private NopStatementTree parseNopStatement() {
+		Token endLine = assertAndNext(TokenType.ENDLINE);
 		return new NopStatementTree(endLine);
 	}
 
-	private StatementTree parseForStatement() {
+	private ForStatementTree parseForStatement() {
 		Token keyword = assertToken("for");
 		token = nextToken();
 
@@ -304,14 +423,7 @@ public class Parser {
 		Token keyword = assertToken("if");
 		token = nextToken();
 
-		Token open = assertToken(TokenType.OPENROUND);
-		token = nextToken();
-
 		ExprTree condition = parseExpr();
-
-
-		Token close = assertToken(TokenType.CLOSEROUND);
-		token = nextToken();
 
 		StatementTree statement = parseStatement();
 		Token elseKeyword = null;
@@ -321,11 +433,16 @@ public class Parser {
 			token = nextToken();
 			elseStatement = parseStatement();
 		}
-		return new IfStatementTree(keyword,open,condition,close,statement,elseKeyword,elseStatement);
+		return new IfStatementTree(keyword,condition,statement,elseKeyword,elseStatement);
 	}
 
 	//region assert
 
+	private Token assertAndNext(TokenType type, String expected) {
+		Token ret = assertToken(type, expected);
+		token = nextToken();
+		return ret;
+	}
 	private Token assertToken(TokenType type, String expected) {
 		return assertToken(token,type,expected);
 	}
@@ -334,6 +451,11 @@ public class Parser {
 			throw new UnexpectedTokenException(token, expected + " expected");
 		}
 		return token;
+	}
+	private Token assertAndNext(TokenType expected) {
+		Token ret = assertToken(expected);
+		token = nextToken();
+		return ret;
 	}
 	private Token assertToken(TokenType type) {
 		return assertToken(token,type);
@@ -365,6 +487,11 @@ public class Parser {
 		throw new AssertionError("Unknown TokenType");
 	}
 
+	private Token assertAndNext(String expected) {
+		Token ret = assertToken(expected);
+		token = nextToken();
+		return ret;
+	}
 	private Token assertToken(String expected) {
 		return assertToken(token,expected);
 	}
@@ -421,8 +548,9 @@ public class Parser {
 		token = nextToken();
 		List<ParameterDeclaration> parameterList = new ArrayList<>();
 		while (token.type != TokenType.CLOSEROUND) {
-			RuntimeTypeElementTree type = parseTypeElement();
-			DeclaratorTree declarator = parseDeclarator();
+			TypeElementTree type = parseTypeElement();
+			DeclaratorTree declarator = null;
+			if (!token.text.equals(",") && token.type != TokenType.CLOSEROUND) declarator = parseDeclarator();
 			parameterList.add(new ParameterDeclaration(type,declarator));
 			if (token.text.equals(",")) {
 				token = nextToken();
@@ -454,9 +582,10 @@ public class Parser {
 	}
 
 
-	private RuntimeTypeElementTree parseTypeElement() {
+	private TypeElementTree parseTypeElement() {
 		Token _const = null;
 		Token _restrict = null;
+		Location startLocation = token.location;
 		while(true) {
 			switch (token.text) {
 				case "const":
@@ -472,7 +601,7 @@ public class Parser {
 			}
 			break;
 		}
-		RuntimeTypeElementTree type;
+		TypeElementTree type;
 		if (token.type == TokenType.OPENROUND) {
 			token = nextToken();
 			type = parseTypeElement();
@@ -484,8 +613,8 @@ public class Parser {
 			type = new TypeKeywordElementTree(_const, _restrict, token);
 			token = nextToken();
 		} else if (token.type == TokenType.IDENTIFIER) {
-			type = new TypeReferenceElementTree(_const, _restrict, new ReferenceExprTree(token));
-			token = nextToken();
+			StaticElementReferenceTree reference = parseStaticElementReference();
+			type = new TypeReferenceElementTree(_const, _restrict, reference, Location.between(startLocation,reference.getLocation()));
 		} /*else if (token.text.equals("struct")) {
 			type = new TypeStructElementTree(_const, parseStruct());
 		} */else {
@@ -495,11 +624,16 @@ public class Parser {
 			Token spec = token;
 			if (token.type == TokenType.OPENSQUARE) {
 				token = nextToken();
+				ExprTree size = null;
 				if (token.type != TokenType.CLOSESQUARE) {
-					throw new UnexpectedTokenException(token,']');
+					size = parseExpr();
+					if (token.type != TokenType.CLOSESQUARE)
+						throw new UnexpectedTokenException(token,']');
 				}
 				Token closeSquare = token;
-				type = new DynamicArrayTypeElementTree(null,null,type,spec,closeSquare);
+				type = size == null ?
+						new ArrayTypeElementTree(null,null,type,spec,closeSquare) :
+						new StaticArrayTypeElementTree(null,null,type,spec,size,closeSquare);
 
 				token = nextToken();
 			} else if(token.text.equals("*")) {
@@ -513,34 +647,55 @@ public class Parser {
 		return type;
 	}
 
-	
-	
-	
+	private StaticElementReferenceTree parseStaticElementReference() {
+		List<ReferenceExprTree> references = new ArrayList<>();
+		while (true) {
+			references.add(new ReferenceExprTree(token));
+			token = nextToken();
+			if (token.text.equals(".")) {
+				token = nextToken();
+				continue;
+			}
+			break;
+		}
+		return new StaticElementReferenceTree(references);
+	}
+
+
 	//region #parseExpr
 
 
 
 	public ExprTree parseExpr() {
 
-		ExprTree lhs = parsePrimary();
+		ExprTree lhs = parse_Primary();
 
 
 		token = nextToken();
 
 
 		if (token.type == TokenType.OPENSQUARE) {
-			Token open = token;
-			token = nextToken();
-			ExprTree index = parseExpr();
-			if (token.type != TokenType.CLOSESQUARE) {
-				throw new UnexpectedTokenException(token,']');
-			}
-			Token close = token;
-			token = nextToken();
-			return new IndexExpr(lhs,open,index,close);
+			return new IndexExprTree(lhs,parseIndexList());
 		}
 
 		return parseBinOpRhs(0, lhs);
+	}
+
+	private IndexListTree parseIndexList() {
+		Token open = assertAndNext(TokenType.OPENSQUARE);
+		List<ExprTree> args = new ArrayList<>();
+		while (token.type != TokenType.CLOSESQUARE) {
+			args.add(parseExpr());
+			if (token.text.equals(",")) {
+				token = nextToken();
+				continue;
+			}
+			if (token.type == TokenType.CLOSESQUARE) break;
+			throw new UnexpectedTokenException(token,"',' or ']' expected");
+		}
+		Token close = token;
+		token = nextToken();
+		return new IndexListTree(open,args,close);
 	}
 
 	private ExprTree parseBinOpRhs(int priority, ExprTree lhs) {
@@ -552,7 +707,7 @@ public class Parser {
 			}
 			token = nextToken();
 
-			ExprTree rhs = parsePrimary();
+			ExprTree rhs = parse_Primary();
 			token = nextToken();
 
 			int nextPriority = Compiler.getBinaryOperatorPriority(token.text);
@@ -566,7 +721,7 @@ public class Parser {
 	}
 
 
-	private ExprTree parsePrimary() {
+	private ExprTree parse_Primary() {
 		Token prefixOperator = null;
 		int prefixPriority = 0;
 		if (token.type == TokenType.OPERATOR) {
@@ -575,7 +730,7 @@ public class Parser {
 			token = nextToken();
 		}
 
-		ExprTree expr = parsePrimary0();
+		ExprTree expr = parse_Primary0();
 
 		if (seeNextToken().type == TokenType.OPERATOR) {
 			if (Compiler.getPostfixOperatorPriority(seeNextToken().text) > prefixPriority) {
@@ -591,7 +746,7 @@ public class Parser {
 		return expr;
 	}
 
-	private ExprTree parsePrimary0() {
+	private ExprTree parse_Primary0() {
 		switch (token.type) {
 			case NUMBER:
 				return new LiteralExprTree(token, LiteralType.INTEGER_LITERAL);
@@ -600,33 +755,67 @@ public class Parser {
 			case STRING:
 				return new LiteralExprTree(token, LiteralType.STRING_LITERAL);
 			case OPENROUND:
-				return parseParentExpr();
+				return parse_ParentExpr();
 			case OPEN:
-				return parseInitializerList();
-			case IDENTIFIER:
-				return parseIdentifierExpr();
+				return parse_InitializerList();
 			case KEYWORD: {
 				switch (token.text) {
 					case "false":
 					case "true":
 						return new LiteralExprTree(token, LiteralType.BOOLEAN_LITERAL);
+					case "new":
+						return parse_NewExpr();
+					case "delete":
+						return parse_DeleteExpr();
 				}
 			}
+			case IDENTIFIER:
+				return parse_IdentifierExpr();
 		}
 		throw new UnexpectedTokenException(token,"primary expression expected");
 	}
 
-	private ExprTree parseIdentifierExpr() {
+	private ExprTree parse_NewExpr() {
+		Token keyword = assertAndNext("new");
+		Tree args = null;
+		if (token.type == TokenType.OPENROUND) {
+			args = parse_ArgumentList();
+			token = nextToken();
+		} else if (token.type == TokenType.OPENSQUARE) {
+			args = parseIndexList();
+		}
+		ExprTree expression = parseExpr();
+		curTok--;
+		token = currentToken();
+		return new NewExprTree(keyword,args,expression);
+	}
+	private ExprTree parse_DeleteExpr() {
+		Token keyword = assertAndNext("delete");
+		Tree args = null;
+		if (token.type == TokenType.OPENROUND) {
+			args = parse_ArgumentList();
+			token = nextToken();
+		} else if (token.type == TokenType.OPENSQUARE) {
+			args = parseIndexList();
+		}
+		ExprTree expression = parseExpr();
+		curTok--;
+		token = currentToken();
+		return new DeleteExprTree(keyword,args,expression);
+	}
+
+
+	private ExprTree parse_IdentifierExpr() {
 		ReferenceExprTree ref = new ReferenceExprTree(token);
 		if (seeNextToken().type == TokenType.OPENROUND) {
 			token = nextToken();
-			ArgumentListTree args = parseArgumentList();
+			ArgumentListTree args = parse_ArgumentList();
 			return new CallExprTree(ref,args);
 		}
 		return ref;
 	}
 
-	private ArgumentListTree parseArgumentList() {
+	private ArgumentListTree parse_ArgumentList() {
 		Token openRound = assertToken(TokenType.OPENROUND);
 		token = nextToken();
 		List<ExprTree> args = new ArrayList<>();
@@ -642,12 +831,8 @@ public class Parser {
 		return new ArgumentListTree(openRound,args,closeRound);
 	}
 
-	private ExprTree parseInitializerList() {
-		if (token.type != TokenType.OPEN) {
-			throw new UnexpectedTokenException(token,'{');
-		}
-		Token open = token;
-		token = nextToken();
+	private InitializerListExprTree parse_InitializerList() {
+		Token open = assertToken(TokenType.OPEN);
 		List<ExprTree> initializers = new ArrayList<>();
 		while (token.type != TokenType.CLOSE) {
 			initializers.add(parseExpr());
@@ -662,25 +847,89 @@ public class Parser {
 		return new InitializerListExprTree(open,initializers,close);
 	}
 
-	private ExprTree parseParentExpr() {
-		if (token.type != TokenType.OPENROUND)
-			throw new UnexpectedTokenException(token,'(');
+	private ExprTree parse_ParentExpr() {
+		assertToken(TokenType.OPENROUND);
 		token = nextToken();
 		ExprTree expr = parseExpr();
-		if (token.type != TokenType.CLOSEROUND)
-			throw new UnexpectedTokenException(token,')');
+		assertToken(TokenType.CLOSEROUND);
 		return expr;
 	}
 	//endregion
 
 
 
-	private List<Token> readModifiers() {
-		List<Token> modifiers = new ArrayList<>();
+	private List<ModifierTree> readPostModifiers() {
+		List<ModifierTree> modifiers = new ArrayList<>();
+		while (isPostModifier(token)) {
+			for (ModifierTree curMod : modifiers) {
+				if (curMod.getKeyword().text.equals(token.text))
+					throw new UnexpectedTokenException(token, "duplicated postfix modifier '" + token.text + "'");
+			}
+			ModifierTree mod;
+			if (seeNextToken().type == TokenType.OPENSQUARE) {
+				Token keyword = token;
+				token = nextToken();
+				Token openSquare = token;
+				token = nextToken();
+				List<Token> attributes = new ArrayList<>();
+				while (true) {
+					if (token.type != TokenType.IDENTIFIER && token.type != TokenType.KEYWORD && token.type != TokenType.STRING)
+						throw new UnexpectedTokenException(token,"attribute expected");
+					attributes.add(token);
+					token = nextToken();
+					if (token.type == TokenType.CLOSESQUARE) {
+						Token closeSquare = token;
+						mod = new ModifierTree(keyword,openSquare,attributes,closeSquare);
+						break;
+					} else if (token.text.equals(",")) {
+						token = nextToken();
+						continue;
+					} else {
+						throw new UnexpectedTokenException(token, ']');
+					}
+				}
+			} else {
+				mod = new ModifierTree(token);
+			}
+			modifiers.add(mod);
+			token = nextToken();
+		}
+		return modifiers;
+	}
+	private List<ModifierTree> readModifiers() {
+		List<ModifierTree> modifiers = new ArrayList<>();
 		while (isModifier(token)) {
-			if (modifiers.contains(token))
-				throw new UnexpectedTokenException(token, "duplicated modifier '" + token.text + "'");
-			modifiers.add(token);
+			for (ModifierTree curMod : modifiers) {
+				if (curMod.getKeyword().text.equals(token.text))
+					throw new UnexpectedTokenException(token, "duplicated modifier '" + token.text + "'");
+			}
+			ModifierTree mod;
+			if (seeNextToken().type == TokenType.OPENSQUARE) {
+				Token keyword = token;
+				token = nextToken();
+				Token openSquare = token;
+				token = nextToken();
+				List<Token> attributes = new ArrayList<>();
+				while (true) {
+					if (token.type != TokenType.IDENTIFIER && token.type != TokenType.KEYWORD && token.type != TokenType.STRING)
+						throw new UnexpectedTokenException(token,"attribute expected");
+					attributes.add(token);
+					token = nextToken();
+					if (token.type == TokenType.CLOSESQUARE) {
+						Token closeSquare = token;
+						mod = new ModifierTree(keyword,openSquare,attributes,closeSquare);
+						break;
+					} else if (token.text.equals(",")) {
+						token = nextToken();
+						continue;
+					} else {
+						throw new UnexpectedTokenException(token, ']');
+					}
+				}
+			} else {
+				mod = new ModifierTree(token);
+			}
+			modifiers.add(mod);
 			token = nextToken();
 		}
 		return modifiers;
@@ -688,6 +937,9 @@ public class Parser {
 
 	private boolean isModifier(Token token) {
 		return token.type == TokenType.KEYWORD && Compiler.modifiers.contains(token.text);
+	}
+	private boolean isPostModifier(Token token) {
+		return token.type == TokenType.KEYWORD && Compiler.postModifiers.contains(token.text);
 	}
 
 

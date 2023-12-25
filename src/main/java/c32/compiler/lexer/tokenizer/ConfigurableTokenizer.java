@@ -37,7 +37,7 @@ public class ConfigurableTokenizer implements Tokenizer{
 	private Exception exception = null;
 
 	@Override
-	public synchronized Collection<Token> tokenize(String source) {
+	public synchronized Stack<Token> tokenize(String source) {
 		this.source = source;
 
 		Stack<Token> tokens = new Stack<>();

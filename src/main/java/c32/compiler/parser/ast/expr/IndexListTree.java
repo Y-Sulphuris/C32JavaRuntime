@@ -12,26 +12,26 @@ import lombok.Data;
 import java.util.List;
 
 @Data
-public class InitializerListExprTree implements ExprTree {
-	private final Token open;
-	private final List<ExprTree> initializers;
-	private final Token close;
+public class IndexListTree implements Tree {
+	private final Token openSquare;
+	private final List<ExprTree> indexes;
+	private final Token closeSquare;
 
 	@Override
 	public Location getLocation() {
-		return Location.between(open.location,close.location);
+		return Location.between(openSquare.location,closeSquare.location);
 	}
 
 	@Override
 	public JsonNode toJson(ObjectMapper mapper) {
 		ObjectNode node = mapper.createObjectNode();
-		node.put("open",open.text);
-		ArrayNode inits = mapper.createArrayNode();
-		for (ExprTree initializer : initializers) {
-			inits.add(initializer.toJson(mapper));
+		node.put("openSquare",openSquare.text);
+		ArrayNode indexesNode = mapper.createArrayNode();
+		for(ExprTree index : indexes) {
+			indexesNode.add(index.toJson(mapper));
 		}
-		node.set("initializers",inits);
-		node.put("close",close.text);
+		node.set("args",indexesNode);
+		node.put("closeSquare",closeSquare.text);
 		return node;
 	}
 }

@@ -8,27 +8,22 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.Getter;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
 @Getter
-public class StructDeclaratorTree extends TypeDeclaratorTree {
+public class NamespaceDeclarator extends DeclaratorTree {
 	private final Token open;
 	private final List<DeclarationTree<?>> declarations;
 	private final Token close;
 
 
-	public StructDeclaratorTree(Token name, Token open, List<DeclarationTree<?>> declarations, Token close) {
-		super(name,Location.between(name.location, close.location));
+	public NamespaceDeclarator(@Nullable Token name, Token open, List<DeclarationTree<?>> declarations, Token close) {
+		super(name, Location.between(open.location,close.location));
 		this.open = open;
 		this.declarations = declarations;
 		this.close = close;
-	}
-
-
-	@Override
-	public boolean isLineDeclarator() {
-		return false;
 	}
 
 	@Override
@@ -42,5 +37,10 @@ public class StructDeclaratorTree extends TypeDeclaratorTree {
 		node.set("declarations",declarationsNode);
 		node.set("location",location.toJson(mapper));
 		return node;
+	}
+
+	@Override
+	public boolean isLineDeclarator() {
+		return false;
 	}
 }

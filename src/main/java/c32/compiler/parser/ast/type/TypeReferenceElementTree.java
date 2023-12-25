@@ -2,36 +2,26 @@ package c32.compiler.parser.ast.type;
 
 import c32.compiler.Location;
 import c32.compiler.lexer.tokenizer.Token;
-import c32.compiler.parser.ast.expr.ReferenceExprTree;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-public class TypeReferenceElementTree extends RuntimeTypeElementTree {
+public class TypeReferenceElementTree extends TypeElementTree {
+	private final StaticElementReferenceTree reference;
+	private final Location location;
 
-	private final ReferenceExprTree typeReference;
-
-	public TypeReferenceElementTree(Token _const, Token _restrict, ReferenceExprTree typeReference) {
+	public TypeReferenceElementTree(Token _const, Token _restrict, StaticElementReferenceTree reference, Location location) {
 		super(_const, _restrict);
-		this.typeReference = typeReference;
-	}
-
-	@Override
-	public Token getKeyword() {
-		return null;
-	}
-
-	@Override
-	public ReferenceExprTree getTypeReference() {
-		return typeReference;
+		this.reference = reference;
+		this.location = location;
 	}
 
 	@Override
 	public Location getLocation() {
-		return Location.between(get_const().location,typeReference.getLocation());
+		return location;
 	}
 
 	@Override
 	protected ObjectNode applyJson(ObjectMapper mapper, ObjectNode root) {
-		return root.set("typeReference",typeReference.toJson(mapper));
+		return root.set("reference",reference.toJson(mapper));
 	}
 }

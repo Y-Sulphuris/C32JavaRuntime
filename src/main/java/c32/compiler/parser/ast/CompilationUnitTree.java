@@ -7,28 +7,34 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.Data;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
 @Data
 public class CompilationUnitTree implements Tree {
 	private final String fileName;
-	String packageName = "";
+	@Nullable private final PackageTree packageTree;
 
 	private final List<DeclarationTree<?>> declarations;
-	public CompilationUnitTree(String fileName, List<DeclarationTree<?>> declarations) {
+	public CompilationUnitTree(String fileName, @Nullable PackageTree packageTree, List<DeclarationTree<?>> declarations) {
 		this.fileName = fileName;
+		this.packageTree = packageTree;
 		this.declarations = declarations;
 	}
 
 	@Override
 	public JsonNode toJson(ObjectMapper mapper) {
 		ObjectNode node = mapper.createObjectNode();
+
+		if (packageTree != null) node.set("package",packageTree.toJson(mapper));
+
 		ArrayNode declarationsNode = mapper.createArrayNode();
 		for (DeclarationTree<?> declaration : declarations) {
 			declarationsNode.add(declaration.toJson(mapper));
 		}
 		node.set("declarations",declarationsNode);
+
 		return node;
 	}
 

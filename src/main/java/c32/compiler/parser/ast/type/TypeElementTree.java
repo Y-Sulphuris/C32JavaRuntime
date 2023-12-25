@@ -1,30 +1,30 @@
 package c32.compiler.parser.ast.type;
 
-import c32.compiler.Location;
 import c32.compiler.lexer.tokenizer.Token;
 import c32.compiler.parser.ast.Tree;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import org.jetbrains.annotations.Nullable;
 
+@Data
+@AllArgsConstructor
+@Getter
 public abstract class TypeElementTree implements Tree {
-	public abstract Token getKeyword();
+	@Nullable private Token _const;
+	@Nullable private Token _restrict;
 
-	@EqualsAndHashCode(callSuper = true)
-	@Data
-	public static class StructTypeElementTree extends TypeElementTree {
-		private final Token keyword;
 
-		@Override
-		public Location getLocation() {
-			return keyword.location;
-		}
-
-		@Override
-		public JsonNode toJson(ObjectMapper mapper) {
-			return mapper.createObjectNode().put("keyword",keyword.text);
-		}
+	@Override
+	public JsonNode toJson(ObjectMapper mapper) {
+		ObjectNode root = mapper.createObjectNode();
+		if (_const != null) root.put("const",_const.text);
+		if (_restrict != null) root.put("const",_restrict.text);
+		return applyJson(mapper,root);
 	}
-}
 
+	protected abstract ObjectNode applyJson(ObjectMapper mapper, ObjectNode root);
+}

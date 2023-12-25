@@ -1,7 +1,6 @@
 package c32.compiler.parser.ast.declarator;
 
 import c32.compiler.Location;
-import c32.compiler.parser.ast.FunctionDeclaratorTree;
 import c32.compiler.parser.ast.statement.BlockStatementTree;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;

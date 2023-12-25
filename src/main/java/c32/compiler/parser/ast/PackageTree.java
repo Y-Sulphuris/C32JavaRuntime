@@ -1,31 +1,33 @@
-package c32.compiler.parser.ast.statement;
+package c32.compiler.parser.ast;
 
 import c32.compiler.Location;
 import c32.compiler.lexer.tokenizer.Token;
-import c32.compiler.parser.ast.expr.ExprTree;
+import c32.compiler.parser.ast.type.StaticElementReferenceTree;
+import c32.compiler.parser.ast.type.TypeElementTree;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.Data;
-import org.jetbrains.annotations.Nullable;
+
+import java.util.List;
 
 @Data
-public class ReturnStatementTree implements StatementTree {
+public class PackageTree implements Tree {
+	private final List<ModifierTree> modifiersTree;
 	private final Token keyword;
-	@Nullable private final ExprTree expression;
+	private final StaticElementReferenceTree name;
 	private final Token endLine;
-
-	@Override
-	public Location getLocation() {
-		return keyword.location;
-	}
+	private final Location location;
 
 	@Override
 	public JsonNode toJson(ObjectMapper mapper) {
 		ObjectNode node = mapper.createObjectNode();
+
 		node.put("keyword",keyword.text);
-		if (expression != null) node.set("expression",expression.toJson(mapper));
+		node.set("name",name.toJson(mapper));
 		node.put("endLine",endLine.text);
+		node.set("location",location.toJson(mapper));
+
 		return node;
 	}
 }
