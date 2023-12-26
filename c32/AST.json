@@ -80,9 +80,7 @@
           } ],
           "close" : ")"
         },
-        "postModifiers" : [ {
-          "keyword" : "pure"
-        } ],
+        "postModifiers" : [ ],
         "location" : {
           "startPos" : 32,
           "endPos" : 48,
@@ -92,21 +90,96 @@
       },
       "blockStatement" : {
         "open" : "{",
-        "statements" : [ ],
+        "statements" : [ {
+          "declaration" : {
+            "modifiers" : [ ],
+            "typeElement" : {
+              "keyword" : "int"
+            },
+            "declarators" : [ {
+              "name" : "i2",
+              "assignOperator" : "=",
+              "initializer" : {
+                "literal" : "4",
+                "type" : "INTEGER_LITERAL"
+              },
+              "location" : {
+                "startPos" : 56,
+                "endPos" : 62,
+                "startLine" : 6,
+                "endLine" : 6
+              }
+            } ],
+            "endLine" : ";",
+            "location" : {
+              "startPos" : 52,
+              "endPos" : 63,
+              "startLine" : 6,
+              "endLine" : 6
+            }
+          }
+        }, {
+          "declaration" : {
+            "modifiers" : [ ],
+            "typeElement" : {
+              "keyword" : "bool"
+            },
+            "declarators" : [ {
+              "name" : "b",
+              "assignOperator" : "=",
+              "initializer" : {
+                "literal" : "false",
+                "type" : "BOOLEAN_LITERAL"
+              },
+              "location" : {
+                "startPos" : 70,
+                "endPos" : 79,
+                "startLine" : 7,
+                "endLine" : 7
+              }
+            } ],
+            "endLine" : ";",
+            "location" : {
+              "startPos" : 65,
+              "endPos" : 80,
+              "startLine" : 7,
+              "endLine" : 7
+            }
+          }
+        }, {
+          "keyword" : "if",
+          "condition" : {
+            "identifier" : "b",
+            "location" : {
+              "startPos" : 85,
+              "endPos" : 86,
+              "startLine" : 8,
+              "endLine" : 8
+            }
+          },
+          "statement" : {
+            "open" : "{",
+            "statements" : [ {
+              "keyword" : "return",
+              "endLine" : ";"
+            } ],
+            "close" : "}"
+          }
+        } ],
         "close" : "}"
       },
       "location" : {
         "startPos" : 32,
-        "endPos" : 58,
+        "endPos" : 104,
         "startLine" : 5,
-        "endLine" : 7
+        "endLine" : 11
       }
     } ],
     "location" : {
       "startPos" : 27,
-      "endPos" : 58,
+      "endPos" : 104,
       "startLine" : 5,
-      "endLine" : 7
+      "endLine" : 11
     }
   } ]
 }

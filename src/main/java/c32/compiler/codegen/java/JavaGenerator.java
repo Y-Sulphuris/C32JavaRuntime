@@ -1,9 +1,12 @@
 package c32.compiler.codegen.java;
 
+import c32.compiler.logical.tree.expression.BooleanLiteralExpression;
 import c32.compiler.logical.tree.*;
 import c32.compiler.logical.tree.expression.Expression;
 import c32.compiler.logical.tree.expression.NumericLiteralExpression;
-import sun.nio.cs.KOI8_U;
+import c32.compiler.logical.tree.statement.BlockStatement;
+import c32.compiler.logical.tree.statement.Statement;
+import c32.compiler.logical.tree.statement.VariableDeclarationStatement;
 
 import java.io.File;
 import java.io.IOException;
@@ -73,11 +76,13 @@ public class JavaGenerator {
 					out.print("d");
 					break;
 			}
-		}
+		} else if (init instanceof BooleanLiteralExpression) {
+			out.print(((BooleanLiteralExpression) init).isValue());
+		} else throw new UnsupportedOperationException();
 	}
 
 	private void writeFunctionNamespace(FunctionInfo function, PrintStream out) {
-
+		//todo
 	}
 
 	private String getJavaPackageName(SpaceInfo space) {
@@ -98,8 +103,33 @@ public class JavaGenerator {
 			out.print(getJavaTypeName(arg.getTypeRef().getType()) + " " + arg.getName());
 			if (arg != function.getArgs().get(function.getArgs().size()-1)) out.print(',');
 		}
-		out.println(") {");
-		out.println("\t}");
+		if (function instanceof FunctionDeclarationInfo) {
+			out.println(");");
+		} else if (function instanceof FunctionImplementationInfo) {
+			FunctionImplementationInfo func = (FunctionImplementationInfo) function;
+			out.println(") {");
+			writeStatement(func.getImplementation(), out);
+			out.println("\t}");
+		}
+	}
+
+	private void writeStatement(Statement state, PrintStream out) {
+		if (state instanceof BlockStatement) {
+			for (Statement statement : ((BlockStatement) state).getStatements()) {
+				writeStatement(statement,out);
+			}
+		} else if (state instanceof VariableDeclarationStatement) {
+			for (VariableInfo variable : ((VariableDeclarationStatement) state).getVariable()) {
+				out.print("\t\t");
+				if (variable.getTypeRef().is_const()) out.print("final ");
+				out.print(getJavaTypeName(variable.getTypeRef().getType()) + " " + variable.getName());
+				if (variable.getInitializer() != null) {
+					out.print(" = ");
+					writeExpression(variable.getInitializer(),out);
+				}
+				out.println(';');
+			}
+		} else throw new UnsupportedOperationException();
 	}
 
 	private String getJavaFunctionName(FunctionInfo function) {

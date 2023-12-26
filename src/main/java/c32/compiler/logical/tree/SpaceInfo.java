@@ -3,6 +3,8 @@ package c32.compiler.logical.tree;
 import c32.compiler.except.CompilerException;
 import c32.compiler.logical.CompilerAccessException;
 import c32.compiler.logical.TypeNotFoundException;
+import c32.compiler.logical.tree.expression.VariableRefExpression;
+import c32.compiler.parser.ast.expr.ReferenceExprTree;
 import c32.compiler.parser.ast.type.ArrayTypeElementTree;
 import c32.compiler.parser.ast.type.TypeElementTree;
 import c32.compiler.parser.ast.type.TypeKeywordElementTree;
@@ -21,7 +23,6 @@ public interface SpaceInfo extends SymbolInfo {
 	Set<FieldInfo> getFields();
 	FieldInfo addField(FieldInfo field);
 
-	boolean isAccessibleFrom(SpaceInfo space);
 
 	default TypeRefInfo resolveType(SpaceInfo caller, TypeElementTree type) {
 		if (type instanceof TypeKeywordElementTree) {
@@ -39,5 +40,15 @@ public interface SpaceInfo extends SymbolInfo {
 			} else throw new CompilerAccessException(caller,type);
 		}
 		return null;
+	}
+
+	default VariableRefExpression resolveVariable(ReferenceExprTree reference) {
+		for (FieldInfo field : getFields()) {
+			if (field.getName().equals(reference.getIdentifier().text) && field.getVariable().isAccessibleFrom(this)) {
+				return new VariableRefExpression(field.getVariable());
+			}
+		}
+		if (getParent() != null) return getParent().resolveVariable(reference);
+		throw new CompilerException(reference.getLocation(),"cannot find variable: " + reference.getIdentifier().text);
 	}
 }

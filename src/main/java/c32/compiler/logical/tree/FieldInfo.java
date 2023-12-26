@@ -7,4 +7,5 @@ public interface FieldInfo {
 	String getName();
 	Expression getInitializer();
 	SpaceInfo getContainer();
+	VariableInfo getVariable();
 }

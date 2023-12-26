@@ -3,6 +3,9 @@ package c32.compiler.logical;
 import c32.compiler.logical.tree.*;
 import c32.compiler.logical.tree.expression.Expression;
 import c32.compiler.logical.tree.expression.NumericLiteralExpression;
+import c32.compiler.logical.tree.statement.BlockStatement;
+import c32.compiler.logical.tree.statement.Statement;
+import c32.compiler.logical.tree.statement.VariableDeclarationStatement;
 import c32.compiler.parser.ast.CompilationUnitTree;
 import c32.compiler.parser.ast.PackageTree;
 import c32.compiler.parser.ast.declaration.DeclarationTree;
@@ -12,10 +15,18 @@ import c32.compiler.parser.ast.declarator.*;
 import c32.compiler.parser.ast.expr.ExprTree;
 import c32.compiler.parser.ast.expr.LiteralExprTree;
 import c32.compiler.parser.ast.expr.ReferenceExprTree;
+import c32.compiler.parser.ast.statement.BlockStatementTree;
+import c32.compiler.parser.ast.statement.DeclarationStatementTree;
+import c32.compiler.parser.ast.statement.IfStatementTree;
+import c32.compiler.parser.ast.statement.StatementTree;
+import lombok.var;
 
 import java.util.*;
 
 public class TreeBuilder {
+
+	private final HashMap<FunctionImplementationInfo, BlockStatementTree> implementations = new HashMap<>();
+
 	public SpaceInfo buildNamespace(Collection<CompilationUnitTree> units) {
 		SpaceInfo root = new NamespaceInfo("",null);
 
@@ -30,9 +41,15 @@ public class TreeBuilder {
 
 			fillNamespace(current,unit.getDeclarations());
 		}
+		implementations.forEach((func, impl) -> {
+			func.setImplementation(BlockStatement.build(func,impl));
+		});
 
 		return root;
 	}
+
+
+
 
 	private void fillNamespace(SpaceInfo current, List<DeclarationTree<?>> declarations) {
 		final Set<DeclarationTree<? extends DeclaratorTree>> forRemoval = new HashSet<>();
@@ -93,28 +110,17 @@ public class TreeBuilder {
 		}
 	}
 
-	private FieldInfo buildField(SpaceInfo container,ValuedDeclarationTree decl,VariableDeclaratorTree declarator) {
+	private FieldInfo buildField(SpaceInfo container, ValuedDeclarationTree decl,VariableDeclaratorTree declarator) {
 		Objects.requireNonNull(declarator.getName());
 		TypeRefInfo type = container.resolveType(container,decl.getTypeElement());
 		Expression init = null;
-		if (declarator.getInitializer() != null) init = buildExpression(container,declarator.getInitializer(),type);
+		if (declarator.getInitializer() != null) init = Expression.build(container,declarator.getInitializer(),type);
 		return new FieldVariableInfo(
-				new VariableInfo(declarator.getName().text, type, init), container
+				buildVariableInfo(declarator.getName().text,type,init), container
 		);
 	}
-
-	private Expression buildExpression(SpaceInfo container, ExprTree exprTree, TypeRefInfo returnType) {
-		if (exprTree instanceof LiteralExprTree) {
-			switch (((LiteralExprTree) exprTree).getType()) {
-				case CHAR_LITERAL:
-				case BOOLEAN_LITERAL:
-				case STRING_LITERAL:
-					throw new UnsupportedOperationException();
-				case INTEGER_LITERAL:
-					return new NumericLiteralExpression(((LiteralExprTree) exprTree).getLiteral(),returnType);
-			}
-		}
-		throw new UnsupportedOperationException();
+	private VariableInfo buildVariableInfo(String name, TypeRefInfo type, Expression init) {
+		return new VariableInfo(name, type, init);
 	}
 
 	private NamespaceInfo buildNamespace(SpaceInfo current, NamespaceDeclarator decl) {
@@ -124,8 +130,10 @@ public class TreeBuilder {
 		return space;
 	}
 	private FunctionImplementationInfo buildFunctionImpl(SpaceInfo current, ValuedDeclarationTree decl, FunctionDefinitionTree definition) {
-		return new FunctionImplementationInfo(
+		FunctionImplementationInfo info = new FunctionImplementationInfo(
 				new FunctionDeclarationInfo(current, decl.getModifiers(), decl.getTypeElement(), definition.getDeclarator())
 		);
+		implementations.put(info,definition.getBlockStatement());
+		return info;
 	}
 }

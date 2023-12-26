@@ -10,6 +10,7 @@ import lombok.Data;
 @Data
 public class DeclarationStatementTree implements StatementTree {
 	private final DeclarationTree<?> declaration;
+
 	@Override
 	public Location getLocation() {
 		return declaration.getLocation();

@@ -12,9 +12,8 @@ public class VariableInfo implements SymbolInfo {
 	private final TypeRefInfo typeRef;
 	@Nullable private final Expression initializer;
 
-	public VariableInfo(String name, TypeRefInfo typeRef) {
-		this.name = name;
-		this.typeRef = typeRef;
-		this.initializer = null;
+	@Override
+	public boolean isAccessibleFrom(SpaceInfo space) {
+		return true;
 	}
 }

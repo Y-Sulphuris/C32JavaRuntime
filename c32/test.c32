@@ -2,6 +2,10 @@ package test;
 
 int i = 5;
 
-void main(char[][] i) pure {
-
+void main(char[][] i) {
+	int i2 = 4;
+	bool b = false;
+	if(b) {
+		return;
+	}
 }

@@ -34,7 +34,7 @@ public class FunctionDeclarationInfo implements FunctionInfo {
 				assert param.getDeclarator().getName() != null;
 				argName = param.getDeclarator().getName().text;
 			} else argName = "$arg" + arg_i;
-			args.add(new VariableInfo(argName,parent.resolveType(parent,param.getTypeElement())));
+			args.add(new VariableInfo(argName,parent.resolveType(parent,param.getTypeElement()),null));
 		}
 		if (definition.getThrowsExceptions() != null)
 			for (TypeElementTree exceptionType : definition.getThrowsExceptions().getExceptionTypes())
