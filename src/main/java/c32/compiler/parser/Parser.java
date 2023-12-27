@@ -849,10 +849,27 @@ public class Parser {
 
 	private ExprTree parse_ParentExpr() {
 		assertToken(TokenType.OPENROUND);
+		Token openRound = token;
 		token = nextToken();
-		ExprTree expr = parseExpr();
-		assertToken(TokenType.CLOSEROUND);
-		return expr;
+		int startPos = curTok;
+		try {
+			ExprTree expr = parseExpr();
+			assertToken(TokenType.CLOSEROUND);
+			return expr;
+		} catch (CompilerException e) {
+			try {
+				curTok = startPos;
+				TypeElementTree type = parseTypeElement();
+				Token closeRound = assertAndNext(TokenType.CLOSEROUND);
+				ExprTree exprTree = parseExpr();
+				curTok--;
+				token = currentToken();
+				return new CastExprTree(openRound,type,closeRound,exprTree);
+			} catch (CompilerException ee) {
+				ee.initCause(e);
+				throw ee;
+			}
+		}
 	}
 	//endregion
 

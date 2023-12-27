@@ -351,8 +351,13 @@
                     },
                     "operator" : "+",
                     "rhs" : {
-                      "literal" : "2b",
-                      "type" : "INTEGER_LITERAL"
+                      "identifier" : "i2",
+                      "location" : {
+                        "startPos" : 352,
+                        "endPos" : 354,
+                        "startLine" : 27,
+                        "endLine" : 27
+                      }
                     }
                   },
                   "operator" : "-",
@@ -386,6 +391,51 @@
               "declaration" : {
                 "modifiers" : [ ],
                 "typeElement" : {
+                  "keyword" : "byte"
+                },
+                "declarators" : [ {
+                  "name" : "b",
+                  "assignOperator" : "=",
+                  "initializer" : {
+                    "literal" : "4b",
+                    "type" : "INTEGER_LITERAL"
+                  },
+                  "location" : {
+                    "startPos" : 377,
+                    "endPos" : 383,
+                    "startLine" : 29,
+                    "endLine" : 29
+                  }
+                } ],
+                "endLine" : ";",
+                "location" : {
+                  "startPos" : 372,
+                  "endPos" : 384,
+                  "startLine" : 29,
+                  "endLine" : 29
+                }
+              }
+            }, {
+              "expression" : {
+                "lhs" : {
+                  "identifier" : "b",
+                  "location" : {
+                    "startPos" : 386,
+                    "endPos" : 387,
+                    "startLine" : 30,
+                    "endLine" : 30
+                  }
+                },
+                "operator" : "+=",
+                "rhs" : {
+                  "literal" : "5ub",
+                  "type" : "INTEGER_LITERAL"
+                }
+              }
+            }, {
+              "declaration" : {
+                "modifiers" : [ ],
+                "typeElement" : {
                   "keyword" : "char"
                 },
                 "declarators" : [ {
@@ -396,18 +446,18 @@
                     "type" : "CHAR_LITERAL"
                   },
                   "location" : {
-                    "startPos" : 377,
-                    "endPos" : 385,
-                    "startLine" : 29,
-                    "endLine" : 29
+                    "startPos" : 402,
+                    "endPos" : 410,
+                    "startLine" : 31,
+                    "endLine" : 31
                   }
                 } ],
                 "endLine" : ";",
                 "location" : {
-                  "startPos" : 372,
-                  "endPos" : 386,
-                  "startLine" : 29,
-                  "endLine" : 29
+                  "startPos" : 397,
+                  "endPos" : 411,
+                  "startLine" : 31,
+                  "endLine" : 31
                 }
               }
             }, {
@@ -428,18 +478,18 @@
                     "type" : "STRING_LITERAL"
                   },
                   "location" : {
-                    "startPos" : 395,
-                    "endPos" : 415,
-                    "startLine" : 30,
-                    "endLine" : 30
+                    "startPos" : 420,
+                    "endPos" : 440,
+                    "startLine" : 32,
+                    "endLine" : 32
                   }
                 } ],
                 "endLine" : ";",
                 "location" : {
-                  "startPos" : 388,
-                  "endPos" : 416,
-                  "startLine" : 30,
-                  "endLine" : 30
+                  "startPos" : 413,
+                  "endPos" : 441,
+                  "startLine" : 32,
+                  "endLine" : 32
                 }
               }
             }, {
@@ -447,10 +497,10 @@
                 "reference" : {
                   "identifier" : "println",
                   "location" : {
-                    "startPos" : 418,
-                    "endPos" : 425,
-                    "startLine" : 31,
-                    "endLine" : 31
+                    "startPos" : 443,
+                    "endPos" : 450,
+                    "startLine" : 33,
+                    "endLine" : 33
                   }
                 },
                 "argumentList" : {
@@ -458,10 +508,10 @@
                   "arguments" : [ {
                     "identifier" : "str",
                     "location" : {
-                      "startPos" : 426,
-                      "endPos" : 429,
-                      "startLine" : 31,
-                      "endLine" : 31
+                      "startPos" : 451,
+                      "endPos" : 454,
+                      "startLine" : 33,
+                      "endLine" : 33
                     }
                   } ],
                   "closeRound" : ")"
@@ -472,30 +522,30 @@
           },
           "location" : {
             "startPos" : 216,
-            "endPos" : 433,
+            "endPos" : 458,
             "startLine" : 17,
-            "endLine" : 32
+            "endLine" : 34
           }
         } ],
         "location" : {
           "startPos" : 211,
-          "endPos" : 433,
+          "endPos" : 458,
           "startLine" : 17,
-          "endLine" : 32
+          "endLine" : 34
         }
       } ],
       "location" : {
         "startPos" : 55,
-        "endPos" : 435,
+        "endPos" : 460,
         "startLine" : 4,
-        "endLine" : 33
+        "endLine" : 35
       }
     } ],
     "location" : {
       "startPos" : 40,
-      "endPos" : 437,
+      "endPos" : 462,
       "startLine" : 4,
-      "endLine" : 35
+      "endLine" : 37
     }
   } ]
 }

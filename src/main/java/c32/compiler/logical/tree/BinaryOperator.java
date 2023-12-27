@@ -23,14 +23,44 @@ public class BinaryOperator {
     private static final Set<BinaryOperator> registeredOperators = new HashSet<>();
     private static void registerBinary(TypeInfo left, String op, TypeInfo right, TypeInfo returnType) {
         registeredOperators.add(new BinaryOperator(left,op,right,returnType));
+
+        //это костыль
         registeredOperators.add(new BinaryOperator(left,op+'=',right,returnType));
+        //это костыль
     }
     static {
-        registerBinary(INT,"+", INT, INT);
-        registerBinary(INT,"-", INT, INT);
-        registerBinary(INT,"*", INT, INT);
-        registerBinary(INT,"/", INT, INT);
-        registerBinary(INT,"%", INT, INT);
+        TypeInfo.PrimitiveTypeInfo.forEachNumeric(TYPE -> {
+            registerBinary(TYPE,"+", TYPE, TYPE);
+            registerBinary(TYPE,"-", TYPE, TYPE);
+            registerBinary(TYPE,"*", TYPE, TYPE);
+            registerBinary(TYPE,"/", TYPE, TYPE);
+            registerBinary(TYPE,"%", TYPE, TYPE);
+            registerBinary(TYPE,"^^", TYPE, TYPE);
+
+            registerBinary(TYPE,">=",TYPE,BOOL);
+            registerBinary(TYPE,"<=",TYPE,BOOL);
+            registerBinary(TYPE,">",TYPE,BOOL);
+            registerBinary(TYPE,"<",TYPE,BOOL);
+        });
+        TypeInfo.PrimitiveTypeInfo.forEachValued(TYPE -> {
+            registerBinary(TYPE,"==",TYPE,BOOL);
+            registerBinary(TYPE,"!=",TYPE,BOOL);
+        });
+
+        TypeInfo.PrimitiveTypeInfo.forEachInteger(TYPE -> {
+            registerBinary(TYPE,"<<", TYPE, TYPE);
+            registerBinary(TYPE,"<<<", TYPE, TYPE);
+            registerBinary(TYPE,"<<<<", TYPE, TYPE);
+            registerBinary(TYPE,">>", TYPE, TYPE);
+            registerBinary(TYPE,">>>", TYPE, TYPE);
+            registerBinary(TYPE,">>>>", TYPE, TYPE);
+
+            registerBinary(TYPE,"|", TYPE, TYPE);
+            registerBinary(TYPE,"^", TYPE, TYPE);
+            registerBinary(TYPE,"&", TYPE, TYPE);
+        });
+        registerBinary(BOOL,"||", BOOL, BOOL);
+        registerBinary(BOOL,"&&", BOOL, BOOL);
     }
     public static BinaryOperator findOperator(Location location, Expression lvalue, String operator, Expression rvalue) {
         for (BinaryOperator op : registeredOperators) {
@@ -41,10 +71,10 @@ public class BinaryOperator {
         }
         for (BinaryOperator op : registeredOperators) {
             if (!op.getOp().equals(operator)) continue;
-            if (op.getLeftType().canBeImplicitCastTo(lvalue.getReturnType()) && op.getRightType().canBeImplicitCastTo(rvalue.getReturnType())) {
+            if (lvalue.getReturnType().canBeImplicitCastTo(op.getLeftType()) && rvalue.getReturnType().canBeImplicitCastTo(op.getRightType())) {
                 return op;
             }
         }
-        throw new IllegalOperatorException(location, lvalue.getReturnType(),operator,rvalue.getReturnType());
+        throw new IllegalOperatorException(location, lvalue.getReturnType(),operator,rvalue.getReturnType(),false);
     }
 }

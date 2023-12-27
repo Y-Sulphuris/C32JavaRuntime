@@ -1,11 +1,8 @@
 package c32.compiler.logical.tree.expression;
 
 import c32.compiler.except.CompilerException;
-import c32.compiler.logical.VariableNotFoundException;
-import c32.compiler.logical.tree.NamespaceInfo;
 import c32.compiler.logical.tree.SpaceInfo;
 import c32.compiler.logical.tree.TypeInfo;
-import c32.compiler.logical.tree.TypeRefInfo;
 import c32.compiler.parser.ast.expr.*;
 
 import java.util.ArrayList;
@@ -41,13 +38,27 @@ public interface Expression {
 			if (((BinaryExprTree) exprTree).getOperator().text.equals(".") && ((BinaryExprTree) exprTree).getLhs() instanceof ReferenceExprTree) {
 				SpaceInfo space = container.resolveSpace(container,((ReferenceExprTree) ((BinaryExprTree) exprTree).getLhs()));
 				return Expression.build(space,((BinaryExprTree) exprTree).getRhs(),returnType);
+			}//это наверное надо будет педелелать, но это не точно
+
+			Expression
+					lhs = Expression.build(container, ((BinaryExprTree) exprTree).getLhs(), null),
+			rhs = Expression.build(container, ((BinaryExprTree) exprTree).getRhs(), null);
+			if (((BinaryExprTree) exprTree).getOperator().text.endsWith("=")) {
+				switch (((BinaryExprTree) exprTree).getOperator().text) {
+					case "==":
+					case "!=":
+					case "<=":
+					case ">=":
+					case "===":
+					case "!==":
+						break;
+					default:
+						String op = ((BinaryExprTree) exprTree).getOperator().text;
+						op = op.substring(0,op.length()-1);
+						return new AssignExpression(exprTree.getLocation(), lhs, op, rhs);
+				}
 			}
-			return new BinaryExpression(exprTree.getLocation(),
-					Expression.build(container, ((BinaryExprTree) exprTree).getLhs(), null),
-					((BinaryExprTree) exprTree).getOperator().text,
-					Expression.build(container, ((BinaryExprTree) exprTree).getRhs(), null),
-					returnType
-			).calculate();
+			return new BinaryExpression(exprTree.getLocation(), lhs, ((BinaryExprTree) exprTree).getOperator().text, rhs, returnType).calculate();
 		} else if (exprTree instanceof CallExprTree) {
 			List<Expression> args = new ArrayList<>();
 			for (ExprTree argument : ((CallExprTree) exprTree).getArgumentList().getArguments()) {

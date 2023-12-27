@@ -65,3 +65,9 @@ void main() {
 
 
 }
+
+
+struct str {}
+
+int str = 4;
+int res = (str)-5;

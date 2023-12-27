@@ -67,23 +67,6 @@ public interface Statement {
 			return new ReturnStatement(function,container,expr);
 		} else if (statement instanceof ExpressionStatementTree) {
 			Expression expr = Expression.build(container,((ExpressionStatementTree) statement).getExpression(),null);
-			if (expr instanceof BinaryExpression && ((BinaryExpression) expr).getOperator().getOp().endsWith("=")) {
-				switch (((BinaryExpression) expr).getOperator().getOp()) {
-					case "==":
-					case "!=":
-					case "<=":
-					case ">=":
-					case "===":
-					case "!==":
-						break;
-					default:
-						String op = ((BinaryExpression) expr).getOperator().getOp();
-						op = op.substring(0,op.length()-1);
-						return new AssignStatement(statement.getLocation(), function,container,
-								((BinaryExpression) expr).getLhs(),
-								((BinaryExpression) expr).getRhs(),op);
-				}
-			}
 			return new ExpressionStatement(function,container,expr);
 		}
 

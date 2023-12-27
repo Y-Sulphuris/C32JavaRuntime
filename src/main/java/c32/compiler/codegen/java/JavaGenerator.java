@@ -104,6 +104,12 @@ public class JavaGenerator {
 		} else if (expr instanceof UnaryPrefixExpression) {
 			out.print(((UnaryPrefixExpression) expr).getOperator());
 			writeExpression(((UnaryPrefixExpression) expr).getExpr(),out);
+		} else if (expr instanceof AssignExpression) {
+			writeExpression(((AssignExpression) expr).getLvalue(),out);
+			BinaryOperator parent = ((AssignExpression) expr).getParentOperator();
+			if (parent != null) out.print(parent.getOp());
+			out.print("=");
+			writeExpression(((AssignExpression) expr).getRvalue(),out);
 		}
 		else
 			throw new UnsupportedOperationException(expr.getClass().getName());
@@ -198,12 +204,6 @@ public class JavaGenerator {
 			out.println(';');
 		} else if (state instanceof BreakStatement) {
 			out.println("break;");
-		} else if (state instanceof AssignStatement) {
-			writeExpression(((AssignStatement) state).getLvalue(),out);
-			out.print(" " + ((AssignStatement) state).getParentOperator());
-			out.print("= ");
-			writeExpression(((AssignStatement) state).getRvalue(),out);
-			out.println(';');
 		} else if (state instanceof ExpressionStatement) {
 			if (((ExpressionStatement) state).getExpression() instanceof BinaryExpression) {
 				return;//todo: это уберём, когда добавим перегрузку операторов

@@ -200,7 +200,7 @@ public class Compiler {
 		try {
 			SpaceInfo logicalTree = new TreeBuilder().buildNamespace(Collections.singleton(AST));
 			new JavaGenerator().generate(logicalTree);
-			new CSGenerator().generate(logicalTree);
+			//new CSGenerator().generate(logicalTree);
 		} catch (CompilerException e) {
 			throw handleCompilerException(e);
 		}

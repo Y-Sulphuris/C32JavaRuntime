@@ -24,8 +24,10 @@ void main(const (char[][]) args) {
 		}
 		break;
 	}
-	i2 += 4b + 2b - (2*5);
+	i2 += 4b + i2 - (2*5);
 	++i2;
+	byte b = (byte)4b;
+	//b += (byte)5ub;
 	char ch = '3';
 	char[] str = "hello\nworld";
 	println(str);

@@ -7,7 +7,9 @@ import lombok.Getter;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Set;
+import java.util.function.Consumer;
 
 public interface TypeInfo extends SpaceInfo {
 	long sizeof();
@@ -49,6 +51,16 @@ public interface TypeInfo extends SpaceInfo {
 	@Getter
 	class PrimitiveTypeInfo implements TypeInfo {
 
+		private final Set<PrimitiveTypeInfo> implicitCast = new HashSet<>();
+		void addImplicitCast(PrimitiveTypeInfo... types) {
+			Collections.addAll(implicitCast,types);
+		}
+
+		@Override
+		public boolean canBeImplicitCastTo(TypeInfo type) {
+			return TypeInfo.super.canBeImplicitCastTo(type) || (type instanceof PrimitiveTypeInfo && implicitCast.contains(type));
+		}
+
 		@Override
 		public String toString() {
 			return "TypeInfo(" + name + ')';
@@ -73,7 +85,37 @@ public interface TypeInfo extends SpaceInfo {
 
 		public static final CharPrimitiveTypeInfo               CHAR = new CharPrimitiveTypeInfo("char",2);
 
-		//public static void forEachNumeric()
+		static {
+			BYTE.addImplicitCast(SHORT,USHORT,INT,UINT,LONG,ULONG,FLOAT,DOUBLE);
+			UBYTE.addImplicitCast(SHORT,USHORT,INT,UINT,LONG,ULONG,FLOAT,DOUBLE);
+			SHORT.addImplicitCast(INT,UINT,LONG,ULONG,FLOAT,DOUBLE);
+			USHORT.addImplicitCast(INT,UINT,LONG,ULONG,FLOAT,DOUBLE);
+			INT.addImplicitCast(LONG,ULONG,FLOAT,DOUBLE);
+			UINT.addImplicitCast(LONG,ULONG,FLOAT,DOUBLE);
+			LONG.addImplicitCast(DOUBLE);
+			ULONG.addImplicitCast(DOUBLE);
+			FLOAT.addImplicitCast(DOUBLE);
+		}
+		public static void forEachValued(Consumer<PrimitiveTypeInfo> action) {
+			forEachNumeric(action);
+			action.accept(BOOL);
+			action.accept(CHAR);
+		}
+		public static void forEachNumeric(Consumer<PrimitiveTypeInfo> action) {
+			forEachInteger(action);
+			action.accept(FLOAT);
+			action.accept(DOUBLE);
+		}
+		public static void forEachInteger(Consumer<PrimitiveTypeInfo> action) {
+			action.accept(BYTE);
+			action.accept(UBYTE);
+			action.accept(SHORT);
+			action.accept(USHORT);
+			action.accept(INT);
+			action.accept(UINT);
+			action.accept(LONG);
+			action.accept(ULONG);
+		}
 
 		public PrimitiveTypeInfo(String name, long size) {
 			this.name = name;

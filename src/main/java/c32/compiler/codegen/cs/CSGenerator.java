@@ -198,12 +198,6 @@ public class CSGenerator {
 			out.println(';');
 		} else if (state instanceof BreakStatement) {
 			out.println("break;");
-		} else if (state instanceof AssignStatement) {
-			writeExpression(((AssignStatement) state).getLvalue(),out);
-			out.print(" " + ((AssignStatement) state).getParentOperator());
-			out.print("= ");
-			writeExpression(((AssignStatement) state).getRvalue(),out);
-			out.println(';');
 		} else if (state instanceof ExpressionStatement) {
 			if (((ExpressionStatement) state).getExpression() instanceof BinaryExpression) {
 				return;
