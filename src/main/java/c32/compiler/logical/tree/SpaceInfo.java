@@ -2,18 +2,22 @@ package c32.compiler.logical.tree;
 
 import c32.compiler.except.CompilerException;
 import c32.compiler.logical.CompilerAccessException;
+import c32.compiler.logical.FunctionNotFoundException;
 import c32.compiler.logical.TypeNotFoundException;
+import c32.compiler.logical.tree.expression.Expression;
 import c32.compiler.logical.tree.expression.VariableRefExpression;
+import c32.compiler.parser.ast.expr.CallExprTree;
+import c32.compiler.parser.ast.expr.ExprTree;
 import c32.compiler.parser.ast.expr.ReferenceExprTree;
-import c32.compiler.parser.ast.type.ArrayTypeElementTree;
-import c32.compiler.parser.ast.type.TypeElementTree;
-import c32.compiler.parser.ast.type.TypeKeywordElementTree;
+import c32.compiler.parser.ast.type.*;
+import lombok.val;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 public interface SpaceInfo extends SymbolInfo {
 	SpaceInfo getParent();
-
 	Set<FunctionInfo> getFunctions();
 	FunctionInfo addFunction(FunctionInfo function);
 
@@ -24,31 +28,114 @@ public interface SpaceInfo extends SymbolInfo {
 	FieldInfo addField(FieldInfo field);
 
 
-	default TypeRefInfo resolveType(SpaceInfo caller, TypeElementTree type) {
+	default TypeInfo resolveType(SpaceInfo caller, TypeElementTree type) {
 		if (type instanceof TypeKeywordElementTree) {
 			return TypeInfo.PrimitiveTypeInfo.resolve((TypeKeywordElementTree)type);
-		}
-		if (type instanceof ArrayTypeElementTree) {
+		} else if (type instanceof ArrayTypeElementTree) {
 			if (type.get_restrict() != null) throw new CompilerException(type.getLocation(),"arrays cannot be restrict");
-			return new TypeRefInfo(type.get_const() != null,false, TypeArrayInfo.arrayOf(this.resolveType(caller,((ArrayTypeElementTree) type).getElementType()).getType()));
+			return TypeArrayInfo.arrayOf(new TypeRefInfo(((ArrayTypeElementTree) type).getElementType().get_const() != null, false,
+							this.resolveType(caller,((ArrayTypeElementTree) type).getElementType())));
+		} else if (type instanceof PointerTypeElementTree) {
+			return TypePointerInfo.pointerOf(
+					new TypeRefInfo(
+							((PointerTypeElementTree) type).getElementType().get_const() != null,
+							((PointerTypeElementTree) type).getElementType().get_restrict() != null,
+							this.resolveType(caller,((PointerTypeElementTree) type).getElementType())));
+		} else if (type instanceof TypeReferenceElementTree) {
+			if (((TypeReferenceElementTree) type).getReference().getReferences().size() == 1) {
+				//todo: find type
+				if (getParent() != null) {
+					TypeInfo ref = getParent().resolveType(caller,type);
+					if (ref == null) throw new TypeNotFoundException(caller,type);
+					if (ref.isAccessibleFrom(caller)) {
+						return ref;
+					} else throw new CompilerAccessException(type.getLocation(), caller, ref);
+				}
+				return null;
+			} else {
+				ReferenceExprTree namespaceRef = ((TypeReferenceElementTree) type).getReference().getReferences().remove(0);
+				return resolveType(
+						resolveNamespace(caller, namespaceRef),
+						((TypeReferenceElementTree) type)
+				);
+			}
 		}
-		if (getParent() != null) {
-			TypeRefInfo ref = getParent().resolveType(caller,type);
-			if (ref == null) throw new TypeNotFoundException(caller,type);
-			if (ref.getType().isAccessibleFrom(caller)) {
-				return ref;
-			} else throw new CompilerAccessException(caller,type);
-		}
-		return null;
+
+		throw new UnsupportedOperationException(type.getClass().getName());
 	}
 
-	default VariableRefExpression resolveVariable(ReferenceExprTree reference) {
+	default SpaceInfo resolveSpace(SpaceInfo caller, StaticElementReferenceTree reference) {
+		List<ReferenceExprTree> references = reference.getReferences();
+		if (references.isEmpty()) return this;
+		String current = references.remove(0).getIdentifier().text;
+		for (NamespaceInfo namespace : getNamespaces()) {
+			if (namespace.getName().equals(current)) {
+				SpaceInfo space = namespace.resolveSpace(caller,reference);
+				if (!space.isAccessibleFrom(caller))
+					throw new CompilerAccessException(reference.getLocation(),caller,space);
+				return space;
+			}
+		}
+		/*for (FieldInfo field : getFields()) {
+			field.getTypeRef().getType().get
+		}*/
+		if (getParent() == null)
+			throw new CompilerException(reference.getLocation(), "cannot find anything from '" + caller.getCanonicalName() + "' for '" + reference.getReferences() + "'");
+		return getParent().resolveSpace(caller,reference);
+	}
+
+	default NamespaceInfo resolveNamespace(SpaceInfo caller, ReferenceExprTree reference) {
+		for (NamespaceInfo namespace : getNamespaces()) {
+			if (namespace.getName().equals(reference.getIdentifier().text) && namespace.isAccessibleFrom(caller)) return namespace;
+		}
+		if (getParent() == null)
+			throw new CompilerException(reference.getLocation(), "cannot find namespace: " + reference.getIdentifier().text);
+		return getParent().resolveNamespace(caller,reference);
+	}
+
+	default VariableRefExpression resolveVariable(SpaceInfo caller, ReferenceExprTree reference) {
 		for (FieldInfo field : getFields()) {
 			if (field.getName().equals(reference.getIdentifier().text) && field.getVariable().isAccessibleFrom(this)) {
 				return new VariableRefExpression(field.getVariable());
 			}
 		}
-		if (getParent() != null) return getParent().resolveVariable(reference);
+		if (getParent() != null) return getParent().resolveVariable(caller, reference);
 		throw new CompilerException(reference.getLocation(),"cannot find variable: " + reference.getIdentifier().text);
+	}
+
+	default FunctionInfo resolveFunction(SpaceInfo caller, CallExprTree call, List<Expression> args) {
+		String fname = call.getReference().getIdentifier().text;
+		EXIT:
+		for (FunctionInfo function : getFunctions()) {
+			if (!function.getName().equals(fname)) continue;
+			if (args.size() != function.getArgs().size()) continue;
+			for (int i = 0; i < args.size(); i++) {
+				if (!args.get(i).getReturnType().equals(function.getArgs().get(i).getTypeRef().getType())) {
+					continue EXIT;
+				}
+			}
+			return function;
+		}
+
+		EXIT_IMPLICIT:
+		for (FunctionInfo function : getFunctions()) {
+			if (!function.getName().equals(fname)) continue;
+			if (args.size() != function.getArgs().size()) continue;
+			for (int i = 0; i < args.size(); i++) {
+				if (!args.get(i).getReturnType().canBeImplicitCastTo(function.getArgs().get(i).getTypeRef().getType())) {
+					continue EXIT_IMPLICIT;
+				}
+			}
+			return function;
+		}
+
+		if (getParent() != null) {
+			FunctionInfo ref = getParent().resolveFunction(caller,call,args);
+			if (ref == null) throw new FunctionNotFoundException(call,args);
+			if (ref.isAccessibleFrom(caller)) {
+				return ref;
+			} else throw new CompilerAccessException(call.getLocation(), caller, ref);
+		}
+		return null;
 	}
 }

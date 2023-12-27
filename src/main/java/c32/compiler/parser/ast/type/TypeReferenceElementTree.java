@@ -4,7 +4,9 @@ import c32.compiler.Location;
 import c32.compiler.lexer.tokenizer.Token;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import lombok.Getter;
 
+@Getter
 public class TypeReferenceElementTree extends TypeElementTree {
 	private final StaticElementReferenceTree reference;
 	private final Location location;
@@ -13,11 +15,6 @@ public class TypeReferenceElementTree extends TypeElementTree {
 		super(_const, _restrict);
 		this.reference = reference;
 		this.location = location;
-	}
-
-	@Override
-	public Location getLocation() {
-		return location;
 	}
 
 	@Override

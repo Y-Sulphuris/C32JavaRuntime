@@ -9,20 +9,21 @@ import java.util.HashMap;
 import java.util.Set;
 
 @Getter
-public class TypeArrayInfo implements TypeInfo {
-	private final TypeRefInfo elementType;
+public class TypePointerInfo implements TypeInfo {
+	private final TypeRefInfo targetType;
 
-	private TypeArrayInfo(TypeRefInfo elementType) {
-		this.elementType = elementType;
+
+	private TypePointerInfo(TypeRefInfo targetType) {
+		this.targetType = targetType;
 	}
-	private static final HashMap<TypeRefInfo, TypeArrayInfo> arrayTypes = new HashMap<>();
+	private static final HashMap<TypeRefInfo, TypePointerInfo> ptrTypes = new HashMap<>();
 
 	@NotNull
-	public static TypeArrayInfo arrayOf(TypeRefInfo typeRefInfo) {
-		if (arrayTypes.containsKey(typeRefInfo))
-			return arrayTypes.get(typeRefInfo);
-		TypeArrayInfo arr = new TypeArrayInfo(typeRefInfo);
-		arrayTypes.put(typeRefInfo,arr);
+	public static TypePointerInfo pointerOf(TypeRefInfo typeRefInfo) {
+		if (ptrTypes.containsKey(typeRefInfo))
+			return ptrTypes.get(typeRefInfo);
+		TypePointerInfo arr = new TypePointerInfo(typeRefInfo);
+		ptrTypes.put(typeRefInfo,arr);
 		return arr;
 	}
 
@@ -68,7 +69,7 @@ public class TypeArrayInfo implements TypeInfo {
 
 	@Override
 	public String getName() {
-		return "__array__$" + elementType.getType().getName() + "$";
+		return "__pointer__$" + targetType.getType().getName() + "$";
 	}
 
 	@Override
@@ -83,14 +84,6 @@ public class TypeArrayInfo implements TypeInfo {
 
 	@Override
 	public String getCanonicalName() {
-		return (elementType.is_const() ? "const " : "") + (elementType.is_restrict() ? "restrict " : "") + elementType.getType().getCanonicalName() + "[]";
-	}
-
-	@Override
-	public boolean canBeImplicitCastTo(TypeInfo type) {
-		if (type instanceof TypeArrayInfo) {
-			return TypeInfo.super.canBeImplicitCastTo(type) || this.getElementType().canBeImplicitCastTo(((TypeArrayInfo) type).getElementType());
-		}
-		return TypeInfo.super.canBeImplicitCastTo(type);
+		return (targetType.is_const() ? "const " : "") + (targetType.is_restrict() ? "restrict " : "") + targetType.getType().getCanonicalName() + "*";
 	}
 }

@@ -1,36 +1,36 @@
-package c32.compiler.codegen.java;
+package c32.compiler.codegen.cs;
 
-import c32.compiler.logical.tree.expression.*;
 import c32.compiler.logical.tree.*;
+import c32.compiler.logical.tree.expression.*;
 import c32.compiler.logical.tree.statement.*;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 
-public class JavaGenerator {
+public class CSGenerator {
 
 	public void generate(SpaceInfo space) {
-		File dir = new File("out/java");
+		File dir = new File("out/cs");
 		dir.mkdir();
 		writeNamespace(space);
 	}
 
 	private void writeNamespace(SpaceInfo space) {
 		String className = "$package";
-		String packageName = getJavaPackageName(space);
-		File dir = new File("out/java/"+packageName.replace('.','/')+'/');
+		String packageName = getCSPackageName(space);
+		File dir = new File("out/cs/"+packageName.replace('.','/')+'/');
 		dir.mkdirs();
-		File file = new File(dir,className+".java");
+		File file = new File(dir,className+".cs");
 		for (SpaceInfo namespace : space.getNamespaces()) {
 			writeNamespace(namespace);
 		}
 		try {
 			file.createNewFile();
 			PrintStream out = new PrintStream(file);
-			if (!packageName.isEmpty()) out.println("package " + packageName + ";");
-			out.println("public final class " + className + " {");
-			out.println("\tprivate " + className + "() throws java.lang.InstantiationException { throw new java.lang.InstantiationException(); }");
+			if (!packageName.isEmpty()) out.println("namespace " + packageName + ";");
+			out.println("public sealed unsafe class " + className + " {");
+			out.println("\tprivate " + className + "() { throw new Exception(\"tak nilzya\"); }");
 			for (FunctionInfo function : space.getFunctions()) {
 				writeFunction(function,out);
 				writeFunctionNamespace(function,out);
@@ -47,12 +47,11 @@ public class JavaGenerator {
 
 	private void writeField(FieldInfo field, PrintStream out) {
 		out.print("\tpublic static ");
-		if (field.getTypeRef().is_const()) out.print("final ");
-		out.print(getJavaTypeName(field.getTypeRef().getType()) + " " + field.getName() + ";");
+		if (field.getTypeRef().is_const()) out.print("readonly ");
+		out.print(getCSTypeName(field.getTypeRef().getType()) + " " + field.getName());
 		Expression init = field.getInitializer();
 		if (init == null) init = field.getTypeRef().getType().getDefaultValue();
-		out.print("\n\tstatic {\n\t\t");
-		out.print(field.getName() + " = ");
+		out.print(" = ");
 		writeExpression(init, out);
 		out.println(';');
 		out.println("\t}");
@@ -62,7 +61,7 @@ public class JavaGenerator {
 	private void writeExpression(Expression expr, PrintStream out) {
 		if (expr instanceof NumericLiteralExpression) {
 			out.print(((NumericLiteralExpression) expr).getNumber());
-			switch (getJavaTypeName(expr.getReturnType())) {
+			switch (getCSTypeName(expr.getReturnType())) {
 				case "long":
 					out.print("L");
 					break;
@@ -84,7 +83,7 @@ public class JavaGenerator {
 			writeExpression(((BinaryExpression) expr).getRhs(), out);
 			out.print(')');
 		} else if (expr instanceof CallExpression) {
-			String fname = getJavaFunctionName(((CallExpression) expr).getFunction());
+			String fname = getCSFunctionName(((CallExpression) expr).getFunction());
 			out.print(fname + "(");
 			for (Expression arg : ((CallExpression) expr).getArgs()) {
 				writeExpression(arg,out);
@@ -117,7 +116,7 @@ public class JavaGenerator {
 		//todo
 	}
 
-	private String getJavaPackageName(SpaceInfo space) {
+	private String getCSPackageName(SpaceInfo space) {
 		StringBuilder builder = new StringBuilder(space.getName());
 		while (space.getParent() != null) {
 			space = space.getParent();
@@ -130,10 +129,10 @@ public class JavaGenerator {
 
 	private void writeFunction(FunctionInfo function, PrintStream out) {
 		if (function.is_extern()) return;
-		String retType = getJavaTypeName(function.getReturnType());
-		out.print("\tpublic static " + retType + " " + getJavaFunctionName(function) + "(");
+		String retType = getCSTypeName(function.getReturnType());
+		out.print("\tpublic static " + retType + " " + getCSFunctionName(function) + "(");
 		for (VariableInfo arg : function.getArgs()) {
-			out.print(getJavaTypeName(arg.getTypeRef().getType()) + " " + arg.getName());
+			out.print(getCSTypeName(arg.getTypeRef().getType()) + " " + arg.getName());
 			if (arg != function.getArgs().get(function.getArgs().size()-1)) out.print(',');
 		}
 		if (function instanceof FunctionDeclarationInfo) {
@@ -156,7 +155,7 @@ public class JavaGenerator {
 			for (VariableInfo variable : ((VariableDeclarationStatement) state).getVariable()) {
 				out.print("\t\t");
 				if (variable.getTypeRef().is_const()) out.print("final ");
-				out.print(getJavaTypeName(variable.getTypeRef().getType()) + " " + variable.getName());
+				out.print(getCSTypeName(variable.getTypeRef().getType()) + " " + variable.getName());
 				if (variable.getInitializer() != null) {
 					out.print(" = ");
 					writeExpression(variable.getInitializer(),out);
@@ -194,14 +193,14 @@ public class JavaGenerator {
 			out.println(';');
 		} else if (state instanceof ExpressionStatement) {
 			if (((ExpressionStatement) state).getExpression() instanceof BinaryExpression) {
-				return;//todo: это уберём, когда добавим перегрузку операторов
+				return;
 			}
 			writeExpression(((ExpressionStatement) state).getExpression(),out);
 			out.println(';');
 		} else throw new UnsupportedOperationException(state.getClass().toString());
 	}
 
-	public static String getJavaFunctionName(FunctionInfo function) {
+	public static String getCSFunctionName(FunctionInfo function) {
 		String fname = getFname(function);
 		if (function.is_extern()) return IntrinsicFunctionTable.get(function,fname);
 		return fname;
@@ -215,14 +214,12 @@ public class JavaGenerator {
 		return builder.toString();
 	}
 
-	public static String getJavaTypeName(TypeInfo type) {
+	public static String getCSTypeName(TypeInfo type) {
 		if (type instanceof TypeInfo.PrimitiveTypeInfo) {
-			if (type.getName().startsWith("u")) return type.getName().substring(1);
-			if (type.getName().equals("bool")) return "boolean";
 			return type.getName();
 		}
 		if (type instanceof TypeArrayInfo) {
-			return getJavaTypeName(((TypeArrayInfo) type).getElementType().getType()) + "[]";
+			return getCSTypeName(((TypeArrayInfo) type).getElementType().getType()) + "[]";
 		}
 		throw new UnsupportedOperationException(type.getCanonicalName() + "not implemented yet");
 	}

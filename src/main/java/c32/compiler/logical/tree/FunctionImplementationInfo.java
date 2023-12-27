@@ -1,19 +1,20 @@
 package c32.compiler.logical.tree;
 
+import c32.compiler.logical.tree.expression.VariableRefExpression;
 import c32.compiler.logical.tree.statement.BlockStatement;
+import c32.compiler.logical.tree.statement.Statement;
+import c32.compiler.logical.tree.statement.VariableDeclarationStatement;
+import c32.compiler.parser.ast.expr.ReferenceExprTree;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.util.List;
 import java.util.Set;
 
 @Getter
-public class FunctionImplementationInfo implements FunctionInfo {
+public class FunctionImplementationInfo implements FunctionInfo, SpaceInfo {
 	private final FunctionDeclarationInfo declaration;
-	private BlockStatement implementation;
-
-	public void setImplementation(BlockStatement implementation) {
-		this.implementation = implementation;
-	}
+	private final BlockStatement implementation = new BlockStatement(this,null);
 
 	public FunctionImplementationInfo(FunctionDeclarationInfo declaration) {
 		this.declaration = declaration;
@@ -26,37 +27,37 @@ public class FunctionImplementationInfo implements FunctionInfo {
 
 	@Override
 	public Set<FunctionInfo> getFunctions() {
-		return declaration.getFunctions();
+		return implementation.getFunctions();
 	}
 
 	@Override
 	public FunctionInfo addFunction(FunctionInfo function) {
-		return declaration.addFunction(function);
+		return implementation.addFunction(function);
 	}
 
 	@Override
 	public Set<NamespaceInfo> getNamespaces() {
-		return declaration.getNamespaces();
+		return implementation.getNamespaces();
 	}
 
 	@Override
 	public NamespaceInfo addNamespace(NamespaceInfo namespace) {
-		return declaration.addNamespace(namespace);
+		return implementation.addNamespace(namespace);
 	}
 
 	@Override
 	public Set<FieldInfo> getFields() {
-		return declaration.getFields();
+		return implementation.getFields();
 	}
 
 	@Override
 	public FieldInfo addField(FieldInfo field) {
-		return declaration.addField(field);
+		return implementation.addField(field);
 	}
 
 	@Override
 	public boolean isAccessibleFrom(SpaceInfo namespace) {
-		return declaration.isAccessibleFrom(namespace);
+		return implementation.isAccessibleFrom(namespace);
 	}
 
 	@Override
@@ -65,7 +66,7 @@ public class FunctionImplementationInfo implements FunctionInfo {
 	}
 
 	@Override
-	public TypeRefInfo getReturnType() {
+	public TypeInfo getReturnType() {
 		return declaration.getReturnType();
 	}
 
@@ -75,7 +76,7 @@ public class FunctionImplementationInfo implements FunctionInfo {
 	}
 
 	@Override
-	public List<TypeRefInfo> getThrowTypes() {
+	public List<TypeInfo> getThrowTypes() {
 		return declaration.getThrowTypes();
 	}
 
@@ -87,5 +88,22 @@ public class FunctionImplementationInfo implements FunctionInfo {
 	@Override
 	public boolean is_noexcept() {
 		return declaration.is_noexcept();
+	}
+
+	@Override
+	public boolean is_extern() {
+		return declaration.is_extern();
+	}
+
+	@Override
+	public boolean is_native() {
+		return declaration.is_native();
+	}
+
+
+	@Override
+	public VariableRefExpression resolveVariable(SpaceInfo caller, ReferenceExprTree reference) {
+		//todo: arguments
+		return getParent().resolveVariable(caller,reference);
 	}
 }

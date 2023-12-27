@@ -15,7 +15,7 @@ public class BinaryExprTree implements ExprTree {
 
 	@Override
 	public Location getLocation() {
-		return Location.between(rhs.getLocation(),lhs.getLocation());
+		return Location.between(lhs.getLocation(),rhs.getLocation());
 	}
 
 	@Override

@@ -2,6 +2,7 @@ package c32.compiler.parser.ast.statement;
 
 import c32.compiler.Location;
 import c32.compiler.lexer.tokenizer.Token;
+import c32.compiler.logical.tree.SpaceInfo;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;

@@ -2,6 +2,7 @@ package c32.compiler.except;
 
 import c32.compiler.Location;
 import lombok.Getter;
+import lombok.NonNull;
 
 @Getter
 public class CompilerException extends RuntimeException {

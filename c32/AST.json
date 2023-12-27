@@ -29,12 +29,19 @@
       "name" : "i",
       "assignOperator" : "=",
       "initializer" : {
-        "literal" : "5",
-        "type" : "INTEGER_LITERAL"
+        "lhs" : {
+          "literal" : "5",
+          "type" : "INTEGER_LITERAL"
+        },
+        "operator" : "+",
+        "rhs" : {
+          "literal" : "4",
+          "type" : "INTEGER_LITERAL"
+        }
       },
       "location" : {
         "startPos" : 19,
-        "endPos" : 24,
+        "endPos" : 28,
         "startLine" : 3,
         "endLine" : 3
       }
@@ -42,9 +49,121 @@
     "endLine" : ";",
     "location" : {
       "startPos" : 0,
-      "endPos" : 25,
+      "endPos" : 29,
       "startLine" : 1,
       "endLine" : 3
+    }
+  }, {
+    "modifiers" : [ ],
+    "typeElement" : {
+      "keyword" : "int"
+    },
+    "declarators" : [ {
+      "declarator" : {
+        "name" : "foo",
+        "parameterList" : {
+          "open" : "(",
+          "parameters" : [ {
+            "typeElement" : {
+              "const" : "const",
+              "keyword" : "int"
+            },
+            "declarator" : {
+              "name" : "i",
+              "location" : {
+                "startPos" : 50,
+                "endPos" : 51,
+                "startLine" : 6,
+                "endLine" : 6
+              }
+            }
+          } ],
+          "close" : ")"
+        },
+        "postModifiers" : [ ],
+        "location" : {
+          "startPos" : 36,
+          "endPos" : 52,
+          "startLine" : 6,
+          "endLine" : 6
+        }
+      },
+      "blockStatement" : {
+        "open" : "{",
+        "statements" : [ {
+          "keyword" : "return",
+          "expression" : {
+            "identifier" : "i",
+            "location" : {
+              "startPos" : 63,
+              "endPos" : 64,
+              "startLine" : 7,
+              "endLine" : 7
+            }
+          },
+          "endLine" : ";"
+        } ],
+        "close" : "}"
+      },
+      "location" : {
+        "startPos" : 36,
+        "endPos" : 67,
+        "startLine" : 6,
+        "endLine" : 8
+      }
+    } ],
+    "location" : {
+      "startPos" : 32,
+      "endPos" : 67,
+      "startLine" : 6,
+      "endLine" : 8
+    }
+  }, {
+    "modifiers" : [ {
+      "keyword" : "extern"
+    } ],
+    "typeElement" : {
+      "keyword" : "void"
+    },
+    "declarators" : [ {
+      "name" : "println",
+      "parameterList" : {
+        "open" : "(",
+        "parameters" : [ {
+          "typeElement" : {
+            "arrayElementType" : {
+              "const" : "const",
+              "keyword" : "char"
+            },
+            "openSquare" : "[",
+            "closeSquare" : "]"
+          },
+          "declarator" : {
+            "name" : "ch",
+            "location" : {
+              "startPos" : 102,
+              "endPos" : 104,
+              "startLine" : 10,
+              "endLine" : 10
+            }
+          }
+        } ],
+        "close" : ")"
+      },
+      "postModifiers" : [ ],
+      "location" : {
+        "startPos" : 81,
+        "endPos" : 105,
+        "startLine" : 10,
+        "endLine" : 10
+      }
+    } ],
+    "endLine" : ";",
+    "location" : {
+      "startPos" : 69,
+      "endPos" : 106,
+      "startLine" : 10,
+      "endLine" : 10
     }
   }, {
     "modifiers" : [ ],
@@ -58,6 +177,7 @@
           "open" : "(",
           "parameters" : [ {
             "typeElement" : {
+              "const" : "const",
               "arrayElementType" : {
                 "arrayElementType" : {
                   "keyword" : "char"
@@ -69,12 +189,12 @@
               "closeSquare" : "]"
             },
             "declarator" : {
-              "name" : "i",
+              "name" : "args",
               "location" : {
-                "startPos" : 46,
-                "endPos" : 47,
-                "startLine" : 5,
-                "endLine" : 5
+                "startPos" : 135,
+                "endPos" : 139,
+                "startLine" : 12,
+                "endLine" : 12
               }
             }
           } ],
@@ -82,10 +202,10 @@
         },
         "postModifiers" : [ ],
         "location" : {
-          "startPos" : 32,
-          "endPos" : 48,
-          "startLine" : 5,
-          "endLine" : 5
+          "startPos" : 113,
+          "endPos" : 140,
+          "startLine" : 12,
+          "endLine" : 12
         }
       },
       "blockStatement" : {
@@ -100,86 +220,198 @@
               "name" : "i2",
               "assignOperator" : "=",
               "initializer" : {
-                "literal" : "4",
-                "type" : "INTEGER_LITERAL"
+                "reference" : {
+                  "identifier" : "foo",
+                  "location" : {
+                    "startPos" : 153,
+                    "endPos" : 156,
+                    "startLine" : 13,
+                    "endLine" : 13
+                  }
+                },
+                "argumentList" : {
+                  "openRound" : "(",
+                  "arguments" : [ {
+                    "literal" : "5",
+                    "type" : "INTEGER_LITERAL"
+                  } ],
+                  "closeRound" : ")"
+                }
               },
               "location" : {
-                "startPos" : 56,
-                "endPos" : 62,
-                "startLine" : 6,
-                "endLine" : 6
+                "startPos" : 148,
+                "endPos" : 159,
+                "startLine" : 13,
+                "endLine" : 13
               }
             } ],
             "endLine" : ";",
             "location" : {
-              "startPos" : 52,
-              "endPos" : 63,
-              "startLine" : 6,
-              "endLine" : 6
+              "startPos" : 144,
+              "endPos" : 160,
+              "startLine" : 13,
+              "endLine" : 13
+            }
+          }
+        }, {
+          "keyword" : "while",
+          "open" : "(",
+          "condition" : {
+            "literal" : "true",
+            "type" : "BOOLEAN_LITERAL"
+          },
+          "close" : ")",
+          "statement" : {
+            "open" : "{",
+            "statements" : [ {
+              "declaration" : {
+                "modifiers" : [ ],
+                "typeElement" : {
+                  "keyword" : "bool"
+                },
+                "declarators" : [ {
+                  "name" : "b",
+                  "assignOperator" : "=",
+                  "initializer" : {
+                    "literal" : "false",
+                    "type" : "BOOLEAN_LITERAL"
+                  },
+                  "location" : {
+                    "startPos" : 184,
+                    "endPos" : 193,
+                    "startLine" : 15,
+                    "endLine" : 15
+                  }
+                } ],
+                "endLine" : ";",
+                "location" : {
+                  "startPos" : 179,
+                  "endPos" : 194,
+                  "startLine" : 15,
+                  "endLine" : 15
+                }
+              }
+            }, {
+              "keyword" : "if",
+              "condition" : {
+                "identifier" : "b",
+                "location" : {
+                  "startPos" : 200,
+                  "endPos" : 201,
+                  "startLine" : 16,
+                  "endLine" : 16
+                }
+              },
+              "statement" : {
+                "open" : "{",
+                "statements" : [ {
+                  "keyword" : "return",
+                  "endLine" : ";"
+                } ],
+                "close" : "}"
+              }
+            }, {
+              "keyword" : "break",
+              "endLine" : ";"
+            } ],
+            "close" : "}"
+          }
+        }, {
+          "expression" : {
+            "lhs" : {
+              "identifier" : "i2",
+              "location" : {
+                "startPos" : 233,
+                "endPos" : 235,
+                "startLine" : 21,
+                "endLine" : 21
+              }
+            },
+            "operator" : "=",
+            "rhs" : {
+              "lhs" : {
+                "literal" : "4",
+                "type" : "INTEGER_LITERAL"
+              },
+              "operator" : "+",
+              "rhs" : {
+                "literal" : "2",
+                "type" : "INTEGER_LITERAL"
+              }
             }
           }
         }, {
           "declaration" : {
             "modifiers" : [ ],
             "typeElement" : {
-              "keyword" : "bool"
+              "arrayElementType" : {
+                "keyword" : "char"
+              },
+              "openSquare" : "[",
+              "closeSquare" : "]"
             },
             "declarators" : [ {
-              "name" : "b",
+              "name" : "str",
               "assignOperator" : "=",
               "initializer" : {
-                "literal" : "false",
-                "type" : "BOOLEAN_LITERAL"
+                "literal" : "hello\nworld",
+                "type" : "STRING_LITERAL"
               },
               "location" : {
-                "startPos" : 70,
-                "endPos" : 79,
-                "startLine" : 7,
-                "endLine" : 7
+                "startPos" : 253,
+                "endPos" : 273,
+                "startLine" : 22,
+                "endLine" : 22
               }
             } ],
             "endLine" : ";",
             "location" : {
-              "startPos" : 65,
-              "endPos" : 80,
-              "startLine" : 7,
-              "endLine" : 7
+              "startPos" : 246,
+              "endPos" : 274,
+              "startLine" : 22,
+              "endLine" : 22
             }
           }
         }, {
-          "keyword" : "if",
-          "condition" : {
-            "identifier" : "b",
-            "location" : {
-              "startPos" : 85,
-              "endPos" : 86,
-              "startLine" : 8,
-              "endLine" : 8
+          "expression" : {
+            "reference" : {
+              "identifier" : "println",
+              "location" : {
+                "startPos" : 276,
+                "endPos" : 283,
+                "startLine" : 23,
+                "endLine" : 23
+              }
+            },
+            "argumentList" : {
+              "openRound" : "(",
+              "arguments" : [ {
+                "identifier" : "str",
+                "location" : {
+                  "startPos" : 284,
+                  "endPos" : 287,
+                  "startLine" : 23,
+                  "endLine" : 23
+                }
+              } ],
+              "closeRound" : ")"
             }
-          },
-          "statement" : {
-            "open" : "{",
-            "statements" : [ {
-              "keyword" : "return",
-              "endLine" : ";"
-            } ],
-            "close" : "}"
           }
         } ],
         "close" : "}"
       },
       "location" : {
-        "startPos" : 32,
-        "endPos" : 104,
-        "startLine" : 5,
-        "endLine" : 11
+        "startPos" : 113,
+        "endPos" : 292,
+        "startLine" : 12,
+        "endLine" : 25
       }
     } ],
     "location" : {
-      "startPos" : 27,
-      "endPos" : 104,
-      "startLine" : 5,
-      "endLine" : 11
+      "startPos" : 108,
+      "endPos" : 292,
+      "startLine" : 12,
+      "endLine" : 25
     }
   } ]
 }

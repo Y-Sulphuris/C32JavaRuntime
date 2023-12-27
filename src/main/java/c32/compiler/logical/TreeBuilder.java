@@ -42,7 +42,9 @@ public class TreeBuilder {
 			fillNamespace(current,unit.getDeclarations());
 		}
 		implementations.forEach((func, impl) -> {
-			func.setImplementation(BlockStatement.build(func,impl));
+			for (StatementTree statement : impl.getStatements()) {
+				func.getImplementation().addStatement(Statement.build(func,func.getImplementation(),statement));
+			}
 		});
 
 		return root;
@@ -61,7 +63,7 @@ public class TreeBuilder {
 				ValuedDeclarationTree decl = (ValuedDeclarationTree) declaration;
 				for (DeclaratorTree declarator : decl) {
 					if (declarator instanceof FunctionDeclaratorTree) {
-						current.addFunction(new FunctionDeclarationInfo(current, decl.getModifiers(), decl.getTypeElement(), (FunctionDeclaratorTree) declarator));
+						current.addFunction(new FunctionDeclarationInfo(current, decl.getModifiers(), decl.getTypeElement(), (FunctionDeclaratorTree) declarator,false));
 						forRemovalDeclarators.add(declarator);
 					} else if (declarator instanceof FunctionDefinitionTree) {
 						current.addFunction(buildFunctionImpl(current,decl,(FunctionDefinitionTree)declarator));
@@ -69,7 +71,7 @@ public class TreeBuilder {
 					}
 				}
 				decl.getDeclarators().removeAll(forRemovalDeclarators);
-				forRemoval.clear();
+				forRemovalDeclarators.clear();
 			}
 			if (declaration.getDeclarators().isEmpty())
 				forRemoval.add(declaration);
@@ -88,7 +90,7 @@ public class TreeBuilder {
 					}
 				}
 				decl.getDeclarators().removeAll(forRemovalDeclarators);
-				forRemoval.clear();
+				forRemovalDeclarators.clear();
 			}
 			if (declaration.getDeclarators().isEmpty())
 				forRemoval.add(declaration);
@@ -112,9 +114,11 @@ public class TreeBuilder {
 
 	private FieldInfo buildField(SpaceInfo container, ValuedDeclarationTree decl,VariableDeclaratorTree declarator) {
 		Objects.requireNonNull(declarator.getName());
-		TypeRefInfo type = container.resolveType(container,decl.getTypeElement());
+		TypeRefInfo type = new TypeRefInfo(
+				decl.getTypeElement().get_const() != null, decl.getTypeElement().get_restrict() != null, container.resolveType(container,decl.getTypeElement())
+		);
 		Expression init = null;
-		if (declarator.getInitializer() != null) init = Expression.build(container,declarator.getInitializer(),type);
+		if (declarator.getInitializer() != null) init = Expression.build(container,declarator.getInitializer(),type.getType());
 		return new FieldVariableInfo(
 				buildVariableInfo(declarator.getName().text,type,init), container
 		);
@@ -131,7 +135,7 @@ public class TreeBuilder {
 	}
 	private FunctionImplementationInfo buildFunctionImpl(SpaceInfo current, ValuedDeclarationTree decl, FunctionDefinitionTree definition) {
 		FunctionImplementationInfo info = new FunctionImplementationInfo(
-				new FunctionDeclarationInfo(current, decl.getModifiers(), decl.getTypeElement(), definition.getDeclarator())
+				new FunctionDeclarationInfo(current, decl.getModifiers(), decl.getTypeElement(), definition.getDeclarator(),true)
 		);
 		implementations.put(info,definition.getBlockStatement());
 		return info;

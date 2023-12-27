@@ -329,10 +329,10 @@ public class Parser {
 		return new ContinueStatement(keyword,endLine);
 	}
 
-	private BreakStatement parseBreakStatement() {
+	private BreakStatementTree parseBreakStatement() {
 		Token keyword = assertAndNext("break");
 		Token endLine = assertAndNext(TokenType.ENDLINE);
-		return new BreakStatement(keyword,endLine);
+		return new BreakStatementTree(keyword,endLine);
 	}
 
 	private GotoStatement parseGotoStatement() {

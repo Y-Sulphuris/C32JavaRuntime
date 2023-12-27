@@ -1,11 +1,26 @@
 package test;
 
-int i = 5;
+int i = 5 + 4;
 
-void main(char[][] i) {
-	int i2 = 4;
-	bool b = false;
-	if(b) {
-		return;
-	}
+
+int foo(const int i) {
+	return i;
 }
+
+extern void println(const char[] ch);
+
+void main(const (char[][]) args) {
+	int i2 = foo(5);
+	while (true) {
+		bool b = false;
+		if(b) {
+			return;
+		}
+		break;
+	}
+	i2 = 4 + 2;
+	char[] str = "hello\nworld";
+	println(str);
+
+}
+

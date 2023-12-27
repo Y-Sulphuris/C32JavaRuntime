@@ -10,11 +10,9 @@ public class TypeRefInfo {
 	private final TypeInfo type;
 
 	public boolean canBeImplicitCastTo(@NotNull TypeRefInfo typeRef) {
-		//if (typeRef.is_const() && !this.is_const()) {
-		//	return false;
-		//}
-		//	that's
-		//	incorrect
+		if (!typeRef.is_const() && this.is_const()) {
+			return false;
+		}
 		return type.canBeImplicitCastTo(typeRef.getType());
 	}
 

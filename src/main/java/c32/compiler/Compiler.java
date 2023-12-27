@@ -1,5 +1,6 @@
 package c32.compiler;
 
+import c32.compiler.codegen.cs.CSGenerator;
 import c32.compiler.codegen.java.JavaGenerator;
 import c32.compiler.except.CompilerException;
 import c32.compiler.logical.TreeBuilder;
@@ -199,6 +200,7 @@ public class Compiler {
 		try {
 			SpaceInfo logicalTree = new TreeBuilder().buildNamespace(Collections.singleton(AST));
 			new JavaGenerator().generate(logicalTree);
+			new CSGenerator().generate(logicalTree);
 		} catch (CompilerException e) {
 			throw handleCompilerException(e);
 		}
@@ -234,24 +236,31 @@ public class Compiler {
 
 	private static String getErrorDescription(CompilerException e, String filename, String source) {
 		StringBuilder msg = new StringBuilder(e.getClass().getSimpleName()).append(": ").append(e.getRawMessage()).append(" (at ")
-				.append(filename).append(':').append(e.getLocation().getStartLine()).append(')').append("\n\n");
+				.append(filename);
+		if (e.getLocation() != null) {
+			msg.append(':').append(e.getLocation().getStartLine());
+		}
+		msg.append(')').append("\n\n");
 
-		String line = source.split("\n")[e.getLocation().getStartLine()-1];
+		if (e.getLocation() != null) {
+			String line = source.split("\n")[e.getLocation().getStartLine()-1];
 
-		int linePos = source.substring(0,e.getLocation().getStartPos()).lastIndexOf('\n');
-		int errStart = e.getLocation().getStartPos() - linePos;
-		int errEnd = e.getLocation().getEndPos() - linePos;
+			int linePos = source.substring(0,e.getLocation().getStartPos()).lastIndexOf('\n');
+			int errStart = e.getLocation().getStartPos() - linePos;
+			int errEnd = e.getLocation().getEndPos() - linePos;
 
-		msg.append(line).append('\n');
+			msg.append(line).append('\n');
 
-		char[] underline = new char[line.length()];
-		for (int i = 0; i < underline.length; i++) {
-			if (i >= errStart-1 && i < errEnd-1) underline[i] = '~';
-			else if (line.charAt(i) == '\t') underline[i] = '\t';
-			else underline[i] = ' ';
+			char[] underline = new char[line.length()];
+			for (int i = 0; i < underline.length; i++) {
+				if (i >= errStart-1 && i < errEnd-1) underline[i] = '~';
+				else if (line.charAt(i) == '\t') underline[i] = '\t';
+				else underline[i] = ' ';
+			}
+			return msg.append(underline).append('\n').toString();
 		}
 
-		return msg.append(underline).append('\n').toString();
+		return msg.append('\n').toString();
 	}
 
 	private static void proc(String cmd) throws IOException{

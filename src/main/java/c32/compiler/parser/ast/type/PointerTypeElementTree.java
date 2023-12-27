@@ -4,7 +4,9 @@ import c32.compiler.Location;
 import c32.compiler.lexer.tokenizer.Token;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import lombok.Getter;
 
+@Getter
 public class PointerTypeElementTree extends TypeElementTree {
 	private final TypeElementTree elementType;
 	private final Token star;

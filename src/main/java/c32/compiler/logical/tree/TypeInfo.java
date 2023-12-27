@@ -79,11 +79,11 @@ public interface TypeInfo extends SpaceInfo {
 			types.put(name,this);
 		}
 
-		public static TypeRefInfo resolve(TypeKeywordElementTree type) {
+		public static TypeInfo resolve(TypeKeywordElementTree type) {
 			TypeInfo typeInfo = types.get(type.getKeyword().text);
 			if (typeInfo == null) return null;
 			if (type.get_restrict() != null) throw new CompilerException(type.getLocation(),"primitives cannot be restrict");
-			return new TypeRefInfo(type.get_const() != null, false, typeInfo);
+			return typeInfo;
 		}
 
 		@Override

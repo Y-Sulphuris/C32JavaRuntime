@@ -8,7 +8,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.Data;
 
 @Data
-public class BreakStatement implements StatementTree {
+public class BreakStatementTree implements StatementTree {
 	private final Token keyword;
 	private final Token endLine;
 
