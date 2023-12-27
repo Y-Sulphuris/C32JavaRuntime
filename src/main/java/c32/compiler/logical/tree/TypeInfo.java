@@ -73,6 +73,8 @@ public interface TypeInfo extends SpaceInfo {
 
 		public static final CharPrimitiveTypeInfo               CHAR = new CharPrimitiveTypeInfo("char",2);
 
+		//public static void forEachNumeric()
+
 		public PrimitiveTypeInfo(String name, long size) {
 			this.name = name;
 			this.size = size;

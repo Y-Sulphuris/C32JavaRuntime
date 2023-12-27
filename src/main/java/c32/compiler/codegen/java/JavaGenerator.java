@@ -95,22 +95,33 @@ public class JavaGenerator {
 			out.print("new char[]{");
 			String text = ((StringLiteralExpression) expr).getString();
 			for (int i = 0; i < text.length(); i++) {
-				String ch = String.valueOf(text.charAt(i));
-				switch (ch) {
-					case "\n":
-						ch = "\\n";
-						break;
-					case "\t":
-						ch = "\\t";
-						break;
-				}
-				out.print("'" + ch + "'");
+				writeChar(String.valueOf(text.charAt(i)),out);
 				if (i != text.length()-1) out.print(",");
 			}
 			out.print("}");
+		} else if (expr instanceof CharLiteralExpression) {
+			writeChar(String.valueOf(((CharLiteralExpression) expr).getCh()),out);
+		} else if (expr instanceof UnaryPrefixExpression) {
+			out.print(((UnaryPrefixExpression) expr).getOperator());
+			writeExpression(((UnaryPrefixExpression) expr).getExpr(),out);
 		}
 		else
 			throw new UnsupportedOperationException(expr.getClass().getName());
+	}
+	private void writeChar(String ch, PrintStream out) {
+		switch (ch) {
+			case "\n":
+				ch = "'\\n'";
+				break;
+			case "\t":
+				ch = "'\\t'";
+				break;
+			default:
+				if (!Character.isAlphabetic(ch.charAt(0)) && !Character.isDigit(ch.charAt(0))) {
+					ch = "((char)" + ch.charAt(0) + ")";
+				} else ch = "'" + ch + "'";
+		}
+		out.print(ch);
 	}
 
 	private void writeFunctionNamespace(FunctionInfo function, PrintStream out) {
@@ -189,7 +200,8 @@ public class JavaGenerator {
 			out.println("break;");
 		} else if (state instanceof AssignStatement) {
 			writeExpression(((AssignStatement) state).getLvalue(),out);
-			out.print(" = ");
+			out.print(" " + ((AssignStatement) state).getParentOperator());
+			out.print("= ");
 			writeExpression(((AssignStatement) state).getRvalue(),out);
 			out.println(';');
 		} else if (state instanceof ExpressionStatement) {
@@ -212,7 +224,15 @@ public class JavaGenerator {
 		for (VariableInfo arg : function.getArgs()) {
 			builder.append("$").append(arg.getTypeRef().getType().getName());
 		}
-		return builder.toString();
+		String base = builder.toString();
+		StringBuilder fullPath = new StringBuilder(base);
+		SpaceInfo space = function.getParent();
+		while (space != null) {
+			if (!space.getName().isEmpty()) fullPath.insert(0,'.');
+			fullPath.insert(0,space.getName());
+			space = space.getParent();
+		}
+		return fullPath.toString();
 	}
 
 	public static String getJavaTypeName(TypeInfo type) {

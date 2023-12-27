@@ -8,6 +8,8 @@ public interface FunctionInfo extends SymbolInfo {
 	List<VariableInfo> getArgs();
 	List<TypeInfo> getThrowTypes();
 
+	SpaceInfo getParent();
+
 	boolean is_pure();
 	boolean is_noexcept();
 	boolean is_extern();

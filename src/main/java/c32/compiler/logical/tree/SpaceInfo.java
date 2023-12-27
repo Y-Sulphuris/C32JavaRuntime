@@ -4,6 +4,7 @@ import c32.compiler.except.CompilerException;
 import c32.compiler.logical.CompilerAccessException;
 import c32.compiler.logical.FunctionNotFoundException;
 import c32.compiler.logical.TypeNotFoundException;
+import c32.compiler.logical.VariableNotFoundException;
 import c32.compiler.logical.tree.expression.Expression;
 import c32.compiler.logical.tree.expression.VariableRefExpression;
 import c32.compiler.parser.ast.expr.CallExprTree;
@@ -83,6 +84,17 @@ public interface SpaceInfo extends SymbolInfo {
 			throw new CompilerException(reference.getLocation(), "cannot find anything from '" + caller.getCanonicalName() + "' for '" + reference.getReferences() + "'");
 		return getParent().resolveSpace(caller,reference);
 	}
+	default SpaceInfo resolveSpace(SpaceInfo caller, ReferenceExprTree reference) {
+		String current = reference.getIdentifier().text;
+		for (NamespaceInfo namespace : getNamespaces()) {
+			if (namespace.getName().equals(current)) {
+				return namespace;
+			}
+		}
+		if (getParent() == null)
+			throw new CompilerException(reference.getLocation(), "cannot find anything from '" + caller.getCanonicalName() + "' for '" + reference + "'");
+		return getParent().resolveSpace(caller,reference);
+	}
 
 	default NamespaceInfo resolveNamespace(SpaceInfo caller, ReferenceExprTree reference) {
 		for (NamespaceInfo namespace : getNamespaces()) {
@@ -100,7 +112,7 @@ public interface SpaceInfo extends SymbolInfo {
 			}
 		}
 		if (getParent() != null) return getParent().resolveVariable(caller, reference);
-		throw new CompilerException(reference.getLocation(),"cannot find variable: " + reference.getIdentifier().text);
+		throw new VariableNotFoundException(reference);
 	}
 
 	default FunctionInfo resolveFunction(SpaceInfo caller, CallExprTree call, List<Expression> args) {
