@@ -35,6 +35,6 @@ public class AssignExpression implements Expression {
 
     @Override
     public TypeInfo getReturnType() {
-        return parentOperator.getReturnType();
+        return parentOperator == null ? lvalue.getReturnType() : parentOperator.getReturnType();
     }
 }

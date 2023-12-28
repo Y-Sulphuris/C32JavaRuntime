@@ -8,12 +8,9 @@ import c32.compiler.logical.VariableNotFoundException;
 import c32.compiler.logical.tree.expression.Expression;
 import c32.compiler.logical.tree.expression.VariableRefExpression;
 import c32.compiler.parser.ast.expr.CallExprTree;
-import c32.compiler.parser.ast.expr.ExprTree;
 import c32.compiler.parser.ast.expr.ReferenceExprTree;
 import c32.compiler.parser.ast.type.*;
-import lombok.val;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -91,8 +88,8 @@ public interface SpaceInfo extends SymbolInfo {
 				return namespace;
 			}
 		}
-		if (getParent() == null)
-			throw new CompilerException(reference.getLocation(), "cannot find anything from '" + caller.getCanonicalName() + "' for '" + reference + "'");
+		if (getParent() == null) return new NonResolvedSpace(caller,reference);
+			//throw new CompilerException(reference.getLocation(), "cannot find anything from '" + caller.getCanonicalName() + "' for '" + reference + "'");
 		return getParent().resolveSpace(caller,reference);
 	}
 
@@ -126,7 +123,9 @@ public interface SpaceInfo extends SymbolInfo {
 					continue EXIT;
 				}
 			}
-			return function;
+			if (function.isAccessibleFrom(caller)) {
+				return function;
+			} else throw new CompilerAccessException(call.getLocation(), caller, function);
 		}
 
 		EXIT_IMPLICIT:
@@ -138,16 +137,14 @@ public interface SpaceInfo extends SymbolInfo {
 					continue EXIT_IMPLICIT;
 				}
 			}
-			return function;
+			if (function.isAccessibleFrom(caller)) {
+				return function;
+			} else throw new CompilerAccessException(call.getLocation(), caller, function);
 		}
 
-		if (getParent() != null) {
-			FunctionInfo ref = getParent().resolveFunction(caller,call,args);
-			if (ref == null) throw new FunctionNotFoundException(call,args);
-			if (ref.isAccessibleFrom(caller)) {
-				return ref;
-			} else throw new CompilerAccessException(call.getLocation(), caller, ref);
+		if (getParent() == null) {
+			return new NonResolvedFunction(caller,call,args);
 		}
-		return null;
+		return getParent().resolveFunction(caller,call,args);
 	}
 }

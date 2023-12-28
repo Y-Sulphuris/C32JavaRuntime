@@ -69,6 +69,18 @@ public class BinaryOperator {
                 return op;
             }
         }
+	    for (BinaryOperator op : registeredOperators) {
+		    if (!op.getOp().equals(operator)) continue;
+		    if (op.getLeftType().canBeImplicitCastTo(lvalue.getReturnType()) && op.getRightType().equals(rvalue.getReturnType())) {
+			    return op;
+		    }
+	    }
+	    for (BinaryOperator op : registeredOperators) {
+		    if (!op.getOp().equals(operator)) continue;
+		    if (op.getLeftType().equals(lvalue.getReturnType()) && op.getRightType().canBeImplicitCastTo(rvalue.getReturnType())) {
+			    return op;
+		    }
+	    }
         for (BinaryOperator op : registeredOperators) {
             if (!op.getOp().equals(operator)) continue;
             if (lvalue.getReturnType().canBeImplicitCastTo(op.getLeftType()) && rvalue.getReturnType().canBeImplicitCastTo(op.getRightType())) {

@@ -1,6 +1,6 @@
 package c32.compiler;
 
-import c32.compiler.codegen.cs.CSGenerator;
+import c32.compiler.codegen.java.Generator;
 import c32.compiler.codegen.java.JavaGenerator;
 import c32.compiler.except.CompilerException;
 import c32.compiler.logical.TreeBuilder;
@@ -15,6 +15,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.*;
 import java.nio.file.Files;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class Compiler {
 
@@ -149,70 +150,108 @@ public class Compiler {
 	static Tokenizer tokenizer = new ConfigurableTokenizer().addKeywords(keywords).addOperators(validOperators);
 
 
-	private static String source = null;
-	private static String filename = "Main";
-	public static void main(String... args) throws IOException{
-		try {
-			if (args.length == 0) throw new RuntimeException();
-			StringBuilder sourceb = new StringBuilder();
-			filename = args[args.length-1];
-			for(String str : Files.readAllLines(new File(filename).toPath())) {
-				sourceb.append(str).append('\n');
-			}
-			source = sourceb.toString();
-		} catch (IOException e) {
-			filename = args[args.length-1];
-			System.out.println("No input files: " + new File(filename).getAbsolutePath());
-			System.exit(0);
-		} catch (RuntimeException e) {
-			System.out.println("Ender code here: ('-' to abort)");
-			StringBuilder sourceb = new StringBuilder();
-			Scanner scanner = new Scanner(System.in);
-			while (true) {
-				String line = scanner.nextLine();
-				if (line.equals("-")) break;
-				sourceb.append(line).append('\n');
-			}
-			source = sourceb.toString();
-		}
 
+	private static CompilationUnitTree getAST(File file) throws IOException {
+		StringBuilder sourceb = new StringBuilder();
+		for(String str : Files.readAllLines(file.toPath())) {
+			sourceb.append(str).append('\n');
+		}
+		String source = sourceb.toString();
 
-		Stack<Token> tokens = ((ConfigurableTokenizer)tokenizer).tokenize(source);
-		Preprocessor.preprocess(tokens);
-		/*
-		for (Token token : tokens) {
-			System.out.println(token);
-		}
-		*/
-		CompilationUnitTree AST;
-		LABEL:
-		try {
-			AST = new Parser().parse(tokens,filename);
-		} catch (CompilerException e) {
-			throw handleCompilerException(e);
-		}
+		CompilationUnitTree AST = getAST(source, file);
+
 		ObjectMapper mapper = new ObjectMapper();
-		File file = new File("AST.json");
-		PrintStream printStream = new PrintStream(file);
+		File astFile = new File(file.getAbsoluteFile() + "_AST.json");
+		PrintStream printStream = new PrintStream(astFile);
 		printStream.println(mapper.writerWithDefaultPrettyPrinter().writeValueAsString(AST.toJson(mapper)));
 		printStream.close();
 
+		return AST;
+	}
+
+	private static CompilationUnitTree getAST(String source, File file) {
+		Stack<Token> tokens = ((ConfigurableTokenizer)tokenizer).tokenize(source, file);
+		Preprocessor.preprocess(tokens);
+
+		CompilationUnitTree AST;
+		LABEL:
 		try {
-			SpaceInfo logicalTree = new TreeBuilder().buildNamespace(Collections.singleton(AST));
-			new JavaGenerator().generate(logicalTree);
-			//new CSGenerator().generate(logicalTree);
+			AST = new Parser().parse(tokens,file.getName());
 		} catch (CompilerException e) {
-			throw handleCompilerException(e);
+			throw handleCompilerException(e,source,file);
 		}
+		return AST;
+	}
+
+	private static SpaceInfo build(Collection<CompilationUnitTree> units) {
+		return new TreeBuilder().buildNamespace(units);
+	}
+
+	private static void compile(Collection<File> files, Collection<Generator> generators) {
+		Collection<CompilationUnitTree> units = files.stream().map((file) -> {
+			try {
+				return getAST(file);
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			}
+		}).collect(Collectors.toList());
+
+		deleteDirectory(new File("out"));
+		try {
+			SpaceInfo space = build(units);
+			for (Generator generator : generators) {
+				generator.generate(space);
+			}
+		} catch (CompilerException e) {
+			if (e.getLocation() == null || e.getLocation().getSourceFile() == null)
+				throw e;
+
+			StringBuilder sourceb = new StringBuilder();
+			try {
+				for(String str : Files.readAllLines(e.getLocation().getSourceFile().toPath())) {
+					sourceb.append(str).append('\n');
+				}
+			} catch (IOException ex) {
+				throw new RuntimeException(ex);
+			}
+			String source = sourceb.toString();
+			throw handleCompilerException(e,source,e.getLocation().getSourceFile());
+		}
+	}
+
+
+	public static CompilerConfig config = null;
+	public static void main(String... args) throws IOException{
+		try {
+			String filename = "Main";
+			if (args.length == 0) throw new RuntimeException();
+			filename = args[args.length-1];
+			File file = new File(filename);
+			if (!file.exists()) throw new RuntimeException();
+
+			compile(Collections.singleton(new File(filename)),Collections.singleton(new JavaGenerator()));
+
+			return;
+		} catch (RuntimeException e) {
+			try {
+				File configFile = new File("Figures.json");
+				Compiler.config = CompilerConfig.parse(configFile);
+			} catch (Exception ee) {
+				System.err.println("Invalid configuration format");
+				throw ee;
+			}
+			compile(allC32Files(config.getSrc()),config.getTargets());
+		}
+
 		/*AST.brewJava().forEach((file) -> {
 			try {
 				file.writeTo(new File("c32target/generated/"));
 			} catch (IOException e) {
 				throw new RuntimeException(e);
 			}
-		});
+		});*/
 
-		File f = new File("c32target/generated/test/test_c32.class");
+		/*File f = new File("c32target/generated/test/test_c32.class");
 		if (f.exists()) f.delete();
 		System.out.println("Compiling...");
 		proc("javac -cp target/classes/ c32target/generated/test/test_c32.java");
@@ -225,11 +264,36 @@ public class Compiler {
 		}*/
 	}
 
-	private static CompilerException handleCompilerException(CompilerException e) {
-		System.err.println(getErrorDescription(e,filename,source));
+	private static Collection<File> allC32Files(File dir) {
+		Collection<File> files = new HashSet<>();
+		File[] contents = dir.listFiles();
+		assert contents != null;
+		for (File file : contents) {
+			if (!file.isDirectory()) {
+				if (file.getName().endsWith(".c32")) files.add(file);
+			} else {
+				files.addAll(allC32Files(file));
+			}
+		}
+		return files;
+	}
+
+	private static void deleteDirectory(File directoryToBeDeleted) {
+		File[] allContents = directoryToBeDeleted.listFiles();
+		if (allContents != null) {
+			for (File file : allContents) {
+				deleteDirectory(file);
+			}
+		}
+		directoryToBeDeleted.delete();
+	}
+
+	private static CompilerException handleCompilerException(CompilerException e, String source, File file) {
+		File working = new File("");
+		System.err.println(getErrorDescription(e,file.getAbsolutePath().replace(working.getAbsolutePath(),""),source));
 		if (e.getCause() != e && e.getCause() instanceof CompilerException) {
 			System.err.println("for:");
-			System.err.println(getErrorDescription((CompilerException) e.getCause(),filename,source));
+			System.err.println(getErrorDescription((CompilerException) e.getCause(),file.getAbsolutePath().replace(working.getAbsolutePath(),""),source));
 		}
 		return e;
 	}
@@ -243,7 +307,12 @@ public class Compiler {
 		msg.append(')').append("\n\n");
 
 		if (e.getLocation() != null) {
-			String line = source.split("\n")[e.getLocation().getStartLine()-1];
+			String line;
+			try {
+				line = source.split("\n")[e.getLocation().getStartLine()-1];
+			} catch (ArrayIndexOutOfBoundsException ee) {
+				line = " ";
+			}
 
 			int linePos = source.substring(0,e.getLocation().getStartPos()).lastIndexOf('\n');
 			int errStart = e.getLocation().getStartPos() - linePos;

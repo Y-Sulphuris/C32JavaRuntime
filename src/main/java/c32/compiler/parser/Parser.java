@@ -58,8 +58,11 @@ public class Parser {
 		Location startLocation = token.location;
 		List<ModifierTree> modifiers = readModifiers();
 		if (token.text.equals(Compiler.PACKAGE)) {
-			if (packageTree == null && declarations.isEmpty())
+			if (packageTree == null && declarations.isEmpty()) {
 				packageTree = parsePackage(modifiers,startLocation);
+				startLocation = token.location;
+				modifiers = readModifiers();
+			}
 		}
 		if (token.type == TokenType.KEYWORD) switch (token.text) {
 			case "typename":
@@ -423,7 +426,9 @@ public class Parser {
 		Token keyword = assertToken("if");
 		token = nextToken();
 
+		assertAndNext(TokenType.OPENROUND);
 		ExprTree condition = parseExpr();
+		assertAndNext(TokenType.CLOSEROUND);
 
 		StatementTree statement = parseStatement();
 		Token elseKeyword = null;
@@ -617,7 +622,9 @@ public class Parser {
 			type = new TypeReferenceElementTree(_const, _restrict, reference, Location.between(startLocation,reference.getLocation()));
 		} /*else if (token.text.equals("struct")) {
 			type = new TypeStructElementTree(_const, parseStruct());
-		} */else {
+		} */else if (token.type == TokenType.EOF) {
+			throw new UnexpectedTokenException(token,"'}' expected");
+		} else {
 			throw new UnexpectedTokenException(token,"type expected");
 		}
 		while (token.type == TokenType.OPENSQUARE || token.text.equals("*") || token.text.equals("&")) {
@@ -853,18 +860,18 @@ public class Parser {
 		token = nextToken();
 		int startPos = curTok;
 		try {
-			ExprTree expr = parseExpr();
-			assertToken(TokenType.CLOSEROUND);
-			return expr;
+			TypeElementTree type = parseTypeElement();
+			Token closeRound = assertAndNext(TokenType.CLOSEROUND);
+			ExprTree exprTree = parseExpr();
+			curTok--;
+			token = currentToken();
+			return new CastExprTree(openRound,type,closeRound,exprTree);
 		} catch (CompilerException e) {
 			try {
 				curTok = startPos;
-				TypeElementTree type = parseTypeElement();
-				Token closeRound = assertAndNext(TokenType.CLOSEROUND);
-				ExprTree exprTree = parseExpr();
-				curTok--;
-				token = currentToken();
-				return new CastExprTree(openRound,type,closeRound,exprTree);
+				ExprTree expr = parseExpr();
+				assertToken(TokenType.CLOSEROUND);
+				return expr;
 			} catch (CompilerException ee) {
 				ee.initCause(e);
 				throw ee;

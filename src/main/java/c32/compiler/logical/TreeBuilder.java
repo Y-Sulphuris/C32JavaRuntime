@@ -47,6 +47,8 @@ public class TreeBuilder {
 			}
 		});
 
+		//resolve all
+
 		return root;
 	}
 

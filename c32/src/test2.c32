@@ -1,0 +1,8 @@
+package test;
+
+
+extern void println(const char[] ch);
+
+void bar2() {
+	bar.foo(5);
+}

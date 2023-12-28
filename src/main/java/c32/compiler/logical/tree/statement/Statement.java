@@ -29,14 +29,14 @@ public interface Statement {
 			List<VariableInfo> variables = new ArrayList<>();
 			for (DeclaratorTree declaratorTree : decl) {
 				var varDec = ((VariableDeclaratorTree) declaratorTree);
-				TypeInfo type = function.resolveType(function,decl.getTypeElement());
+				TypeInfo type = container.resolveType(container,decl.getTypeElement());
 				if (varDec.getName() != null) variables.add(new VariableInfo(varDec.getName().text,
 						new TypeRefInfo(
 								decl.getTypeElement().get_const() != null,
 								decl.getTypeElement().get_restrict() != null,
 								type
 						),
-						varDec.getInitializer() != null ? Expression.build(function, varDec.getInitializer(),type) : null
+						varDec.getInitializer() != null ? Expression.build(container, varDec.getInitializer(),type) : null
 				));
 			}
 			return new VariableDeclarationStatement(function, container, variables);
@@ -58,7 +58,7 @@ public interface Statement {
 			Expression expr = null;
 			TypeInfo retType = function.getReturnType();
 			if (((ReturnStatementTree) statement).getExpression() != null) {
-				expr = Expression.build(function,((ReturnStatementTree) statement).getExpression(),retType);
+				expr = Expression.build(container,((ReturnStatementTree) statement).getExpression(),retType);
 			} else {
 				if (!retType.equals(TypeInfo.PrimitiveTypeInfo.VOID)) {
 					throw new CompilerException(statement.getLocation(), "expression expected");

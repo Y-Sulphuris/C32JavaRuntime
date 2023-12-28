@@ -20,6 +20,10 @@ public interface TypeInfo extends SpaceInfo {
 		return this.equals(type);
 	}
 
+	default boolean canBeExplicitCastTo(TypeInfo type) {
+		return canBeImplicitCastTo(type);
+	}
+
 	class NumericPrimitiveTypeInfo extends PrimitiveTypeInfo {
 		public NumericPrimitiveTypeInfo(String name, long size) {
 			super(name, size);
@@ -61,6 +65,16 @@ public interface TypeInfo extends SpaceInfo {
 			return TypeInfo.super.canBeImplicitCastTo(type) || (type instanceof PrimitiveTypeInfo && implicitCast.contains(type));
 		}
 
+		private final Set<PrimitiveTypeInfo> explicitCast = new HashSet<>();
+		void addExplicitCast(PrimitiveTypeInfo... types) {
+			Collections.addAll(explicitCast,types);
+		}
+
+		@Override
+		public boolean canBeExplicitCastTo(TypeInfo type) {
+			return TypeInfo.super.canBeExplicitCastTo(type) || (type instanceof PrimitiveTypeInfo && explicitCast.contains(type));
+		}
+
 		@Override
 		public String toString() {
 			return "TypeInfo(" + name + ')';
@@ -95,6 +109,19 @@ public interface TypeInfo extends SpaceInfo {
 			LONG.addImplicitCast(DOUBLE);
 			ULONG.addImplicitCast(DOUBLE);
 			FLOAT.addImplicitCast(DOUBLE);
+
+			BYTE.addExplicitCast(UBYTE,CHAR);
+			UBYTE.addExplicitCast(BYTE,CHAR);
+			SHORT.addExplicitCast(BYTE,UBYTE,USHORT,CHAR);
+			USHORT.addExplicitCast(BYTE,UBYTE,SHORT,CHAR);
+			INT.addExplicitCast(BYTE,UBYTE,SHORT,USHORT,UINT,CHAR);
+			UINT.addExplicitCast(BYTE,UBYTE,SHORT,USHORT,INT,CHAR);
+			LONG.addExplicitCast(BYTE,UBYTE,SHORT,USHORT,INT,UINT,ULONG,CHAR);
+			ULONG.addExplicitCast(BYTE,UBYTE,SHORT,USHORT,INT,UINT,LONG,CHAR);
+			FLOAT.addExplicitCast(BYTE,UBYTE,SHORT,USHORT,INT,UINT,LONG,ULONG,CHAR);
+			DOUBLE.addExplicitCast(BYTE,UBYTE,SHORT,USHORT,INT,UINT,LONG,ULONG,FLOAT,CHAR);
+
+			CHAR.addExplicitCast(BYTE,UBYTE,SHORT,USHORT,INT,UINT,LONG,ULONG);
 		}
 		public static void forEachValued(Consumer<PrimitiveTypeInfo> action) {
 			forEachNumeric(action);

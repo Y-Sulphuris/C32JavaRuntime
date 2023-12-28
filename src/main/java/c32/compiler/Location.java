@@ -5,12 +5,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.Data;
 
+import java.io.File;
+
 @Data
 public final class Location {
 	private final int startPos;
 	private final int endPos;
 	private final int startLine;
 	private final int endLine;
+	private final File sourceFile;
 
 	public JsonNode toJson(ObjectMapper mapper) {
 		ObjectNode node = mapper.createObjectNode();
@@ -22,6 +25,8 @@ public final class Location {
 	}
 
 	public static Location between(Location start, Location end) {
-		return new Location(start.startPos,end.endPos,start.startLine,end.endLine);
+		if (!end.getSourceFile().equals(start.getSourceFile()))
+			return start;
+		return new Location(start.startPos,end.endPos,start.startLine,end.endLine, end.getSourceFile());
 	}
 }

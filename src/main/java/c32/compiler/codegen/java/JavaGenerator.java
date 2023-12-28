@@ -8,8 +8,9 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 
-public class JavaGenerator {
+public class JavaGenerator implements Generator {
 
+	@Override
 	public void generate(SpaceInfo space) {
 		File dir = new File("out/java");
 		dir.mkdir();
@@ -76,11 +77,11 @@ public class JavaGenerator {
 		} else if (expr instanceof BooleanLiteralExpression) {
 			out.print(((BooleanLiteralExpression) expr).isValue());
 		} else if (expr instanceof VariableRefExpression) {
-			out.print(((VariableRefExpression) expr).getVariable().getName());
+			out.print("((" + getJavaTypeName(expr.getReturnType()) + ")"+((VariableRefExpression) expr).getVariable().getName()+")");
 		} else if (expr instanceof BinaryExpression) {
 			out.print('(');
 			writeExpression(((BinaryExpression) expr).getLhs(),out);
-			out.print(((BinaryExpression) expr).getOperator());
+			out.print(((BinaryExpression) expr).getOperator().getOp());
 			writeExpression(((BinaryExpression) expr).getRhs(), out);
 			out.print(')');
 		} else if (expr instanceof CallExpression) {
@@ -110,6 +111,10 @@ public class JavaGenerator {
 			if (parent != null) out.print(parent.getOp());
 			out.print("=");
 			writeExpression(((AssignExpression) expr).getRvalue(),out);
+		} else if (expr instanceof ExplicitCastExpression) {
+			out.print("(("+getJavaTypeName(((ExplicitCastExpression) expr).getTargetType()) + ")");
+			writeExpression(((ExplicitCastExpression) expr).getExpression(),out);
+			out.print(")");
 		}
 		else
 			throw new UnsupportedOperationException(expr.getClass().getName());
@@ -245,5 +250,11 @@ public class JavaGenerator {
 			return getJavaTypeName(((TypeArrayInfo) type).getElementType().getType()) + "[]";
 		}
 		throw new UnsupportedOperationException(type.getCanonicalName() + "not implemented yet");
+	}
+
+
+	@Override
+	public boolean equals(Object obj) {
+		return obj.getClass() == this.getClass();
 	}
 }

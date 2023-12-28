@@ -1,0 +1,5 @@
+{
+  "source-path" : "src",
+  "target" : ["java"],
+  "startup" : "main"
+}

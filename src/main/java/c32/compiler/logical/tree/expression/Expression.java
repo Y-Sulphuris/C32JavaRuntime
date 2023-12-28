@@ -68,6 +68,9 @@ public interface Expression {
 		} else if (exprTree instanceof UnaryPrefixExprTree) {
 			Expression expression = Expression.build(container,((UnaryPrefixExprTree) exprTree).getExpression(),null);
 			return new UnaryPrefixExpression(expression,((UnaryPrefixExprTree) exprTree).getOperator().text);
+		} else if (exprTree instanceof CastExprTree) {
+			TypeInfo type = container.resolveType(container,((CastExprTree) exprTree).getTargetType());
+			return new ExplicitCastExpression(exprTree.getLocation(),type,Expression.build(container,((CastExprTree) exprTree).getExpression(),null));
 		}
 
 		throw new UnsupportedOperationException(exprTree.getClass().getName());

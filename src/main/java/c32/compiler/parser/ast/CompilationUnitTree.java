@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.Data;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.File;
 import java.util.*;
 
 @Data
@@ -40,6 +41,6 @@ public class CompilationUnitTree implements Tree {
 
 	@Override
 	public Location getLocation() {
-		return new Location(-1,-1,-1,-1);
+		return new Location(-1,-1,-1,-1,new File(fileName));
 	}
 }

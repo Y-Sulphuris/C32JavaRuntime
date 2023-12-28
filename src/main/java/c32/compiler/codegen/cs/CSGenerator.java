@@ -1,5 +1,6 @@
 package c32.compiler.codegen.cs;
 
+import c32.compiler.codegen.java.Generator;
 import c32.compiler.logical.tree.*;
 import c32.compiler.logical.tree.expression.*;
 import c32.compiler.logical.tree.statement.*;
@@ -8,8 +9,9 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 
-public class CSGenerator {
+public class CSGenerator implements Generator {
 
+	@Override
 	public void generate(SpaceInfo space) {
 		File dir = new File("out/cs");
 		dir.mkdir();
@@ -237,5 +239,11 @@ public class CSGenerator {
 			return getCSTypeName(((TypeArrayInfo) type).getElementType().getType()) + "[]";
 		}
 		throw new UnsupportedOperationException(type.getCanonicalName() + "not implemented yet");
+	}
+
+
+	@Override
+	public boolean equals(Object obj) {
+		return obj.getClass() == this.getClass();
 	}
 }

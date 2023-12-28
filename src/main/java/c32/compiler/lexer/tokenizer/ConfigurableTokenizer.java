@@ -1,5 +1,6 @@
 package c32.compiler.lexer.tokenizer;
 
+import java.io.File;
 import java.util.*;
 
 public class ConfigurableTokenizer implements Tokenizer{
@@ -30,6 +31,8 @@ public class ConfigurableTokenizer implements Tokenizer{
 
 	public ConfigurableTokenizer() {}
 
+	private File file;
+
 	private String source = null;
 	private int pos = 0;
 	private int line = 1;
@@ -37,8 +40,12 @@ public class ConfigurableTokenizer implements Tokenizer{
 	private Exception exception = null;
 
 	@Override
-	public synchronized Stack<Token> tokenize(String source) {
+	public synchronized Stack<Token> tokenize(String source, File file) {
 		this.source = source;
+		this.file = file;
+		pos = 0;
+		line = 1;
+		exception = null;
 
 		Stack<Token> tokens = new Stack<>();
 		Token token = nextToken();
@@ -66,7 +73,7 @@ public class ConfigurableTokenizer implements Tokenizer{
 
 	private Token nextToken() {
 		char ch = nextChar();
-		if (ch == endLine) return new Token(TokenType.ENDLINE,String.valueOf(endLine),pos-1,pos,line);
+		if (ch == endLine) return new Token(TokenType.ENDLINE,String.valueOf(endLine),pos-1,pos,line, file);
 
 		//skip
 		while (ch == ' ' || ch == '\n' || ch == '\t') {
@@ -74,7 +81,7 @@ public class ConfigurableTokenizer implements Tokenizer{
 			ch = nextChar();
 		}
 
-		if (ch == '\0') return new Token(TokenType.EOF,pos-1,pos,line);
+		if (ch == '\0') return new Token(TokenType.EOF,pos-1,pos,line, file);
 
 		//comments
 		if (ch == '/') {
@@ -88,7 +95,7 @@ public class ConfigurableTokenizer implements Tokenizer{
 					ch = nextChar();
 				}
 				pos--;
-				return new Token(TokenType.COMMENT,builder.toString(),startpos,pos,line);
+				return new Token(TokenType.COMMENT,builder.toString(),startpos,pos,line, file);
 			} else if (seeNextChar() == '*') {
 				int startpos = pos;
 				ch = nextChar();
@@ -99,7 +106,7 @@ public class ConfigurableTokenizer implements Tokenizer{
 					ch = nextChar();
 				}
 				pos++;
-				return new Token(TokenType.COMMENT,builder.toString(),startpos,pos,line);
+				return new Token(TokenType.COMMENT,builder.toString(),startpos,pos,line, file);
 			} else {
 				//exception = new Exception();
 				//return new Token(TokenType.ERROR,pos-1,pos,line);
@@ -128,13 +135,13 @@ public class ConfigurableTokenizer implements Tokenizer{
 					operator = builder.toString();
 				} else {
 					pos--;
-					if (!operator.isEmpty()) return new Token(TokenType.OPERATOR, operator,startpos,pos,line);
-					else return new Token(TokenType.ERROR, operator ,startpos,pos,line);
+					if (!operator.isEmpty()) return new Token(TokenType.OPERATOR, operator,startpos,pos,line, file);
+					else return new Token(TokenType.ERROR, operator ,startpos,pos,line, file);
 				}
 				ch = nextChar();
 			}
 			pos--;
-			return new Token(TokenType.OPERATOR, operator,startpos,pos,line);
+			return new Token(TokenType.OPERATOR, operator,startpos,pos,line, file);
 		}
 
 		//numbers
@@ -146,7 +153,7 @@ public class ConfigurableTokenizer implements Tokenizer{
 				ch = nextChar();
 			}
 			pos--;
-			return new Token(TokenType.NUMBER,builder.toString(),startpos,pos,line);
+			return new Token(TokenType.NUMBER,builder.toString(),startpos,pos,line, file);
 		}
 
 		//text/keywords
@@ -159,7 +166,7 @@ public class ConfigurableTokenizer implements Tokenizer{
 			}
 			pos--;
 			String value = builder.toString();
-			return new Token(isKeyword(value) ? TokenType.KEYWORD : TokenType.IDENTIFIER,value,startpos,pos,line);
+			return new Token(isKeyword(value) ? TokenType.KEYWORD : TokenType.IDENTIFIER,value,startpos,pos,line, file);
 		}
 		if (ch == '#') {
 			int startpos = pos-1;
@@ -171,7 +178,7 @@ public class ConfigurableTokenizer implements Tokenizer{
 			}
 			pos--;
 			String value = builder.toString();
-			return new Token(TokenType.DIRECTIVE,value,startpos,pos,line);
+			return new Token(TokenType.DIRECTIVE,value,startpos,pos,line, file);
 		}
 
 		TokenType type;
@@ -198,7 +205,7 @@ public class ConfigurableTokenizer implements Tokenizer{
 				type = TokenType.ERROR;
 				exception = new Exception();
 		}
-		return new Token(type,String.valueOf(ch),pos-1,pos,line);
+		return new Token(type,String.valueOf(ch),pos-1,pos,line, file);
 	}
 
 	private Token readLiteral(char separators, char ch, TokenType type) {
@@ -239,12 +246,12 @@ public class ConfigurableTokenizer implements Tokenizer{
 						}
 					}
 				} else {
-					if(ch == '\n') throw new UnexpectedTokenException(new Token(type,builder.toString(),startpos-1,pos,line),"Unexpected '\\n'");
+					if(ch == '\n') throw new UnexpectedTokenException(new Token(type,builder.toString(),startpos-1,pos,line, file),"Unexpected '\\n'");
 					builder.append(ch);
 				}
 				ch = nextChar();
 			}
-			return new Token(type,builder.toString(),startpos-1,pos,line);
+			return new Token(type,builder.toString(),startpos-1,pos,line, file);
 		}
 		return null;
 	}

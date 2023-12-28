@@ -5,18 +5,20 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import java.io.File;
+
 public class Token {
 	public final TokenType type;
 	public final String text;
 	public final Location location;
 
-	public Token(TokenType type, String text, int startpos, int endpos, int line) {
+	public Token(TokenType type, String text, int startpos, int endpos, int line, File file) {
 		this.type = type;
 		this.text = text;
-		this.location = new Location(startpos,endpos,line,line);
+		this.location = new Location(startpos,endpos,line,line,file);
 	}
-	public Token(TokenType type,int startpos,int endpos, int line) {
-		this(type,"\0",startpos,endpos,line);
+	public Token(TokenType type,int startpos,int endpos, int line, File file) {
+		this(type,"\0",startpos,endpos,line,file);
 	}
 
 	@Override

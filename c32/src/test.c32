@@ -1,0 +1,19 @@
+package test;
+
+
+
+//операторы надо будет полностью переделать, а то это бред какой-то
+int i = 5 + 4;
+
+
+namespace bar {
+    int foo(const int i) {
+	    return i;
+    }
+}
+
+
+void main(const (char[][]) args) {
+
+}
+

@@ -70,7 +70,7 @@ public class BlockStatement implements Statement, SpaceInfo {
 
 	@Override
 	public String getName() {
-		throw new UnsupportedOperationException();
+		return getParent().getName();
 	}
 
 	@Override
