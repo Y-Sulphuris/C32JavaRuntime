@@ -1,9 +1,7 @@
 package test;
 
 
-
-//операторы надо будет полностью переделать, а то это бред какой-то
-int i = 5 + 4;
+byte i = 5b + 4i; //todo: pofixit
 
 
 namespace bar {
@@ -13,7 +11,7 @@ namespace bar {
 }
 
 
-void main(const (char[][]) args) {
+void main() {
 
 }
 

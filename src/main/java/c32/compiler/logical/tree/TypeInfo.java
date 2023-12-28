@@ -5,10 +5,7 @@ import c32.compiler.logical.tree.expression.Expression;
 import c32.compiler.parser.ast.type.TypeKeywordElementTree;
 import lombok.Getter;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Consumer;
 
 public interface TypeInfo extends SpaceInfo {
@@ -52,6 +49,17 @@ public interface TypeInfo extends SpaceInfo {
 			super(name, size);
 		}
 	}
+
+	@Override
+	default NamespaceInfo getNamespace(String name) {
+		return null;
+	}
+
+	@Override
+	default FieldInfo getField(String name) {
+		return null;
+	}
+
 	@Getter
 	class PrimitiveTypeInfo implements TypeInfo {
 

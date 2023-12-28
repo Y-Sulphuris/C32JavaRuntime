@@ -160,11 +160,13 @@ public class Compiler {
 
 		CompilationUnitTree AST = getAST(source, file);
 
-		ObjectMapper mapper = new ObjectMapper();
-		File astFile = new File(file.getAbsoluteFile() + "_AST.json");
-		PrintStream printStream = new PrintStream(astFile);
-		printStream.println(mapper.writerWithDefaultPrettyPrinter().writeValueAsString(AST.toJson(mapper)));
-		printStream.close();
+		if (config.writeAST()) {
+			ObjectMapper mapper = new ObjectMapper();
+			File astFile = new File(file.getAbsoluteFile() + "_AST.json");
+			PrintStream printStream = new PrintStream(astFile);
+			printStream.println(mapper.writerWithDefaultPrettyPrinter().writeValueAsString(AST.toJson(mapper)));
+			printStream.close();
+		}
 
 		return AST;
 	}
@@ -251,17 +253,17 @@ public class Compiler {
 			}
 		});*/
 
-		/*File f = new File("c32target/generated/test/test_c32.class");
+		File f = new File("out/java/out/$package.class");
 		if (f.exists()) f.delete();
 		System.out.println("Compiling...");
-		proc("javac -cp target/classes/ c32target/generated/test/test_c32.java");
+		proc("javac -d out/java/out -cp target/classes/ out/java/$package.java");
 
 		if (f.exists()) {
 			System.out.println("Starting process...\n");
-			proc("java -cp c32target/generated/;target/classes/ test.test_c32");
+			proc("java -cp out/out/;target/classes/ out/out/$package");
 		} else {
 			System.out.println("Compilation error");
-		}*/
+		}
 	}
 
 	private static Collection<File> allC32Files(File dir) {

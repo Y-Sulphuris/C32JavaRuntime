@@ -16,4 +16,9 @@ public class VariableInfo implements SymbolInfo {
 	public boolean isAccessibleFrom(SpaceInfo space) {
 		return true;
 	}
+
+	@Override
+	public SpaceInfo getParent() {
+		return null;
+	}
 }

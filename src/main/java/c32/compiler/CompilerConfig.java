@@ -43,4 +43,8 @@ public final class CompilerConfig {
 		parser.close();
 		return new CompilerConfig(mainFunctionName,src,targets);
 	}
+
+	public boolean writeAST() {
+		return false;
+	}
 }

@@ -1,5 +1,6 @@
 package c32.compiler.logical;
 
+import c32.compiler.except.CompilerException;
 import c32.compiler.logical.tree.*;
 import c32.compiler.logical.tree.expression.Expression;
 import c32.compiler.logical.tree.expression.NumericLiteralExpression;
@@ -28,14 +29,17 @@ public class TreeBuilder {
 	private final HashMap<FunctionImplementationInfo, BlockStatementTree> implementations = new HashMap<>();
 
 	public SpaceInfo buildNamespace(Collection<CompilationUnitTree> units) {
-		SpaceInfo root = new NamespaceInfo("",null);
+		NamespaceInfo root = new NamespaceInfo("",null);
 
 		for (CompilationUnitTree unit : units) {
-			SpaceInfo current = root;
+			NamespaceInfo current = root;
 			if (unit.getPackageTree() != null) {
 				PackageTree pk = unit.getPackageTree();
 				for (ReferenceExprTree pkName : pk.getName().getReferences()) {
-					current = current.addNamespace(new NamespaceInfo(pkName.getIdentifier().text,current));
+					NamespaceInfo space = current.getNamespace(pkName.getIdentifier().text);
+					if (space == null)
+						current = current.addNamespace(new NamespaceInfo(pkName.getIdentifier().text,current));
+					else current = space;
 				}
 			}
 
@@ -55,7 +59,7 @@ public class TreeBuilder {
 
 
 
-	private void fillNamespace(SpaceInfo current, List<DeclarationTree<?>> declarations) {
+	private void fillNamespace(NamespaceInfo current, List<DeclarationTree<?>> declarations) {
 		final Set<DeclarationTree<? extends DeclaratorTree>> forRemoval = new HashSet<>();
 
 		//add functions
@@ -109,6 +113,9 @@ public class TreeBuilder {
 						for (NamespaceDeclarator namespaceDeclarator : decl) {
 							current.addNamespace(buildNamespace(current,namespaceDeclarator));
 						}
+						break;
+					default:
+						throw new CompilerException(decl.getLocation(),decl.getKeyword().text + " are not supported yet");
 				}
 			} else throw new UnsupportedOperationException(declaration.toString());
 		}
@@ -122,10 +129,10 @@ public class TreeBuilder {
 		Expression init = null;
 		if (declarator.getInitializer() != null) init = Expression.build(container,declarator.getInitializer(),type.getType());
 		return new FieldVariableInfo(
-				buildVariableInfo(declarator.getName().text,type,init), container
+				buildVariableInfo(declarator.getName().text,type,container,init), container
 		);
 	}
-	private VariableInfo buildVariableInfo(String name, TypeRefInfo type, Expression init) {
+	private VariableInfo buildVariableInfo(String name, TypeRefInfo type, SpaceInfo container, Expression init) {
 		return new VariableInfo(name, type, init);
 	}
 

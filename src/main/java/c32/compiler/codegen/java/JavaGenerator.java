@@ -1,8 +1,15 @@
 package c32.compiler.codegen.java;
 
+import c32.compiler.Compiler;
+import c32.compiler.codegen.LinkerException;
+import c32.compiler.except.CompilerException;
+import c32.compiler.lexer.tokenizer.Token;
+import c32.compiler.lexer.tokenizer.TokenType;
 import c32.compiler.logical.tree.expression.*;
 import c32.compiler.logical.tree.*;
 import c32.compiler.logical.tree.statement.*;
+import c32.compiler.parser.ast.expr.CallExprTree;
+import c32.compiler.parser.ast.expr.ReferenceExprTree;
 
 import java.io.File;
 import java.io.IOException;
@@ -38,6 +45,27 @@ public class JavaGenerator implements Generator {
 			}
 			for (FieldInfo field : space.getFields()) {
 				writeField(field,out);
+			}
+			if (packageName.isEmpty()) {
+				String main = Compiler.config.getMainFunctionName();
+				SpaceInfo mainSpace = space;
+				while (main.contains(".")) {
+					mainSpace = mainSpace.getNamespace(main.substring(0,main.indexOf(".")));
+					main = main.substring(main.indexOf(".")+1);
+				}
+				FunctionInfo mainFunc = null;
+				System.out.println(mainSpace.getCanonicalName());
+				for (FunctionInfo function : mainSpace.getFunctions()) {
+					System.out.println(function.getCanonicalName());
+					if (!function.getName().equals(main) || !function.getArgs().isEmpty()) continue;
+					mainFunc = function;
+				}
+				if (mainFunc == null)
+					throw new LinkerException("no main function found");
+
+				out.println("public static void main(String... args) {");
+				out.print(getJavaFunctionName(mainFunc) + "();");
+				out.println("}");
 			}
 			out.println('}');
 			out.close();
@@ -153,7 +181,7 @@ public class JavaGenerator implements Generator {
 	private void writeFunction(FunctionInfo function, PrintStream out) {
 		if (function.is_extern()) return;
 		String retType = getJavaTypeName(function.getReturnType());
-		out.print("\tpublic static " + retType + " " + getJavaFunctionName(function) + "(");
+		out.print("\tpublic static " + retType + " " + toLocalName(getJavaFunctionName(function)) + "(");
 		for (VariableInfo arg : function.getArgs()) {
 			out.print(getJavaTypeName(arg.getTypeRef().getType()) + " " + arg.getName());
 			if (arg != function.getArgs().get(function.getArgs().size()-1)) out.print(',');
@@ -218,26 +246,23 @@ public class JavaGenerator implements Generator {
 		} else throw new UnsupportedOperationException(state.getClass().toString());
 	}
 
+	public static String toLocalName(String name) {
+		int index = name.lastIndexOf('.')+1;
+		if (index == 0) return name;
+		return name.substring(index);
+	}
 	public static String getJavaFunctionName(FunctionInfo function) {
 		String fname = getFname(function);
 		if (function.is_extern()) return IntrinsicFunctionTable.get(function,fname);
 		return fname;
 	}
 	private static String getFname(FunctionInfo function) {
-		if (function.getArgs().isEmpty()) return function.getName();
-		StringBuilder builder = new StringBuilder(function.getName());
+		if (function.getArgs().isEmpty()) return function.getCanonicalName();
+		StringBuilder builder = new StringBuilder(function.getCanonicalName());
 		for (VariableInfo arg : function.getArgs()) {
-			builder.append("$").append(arg.getTypeRef().getType().getName());
+			builder.append("$").append(arg.getTypeRef().getType().getFullName());
 		}
-		String base = builder.toString();
-		StringBuilder fullPath = new StringBuilder(base);
-		SpaceInfo space = function.getParent();
-		while (space != null) {
-			if (!space.getName().isEmpty()) fullPath.insert(0,'.');
-			fullPath.insert(0,space.getName());
-			space = space.getParent();
-		}
-		return fullPath.toString();
+		return builder.toString();
 	}
 
 	public static String getJavaTypeName(TypeInfo type) {

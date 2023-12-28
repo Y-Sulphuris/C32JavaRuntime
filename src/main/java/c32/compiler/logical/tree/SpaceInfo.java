@@ -11,18 +11,31 @@ import c32.compiler.parser.ast.expr.CallExprTree;
 import c32.compiler.parser.ast.expr.ReferenceExprTree;
 import c32.compiler.parser.ast.type.*;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
 public interface SpaceInfo extends SymbolInfo {
 	SpaceInfo getParent();
-	Set<FunctionInfo> getFunctions();
+	Collection<FunctionInfo> getFunctions();
 	FunctionInfo addFunction(FunctionInfo function);
 
-	Set<NamespaceInfo> getNamespaces();
+	Collection<NamespaceInfo> getNamespaces();
+	default NamespaceInfo getNamespace(String name) {
+		for (NamespaceInfo namespace : getNamespaces()) {
+			if (namespace.getName().equals(name)) return namespace;
+		}
+		return null;
+	}
 	NamespaceInfo addNamespace(NamespaceInfo namespace);
 
-	Set<FieldInfo> getFields();
+	Collection<FieldInfo> getFields();
+	default FieldInfo getField(String name) {
+		for (FieldInfo field : getFields()) {
+			if (field.getName().equals(name)) return field;
+		}
+		return null;
+	}
 	FieldInfo addField(FieldInfo field);
 
 
@@ -88,8 +101,8 @@ public interface SpaceInfo extends SymbolInfo {
 				return namespace;
 			}
 		}
-		if (getParent() == null) return new NonResolvedSpace(caller,reference);
-			//throw new CompilerException(reference.getLocation(), "cannot find anything from '" + caller.getCanonicalName() + "' for '" + reference + "'");
+		if (getParent() == null)
+			throw new CompilerException(reference.getLocation(), "cannot find anything from '" + caller.getCanonicalName() + "' for '" + reference + "'");
 		return getParent().resolveSpace(caller,reference);
 	}
 
@@ -143,7 +156,7 @@ public interface SpaceInfo extends SymbolInfo {
 		}
 
 		if (getParent() == null) {
-			return new NonResolvedFunction(caller,call,args);
+			throw new FunctionNotFoundException(call,args);
 		}
 		return getParent().resolveFunction(caller,call,args);
 	}
