@@ -1,0 +1,43 @@
+package std;
+
+extern void println(const char[] ch);
+
+extern void println(short i);
+extern void println(ushort i);
+
+extern void println(int i);
+extern void println(uint i);
+
+extern void println(long i);
+extern void println(ulong i);
+
+extern void println(float i);
+extern void println(double i);
+
+extern void print(const char[] ch);
+
+extern void print(byte i);
+extern void print(ubyte i);
+
+extern void print(short i);
+extern void print(ushort i);
+
+extern void print(int i);
+extern void print(uint i);
+
+extern void print(long i);
+extern void print(ulong i);
+
+extern void print(float i);
+extern void print(double i);
+
+
+//typename size_t = ulong, ptrdiff_t = long;
+
+namespace Core {
+	extern void gc();
+
+	extern long currentTimeMills();
+
+	extern long nanoTime();
+}

@@ -3,10 +3,12 @@ package c32.compiler.except;
 import c32.compiler.Location;
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.Setter;
 
 @Getter
 public class CompilerException extends RuntimeException {
-	private final Location location;
+	@Setter
+	private Location location;
 	private final String rawMessage;
 
 

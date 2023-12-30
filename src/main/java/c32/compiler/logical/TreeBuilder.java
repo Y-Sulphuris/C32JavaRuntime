@@ -3,24 +3,17 @@ package c32.compiler.logical;
 import c32.compiler.except.CompilerException;
 import c32.compiler.logical.tree.*;
 import c32.compiler.logical.tree.expression.Expression;
-import c32.compiler.logical.tree.expression.NumericLiteralExpression;
-import c32.compiler.logical.tree.statement.BlockStatement;
 import c32.compiler.logical.tree.statement.Statement;
-import c32.compiler.logical.tree.statement.VariableDeclarationStatement;
 import c32.compiler.parser.ast.CompilationUnitTree;
+import c32.compiler.parser.ast.ModifierTree;
 import c32.compiler.parser.ast.PackageTree;
 import c32.compiler.parser.ast.declaration.DeclarationTree;
 import c32.compiler.parser.ast.declaration.NamespaceDeclaration;
 import c32.compiler.parser.ast.declaration.ValuedDeclarationTree;
 import c32.compiler.parser.ast.declarator.*;
-import c32.compiler.parser.ast.expr.ExprTree;
-import c32.compiler.parser.ast.expr.LiteralExprTree;
 import c32.compiler.parser.ast.expr.ReferenceExprTree;
 import c32.compiler.parser.ast.statement.BlockStatementTree;
-import c32.compiler.parser.ast.statement.DeclarationStatementTree;
-import c32.compiler.parser.ast.statement.IfStatementTree;
 import c32.compiler.parser.ast.statement.StatementTree;
-import lombok.var;
 
 import java.util.*;
 
@@ -28,8 +21,8 @@ public class TreeBuilder {
 
 	private final HashMap<FunctionImplementationInfo, BlockStatementTree> implementations = new HashMap<>();
 
-	public SpaceInfo buildNamespace(Collection<CompilationUnitTree> units) {
-		NamespaceInfo root = new NamespaceInfo("",null);
+	public NamespaceInfo buildNamespace(Collection<CompilationUnitTree> units) {
+		NamespaceInfo root = new NamespaceInfo("",null,true);
 
 		for (CompilationUnitTree unit : units) {
 			NamespaceInfo current = root;
@@ -38,12 +31,12 @@ public class TreeBuilder {
 				for (ReferenceExprTree pkName : pk.getName().getReferences()) {
 					NamespaceInfo space = current.getNamespace(pkName.getIdentifier().text);
 					if (space == null)
-						current = current.addNamespace(new NamespaceInfo(pkName.getIdentifier().text,current));
+						current = current.addNamespace(new NamespaceInfo(pkName.getIdentifier().text,current,true));
 					else current = space;
 				}
 			}
 
-			fillNamespace(current,unit.getDeclarations());
+			fillSpace(current,unit.getDeclarations());
 		}
 		implementations.forEach((func, impl) -> {
 			for (StatementTree statement : impl.getStatements()) {
@@ -59,7 +52,7 @@ public class TreeBuilder {
 
 
 
-	private void fillNamespace(NamespaceInfo current, List<DeclarationTree<?>> declarations) {
+	private void fillSpace(SpaceInfo current, List<DeclarationTree<?>> declarations) {
 		final Set<DeclarationTree<? extends DeclaratorTree>> forRemoval = new HashSet<>();
 
 		//add functions
@@ -69,7 +62,7 @@ public class TreeBuilder {
 				ValuedDeclarationTree decl = (ValuedDeclarationTree) declaration;
 				for (DeclaratorTree declarator : decl) {
 					if (declarator instanceof FunctionDeclaratorTree) {
-						current.addFunction(new FunctionDeclarationInfo(current, decl.getModifiers(), decl.getTypeElement(), (FunctionDeclaratorTree) declarator,false));
+						current.addFunction(new FunctionDeclarationInfo(current, decl, decl.getTypeElement(), (FunctionDeclaratorTree) declarator,false));
 						forRemovalDeclarators.add(declarator);
 					} else if (declarator instanceof FunctionDefinitionTree) {
 						current.addFunction(buildFunctionImpl(current,decl,(FunctionDefinitionTree)declarator));
@@ -111,7 +104,12 @@ public class TreeBuilder {
 				switch (decl.getKeyword().text) {
 					case "namespace":
 						for (NamespaceDeclarator namespaceDeclarator : decl) {
-							current.addNamespace(buildNamespace(current,namespaceDeclarator));
+							current.addNamespace(buildNamespace(current,decl,namespaceDeclarator));
+						}
+						break;
+					case "struct":
+						for (NamespaceDeclarator structDeclarator : decl) {
+							current.addStruct(buildStruct(current,decl,structDeclarator));
 						}
 						break;
 					default:
@@ -121,30 +119,47 @@ public class TreeBuilder {
 		}
 	}
 
-	private FieldInfo buildField(SpaceInfo container, ValuedDeclarationTree decl,VariableDeclaratorTree declarator) {
+	private TypeStructInfo buildStruct(SpaceInfo current, NamespaceDeclaration decl, NamespaceDeclarator declarator) {
 		Objects.requireNonNull(declarator.getName());
-		TypeRefInfo type = new TypeRefInfo(
-				decl.getTypeElement().get_const() != null, decl.getTypeElement().get_restrict() != null, container.resolveType(container,decl.getTypeElement())
+		TypeStructInfo struct = new TypeStructInfo(declarator.getName().text,current,
+				new NamespaceInfo(declarator.getName().text,current,true)
 		);
-		Expression init = null;
-		if (declarator.getInitializer() != null) init = Expression.build(container,declarator.getInitializer(),type.getType());
-		return new FieldVariableInfo(
-				buildVariableInfo(declarator.getName().text,type,container,init), container
-		);
-	}
-	private VariableInfo buildVariableInfo(String name, TypeRefInfo type, SpaceInfo container, Expression init) {
-		return new VariableInfo(name, type, init);
+		fillSpace(struct,declarator.getDeclarations());
+		return struct;
 	}
 
-	private NamespaceInfo buildNamespace(SpaceInfo current, NamespaceDeclarator decl) {
-		assert decl.getName() != null;
-		NamespaceInfo space = new NamespaceInfo(decl.getName().text,current);
-		fillNamespace(space,decl.getDeclarations());
+	private NamespaceInfo buildNamespace(SpaceInfo current, NamespaceDeclaration decl, NamespaceDeclarator declarator) {
+		Objects.requireNonNull(declarator.getName());
+		NamespaceInfo space = new NamespaceInfo(declarator.getName().text,current,decl.hasModifier("static"));
+		fillSpace(space,declarator.getDeclarations());
 		return space;
 	}
+
+
+	private FieldInfo buildField(SpaceInfo container, ValuedDeclarationTree decl,VariableDeclaratorTree declarator) {
+		Objects.requireNonNull(declarator.getName());
+		boolean _const = decl.getTypeElement().get_const() != null;
+		TypeRefInfo type = new TypeRefInfo(
+				_const, decl.getTypeElement().get_restrict() != null, container.resolveType(container,decl.getTypeElement())
+		);
+		Expression init = null;
+		if (declarator.getInitializer() != null) {
+			init = Expression.build(container,container,declarator.getInitializer(),type.getType());
+		} else
+			if (_const) throw new CompilerException(declarator.getLocation(), "const variables must have an initializer");
+
+		boolean _static = decl.hasModifier("static");
+		return new FieldVariableInfo(
+				buildVariableInfo(declarator.getName().text,type,container,init,_static), container
+		);
+	}
+	private VariableInfo buildVariableInfo(String name, TypeRefInfo type, SpaceInfo container, Expression init, boolean _static) {
+		return new VariableInfo(name, type, init, _static, false);
+	}
+
 	private FunctionImplementationInfo buildFunctionImpl(SpaceInfo current, ValuedDeclarationTree decl, FunctionDefinitionTree definition) {
 		FunctionImplementationInfo info = new FunctionImplementationInfo(
-				new FunctionDeclarationInfo(current, decl.getModifiers(), decl.getTypeElement(), definition.getDeclarator(),true)
+				new FunctionDeclarationInfo(current, decl, decl.getTypeElement(), definition.getDeclarator(),true)
 		);
 		implementations.put(info,definition.getBlockStatement());
 		return info;

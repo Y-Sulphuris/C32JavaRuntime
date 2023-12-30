@@ -20,7 +20,12 @@ public class BinaryOperator {
     private final TypeInfo rightType;
     private final TypeInfo returnType;
 
-    private static final Set<BinaryOperator> registeredOperators = new HashSet<>();
+	@Override
+	public String toString() {
+		return "BinaryOperator{" + returnType.getCanonicalName() + "(" + leftType.getCanonicalName() + op + rightType.getCanonicalName() + ")";
+	}
+
+	private static final Set<BinaryOperator> registeredOperators = new HashSet<>();
     private static void registerBinary(TypeInfo left, String op, TypeInfo right, TypeInfo returnType) {
         registeredOperators.add(new BinaryOperator(left,op,right,returnType));
 
@@ -63,27 +68,45 @@ public class BinaryOperator {
         registerBinary(BOOL,"&&", BOOL, BOOL);
     }
     public static BinaryOperator findOperator(Location location, Expression lvalue, String operator, Expression rvalue) {
-        for (BinaryOperator op : registeredOperators) {
-            if (!op.getOp().equals(operator)) continue;
-            if (op.getLeftType().equals(lvalue.getReturnType()) && op.getRightType().equals(rvalue.getReturnType())) {
+		Set<BinaryOperator> possiblyOperators = new HashSet<>();
+	    for (BinaryOperator op : registeredOperators) {
+		    if (!op.getOp().equals(operator)) continue;
+		    possiblyOperators.add(op);
+	    }
+
+        for (BinaryOperator op : possiblyOperators) {
+            if (lvalue.getReturnType().equals(op.getLeftType()) && rvalue.getReturnType().equals(op.getRightType())) {
+				/*System.out.println("EE operator for " +
+						lvalue.getReturnType().getCanonicalName() +
+						" " + operator + " " +
+						rvalue.getReturnType().getCanonicalName() + " = " + op);*/
                 return op;
             }
         }
-	    for (BinaryOperator op : registeredOperators) {
-		    if (!op.getOp().equals(operator)) continue;
-		    if (op.getLeftType().canBeImplicitCastTo(lvalue.getReturnType()) && op.getRightType().equals(rvalue.getReturnType())) {
+	    for (BinaryOperator op : possiblyOperators) {
+		    if (lvalue.getReturnType().canBeImplicitCastTo(op.getLeftType()) && rvalue.getReturnType().equals(op.getRightType())) {
+			    /*System.out.println("IE operator for " +
+					    lvalue.getReturnType().getCanonicalName() +
+					    " " + operator + " " +
+					    rvalue.getReturnType().getCanonicalName() + " = " + op);*/
 			    return op;
 		    }
 	    }
-	    for (BinaryOperator op : registeredOperators) {
-		    if (!op.getOp().equals(operator)) continue;
-		    if (op.getLeftType().equals(lvalue.getReturnType()) && op.getRightType().canBeImplicitCastTo(rvalue.getReturnType())) {
+	    for (BinaryOperator op : possiblyOperators) {
+		    if (lvalue.getReturnType().equals(op.getLeftType()) && rvalue.getReturnType().canBeImplicitCastTo(op.getRightType())) {
+			    /*System.out.println("EI operator for " +
+					    lvalue.getReturnType().getCanonicalName() +
+					    " " + operator + " " +
+					    rvalue.getReturnType().getCanonicalName() + " = " + op);*/
 			    return op;
 		    }
 	    }
-        for (BinaryOperator op : registeredOperators) {
-            if (!op.getOp().equals(operator)) continue;
+        for (BinaryOperator op : possiblyOperators) {
             if (lvalue.getReturnType().canBeImplicitCastTo(op.getLeftType()) && rvalue.getReturnType().canBeImplicitCastTo(op.getRightType())) {
+	            /*System.out.println("II operator for " +
+			            lvalue.getReturnType().getCanonicalName() +
+			            " " + operator + " " +
+			            rvalue.getReturnType().getCanonicalName() + " = " + op);*/
                 return op;
             }
         }

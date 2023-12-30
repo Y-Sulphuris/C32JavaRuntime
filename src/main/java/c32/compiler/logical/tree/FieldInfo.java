@@ -8,4 +8,5 @@ public interface FieldInfo {
 	Expression getInitializer();
 	SpaceInfo getContainer();
 	VariableInfo getVariable();
+
 }

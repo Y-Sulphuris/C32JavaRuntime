@@ -3,6 +3,7 @@ package c32.compiler.logical.tree.expression;
 import c32.compiler.Location;
 import c32.compiler.except.CompilerException;
 import c32.compiler.logical.tree.BinaryOperator;
+import c32.compiler.logical.tree.SymbolInfo;
 import c32.compiler.logical.tree.TypeInfo;
 import c32.compiler.logical.tree.TypeRefInfo;
 import lombok.Getter;
@@ -30,8 +31,11 @@ public class BinaryExpression implements Expression {
 		this.rhs = rhs;
 		TypeInfo ret = this.operator.getReturnType();
 		if (returnType != null && !ret.canBeImplicitCastTo(returnType)) {
-			throw new CompilerException(location,"cannot implicit cast '" + ret.getCanonicalName() + "' to '" + returnType + "'");
+			throw new CompilerException(location,"cannot implicit cast '" + ret.getCanonicalName() + "' to '" + returnType.getCanonicalName() + "'");
 		}
+
+		addUsageIfVariable(lhs);
+		addUsageIfVariable(rhs);
 	}
 
 

@@ -50,7 +50,8 @@ public class Parser {
 		token = nextToken();
 		this.declarations = new ArrayList<>();
 		while (token.type != TokenType.EOF) {
-			declarations.add(parseDeclaration());
+			DeclarationTree<?> decl = parseDeclaration();
+			if (decl != null) declarations.add(decl);
 		}
 		return new CompilationUnitTree(filename,packageTree,declarations);
 	}
@@ -60,6 +61,8 @@ public class Parser {
 		if (token.text.equals(Compiler.PACKAGE)) {
 			if (packageTree == null && declarations.isEmpty()) {
 				packageTree = parsePackage(modifiers,startLocation);
+				if (token.type == TokenType.EOF)
+					return null;
 				startLocation = token.location;
 				modifiers = readModifiers();
 			}
@@ -839,7 +842,7 @@ public class Parser {
 	}
 
 	private InitializerListExprTree parse_InitializerList() {
-		Token open = assertToken(TokenType.OPEN);
+		Token open = assertAndNext(TokenType.OPEN);
 		List<ExprTree> initializers = new ArrayList<>();
 		while (token.type != TokenType.CLOSE) {
 			initializers.add(parseExpr());

@@ -7,7 +7,7 @@ import c32.compiler.logical.tree.TypeRefInfo;
 import lombok.Getter;
 
 @Getter
-public class BooleanLiteralExpression implements Expression {
+public class BooleanLiteralExpression implements LiteralExpression {
 	private final TypeInfo returnType;
 	private final boolean value;
 

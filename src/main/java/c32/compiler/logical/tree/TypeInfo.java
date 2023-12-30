@@ -2,9 +2,11 @@ package c32.compiler.logical.tree;
 
 import c32.compiler.except.CompilerException;
 import c32.compiler.logical.tree.expression.Expression;
+import c32.compiler.logical.tree.expression.NumericLiteralExpression;
 import c32.compiler.parser.ast.type.TypeKeywordElementTree;
 import lombok.Getter;
 
+import java.math.BigInteger;
 import java.util.*;
 import java.util.function.Consumer;
 
@@ -38,6 +40,11 @@ public interface TypeInfo extends SpaceInfo {
 		public UnsignedIntegerPrimitiveTypeInfo getUnsigned() {
 			return (UnsignedIntegerPrimitiveTypeInfo) PrimitiveTypeInfo.types.get('u'+this.getName());
 		}
+
+		@Override
+		public Expression getDefaultValue() {
+			return new NumericLiteralExpression(BigInteger.valueOf(0L),this);
+		}
 	}
 	class UnsignedIntegerPrimitiveTypeInfo extends IntegerPrimitiveTypeInfo {
 		public UnsignedIntegerPrimitiveTypeInfo(String name, long size) {
@@ -50,18 +57,8 @@ public interface TypeInfo extends SpaceInfo {
 		}
 	}
 
-	@Override
-	default NamespaceInfo getNamespace(String name) {
-		return null;
-	}
-
-	@Override
-	default FieldInfo getField(String name) {
-		return null;
-	}
-
 	@Getter
-	class PrimitiveTypeInfo implements TypeInfo {
+	class PrimitiveTypeInfo extends AbstractSymbolInfo implements TypeInfo {
 
 		private final Set<PrimitiveTypeInfo> implicitCast = new HashSet<>();
 		void addImplicitCast(PrimitiveTypeInfo... types) {
@@ -170,6 +167,9 @@ public interface TypeInfo extends SpaceInfo {
 			return null;
 		}
 
+
+
+
 		@Override
 		public Set<FunctionInfo> getFunctions() {
 			return Collections.emptySet();
@@ -179,6 +179,9 @@ public interface TypeInfo extends SpaceInfo {
 		public FunctionInfo addFunction(FunctionInfo function) {
 			throw new UnsupportedOperationException("cannot add function to primitive type");
 		}
+
+
+
 
 		@Override
 		public Set<NamespaceInfo> getNamespaces() {
@@ -190,6 +193,9 @@ public interface TypeInfo extends SpaceInfo {
 			throw new UnsupportedOperationException("cannot add function to primitive type");
 		}
 
+
+
+
 		@Override
 		public Set<FieldInfo> getFields() {
 			return Collections.emptySet();
@@ -198,6 +204,17 @@ public interface TypeInfo extends SpaceInfo {
 		@Override
 		public FieldInfo addField(FieldInfo field) {
 			throw new UnsupportedOperationException("cannot add field to primitive type");
+		}
+
+
+		@Override
+		public Collection<TypeStructInfo> getStructs() {
+			return Collections.emptySet();
+		}
+
+		@Override
+		public TypeStructInfo addStruct(TypeStructInfo struct) {
+			throw new UnsupportedOperationException("cannot add struct to primitive type");
 		}
 
 		@Override
@@ -212,7 +229,7 @@ public interface TypeInfo extends SpaceInfo {
 
 		@Override
 		public Expression getDefaultValue() {
-			throw new UnsupportedOperationException();
+			throw new UnsupportedOperationException(this.getName());
 		}
 	}
 }

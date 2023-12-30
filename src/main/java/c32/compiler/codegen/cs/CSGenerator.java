@@ -1,6 +1,6 @@
 package c32.compiler.codegen.cs;
 
-import c32.compiler.codegen.java.Generator;
+import c32.compiler.codegen.Generator;
 import c32.compiler.logical.tree.*;
 import c32.compiler.logical.tree.expression.*;
 import c32.compiler.logical.tree.statement.*;
@@ -12,7 +12,7 @@ import java.io.PrintStream;
 public class CSGenerator implements Generator {
 
 	@Override
-	public void generate(SpaceInfo space) {
+	public void generate(NamespaceInfo space) {
 		File dir = new File("out/cs");
 		dir.mkdir();
 		writeNamespace(space);
@@ -166,7 +166,7 @@ public class CSGenerator implements Generator {
 			}
 			out.println("\t}");
 		} else if (state instanceof VariableDeclarationStatement) {
-			for (VariableInfo variable : ((VariableDeclarationStatement) state).getVariable()) {
+			for (VariableInfo variable : ((VariableDeclarationStatement) state).getVariables()) {
 				out.print("\t\t");
 				if (variable.getTypeRef().is_const()) out.print("final ");
 				out.print(getCSTypeName(variable.getTypeRef().getType()) + " " + variable.getName());

@@ -13,5 +13,5 @@ public class VariableDeclarationStatement implements Statement {
 	private final FunctionImplementationInfo function;
 	private final BlockStatement container;
 
-	private final Collection<VariableInfo> variable;
+	private final Collection<VariableInfo> variables;
 }

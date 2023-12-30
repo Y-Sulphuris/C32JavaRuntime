@@ -1,9 +1,10 @@
 package c32.compiler;
 
-import c32.compiler.codegen.java.Generator;
+import c32.compiler.codegen.Generator;
 import c32.compiler.codegen.java.JavaGenerator;
 import c32.compiler.except.CompilerException;
 import c32.compiler.logical.TreeBuilder;
+import c32.compiler.logical.tree.NamespaceInfo;
 import c32.compiler.logical.tree.SpaceInfo;
 import c32.compiler.parser.Parser;
 import c32.compiler.parser.ast.CompilationUnitTree;
@@ -46,7 +47,7 @@ public class Compiler {
 				PUBLIC,PROTECTED,PRIVATE,
 				STATIC,
 				EXTERN,NATIVE,ABSTRACT,VIRTUAL,CONSTEXPR,OVER,
-				MUTABLE
+				MUTABLE, "register"
 				);
 
 		postModifiers.addAll(modifiers);
@@ -55,85 +56,86 @@ public class Compiler {
 	public static final Set<String> keywords = new HashSet<>();
 	static {
 		Collections.addAll(keywords,(
-				"noexcept\n" +
-				"abstract\n" +
-				"assert\n" +
-				"auto\n" +
-				"bool\n" +
-				"break\n" +
-				"byte\n" +
-				"case\n" +
-				"catch\n" +
-				"char\n" +
-				"char32\n" +
-				"char8\n" +
-				"class\n" +
-				"concept\n" +
-				"const\n" +
-				"constexpr\n" +
-				"continue\n" +
-				"default\n" +
-				"delete\n" +
-				"do\n" +
-				"double\n" +
-				"else\n" +
-				"enum\n" +
-				"extends\n" +
-				"extern\n" +
-				"false\n" +
-				"final\n" +
-				"finally\n" +
-				"float\n" +
-				"for\n" +
-				"goto\n" +
-				"half\n" +
-				"if\n" +
-				"implements\n" +
-				"import\n" +
-				"instanceof\n" +
-				"int\n" +
-				"interface\n" +
-				"internal\n" +
-				"long\n" +
-				"mutable\n" +
-				"namespace\n" +
-				"native\n" +
-				"new\n" +
-				"null\n" +
-				"octuple\n" +
-				"operator\n" +
-				"over\n" +
-				"package\n" +
-				"private\n" +
-				"protected\n" +
-				"public\n" +
-				"pure\n" +
-				"quadruple\n" +
-				"requires\n" +
-				"restrict\n" +
-				"return\n" +
-				"short\n" +
-				"sizeof\n" +
-				"static\n" +
-				"struct\n" +
-				"super\n" +
-				"switch\n" +
-				"template\n" +
-				"this\n" +
-				"throw\n" +
-				"throws\n" +
-				"true\n" +
-				"try\n" +
-				"typedef\n" +
-				"typename\n" +
-				"ubyte\n" +
-				"uint\n" +
-				"ulong\n" +
-				"union\n" +
-				"ushort\n" +
-				"virtual\n" +
-				"void\n" +
-				"while").split("\n"));
+						"abstract\n" +
+						"assert\n" +
+						"auto\n" +
+						"bool\n" +
+						"break\n" +
+						"byte\n" +
+						"case\n" +
+						"catch\n" +
+						"char\n" +
+						"char32\n" +
+						"char8\n" +
+						"class\n" +
+						"concept\n" +
+						"const\n" +
+						"constexpr\n" +
+						"continue\n" +
+						"default\n" +
+						"delete\n" +
+						"do\n" +
+						"double\n" +
+						"else\n" +
+						"enum\n" +
+						"extends\n" +
+						"extern\n" +
+						"false\n" +
+						"final\n" +
+						"finally\n" +
+						"float\n" +
+						"for\n" +
+						"goto\n" +
+						"half\n" +
+						"if\n" +
+						"implements\n" +
+						"import\n" +
+						"instanceof\n" +
+						"int\n" +
+						"interface\n" +
+						"internal\n" +
+						"long\n" +
+						"mutable\n" +
+						"namespace\n" +
+						"native\n" +
+						"new\n" +
+						"noexcept\n" +
+						"null\n" +
+						"octuple\n" +
+						"operator\n" +
+						"over\n" +
+						"package\n" +
+						"private\n" +
+						"protected\n" +
+						"public\n" +
+						"pure\n" +
+						"quadruple\n" +
+						"register\n" +
+						"requires\n" +
+						"restrict\n" +
+						"return\n" +
+						"short\n" +
+						"sizeof\n" +
+						"static\n" +
+						"struct\n" +
+						"super\n" +
+						"switch\n" +
+						"template\n" +
+						"this\n" +
+						"throw\n" +
+						"throws\n" +
+						"true\n" +
+						"try\n" +
+						"typedef\n" +
+						"typename\n" +
+						"ubyte\n" +
+						"uint\n" +
+						"ulong\n" +
+						"union\n" +
+						"ushort\n" +
+						"virtual\n" +
+						"void\n" +
+						"while").split("\n"));
 	}
 
 	public static final String[] validOperators = ("=;" +
@@ -185,7 +187,7 @@ public class Compiler {
 		return AST;
 	}
 
-	private static SpaceInfo build(Collection<CompilationUnitTree> units) {
+	private static NamespaceInfo build(Collection<CompilationUnitTree> units) {
 		return new TreeBuilder().buildNamespace(units);
 	}
 
@@ -200,7 +202,7 @@ public class Compiler {
 
 		deleteDirectory(new File("out"));
 		try {
-			SpaceInfo space = build(units);
+			NamespaceInfo space = build(units);
 			for (Generator generator : generators) {
 				generator.generate(space);
 			}
@@ -253,14 +255,14 @@ public class Compiler {
 			}
 		});*/
 
-		File f = new File("out/java/out/$package.class");
-		if (f.exists()) f.delete();
+		File f = new File("out/java/out/");
+		f.mkdirs();
 		System.out.println("Compiling...");
-		proc("javac -d out/java/out -cp target/classes/ out/java/$package.java");
+		proc("javac -d out/java/out -cp ../target/classes/;out/java/ out/java/$package.java");
 
 		if (f.exists()) {
 			System.out.println("Starting process...\n");
-			proc("java -cp out/out/;target/classes/ out/out/$package");
+			proc("java -cp out/java/out/;../target/classes/ $package");
 		} else {
 			System.out.println("Compilation error");
 		}
@@ -291,11 +293,12 @@ public class Compiler {
 	}
 
 	private static CompilerException handleCompilerException(CompilerException e, String source, File file) {
-		File working = new File("");
-		System.err.println(getErrorDescription(e,file.getAbsolutePath().replace(working.getAbsolutePath(),""),source));
+		String filename = file.getAbsolutePath().replace(config.getSrc().getAbsolutePath(),"");
+		filename = filename.substring(1).replaceAll("\\|/",".");
+		System.err.println(getErrorDescription(e,filename,source));
 		if (e.getCause() != e && e.getCause() instanceof CompilerException) {
 			System.err.println("for:");
-			System.err.println(getErrorDescription((CompilerException) e.getCause(),file.getAbsolutePath().replace(working.getAbsolutePath(),""),source));
+			System.err.println(getErrorDescription((CompilerException) e.getCause(),filename,source));
 		}
 		return e;
 	}

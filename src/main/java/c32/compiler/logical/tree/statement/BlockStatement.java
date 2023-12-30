@@ -12,7 +12,7 @@ import java.util.*;
 
 @RequiredArgsConstructor
 @Getter
-public class BlockStatement implements Statement, SpaceInfo {
+public class BlockStatement extends AbstractSpaceInfo implements Statement, SpaceInfo {
 	private final FunctionImplementationInfo function;
 	private final BlockStatement container;
 
@@ -39,28 +39,13 @@ public class BlockStatement implements Statement, SpaceInfo {
 	}
 
 	@Override
-	public Set<FunctionInfo> getFunctions() {
-		return Collections.emptySet();
-	}
-
-	@Override
 	public FunctionInfo addFunction(FunctionInfo function) {
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	public Set<NamespaceInfo> getNamespaces() {
-		return Collections.emptySet();
-	}
-
-	@Override
 	public NamespaceInfo addNamespace(NamespaceInfo namespace) {
 		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public Set<FieldInfo> getFields() {
-		return Collections.emptySet();
 	}
 
 	@Override
@@ -82,7 +67,7 @@ public class BlockStatement implements Statement, SpaceInfo {
 	public VariableRefExpression resolveVariable(SpaceInfo caller, ReferenceExprTree reference) {
 		for (Statement statement : getStatements()) {
 			if (statement instanceof VariableDeclarationStatement) {
-				for (VariableInfo variableInfo : ((VariableDeclarationStatement) statement).getVariable()) {
+				for (VariableInfo variableInfo : ((VariableDeclarationStatement) statement).getVariables()) {
 					if (variableInfo.getName().equals(reference.getIdentifier().text))
 						return new VariableRefExpression(variableInfo);
 				}

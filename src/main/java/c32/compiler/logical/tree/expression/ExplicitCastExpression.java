@@ -16,6 +16,10 @@ public class ExplicitCastExpression implements Expression {
 		if (!expression.getReturnType().canBeExplicitCastTo(targetType)) {
 			throw new CompilerException(location,"cannot cast type '" + expression.getReturnType().getCanonicalName() + "' to '" + targetType.getCanonicalName() + "'");
 		}
+
+		if (expression instanceof VariableRefExpression) {
+			((VariableRefExpression) expression).getVariable().addUsage(this);
+		}
 	}
 
 	@Override

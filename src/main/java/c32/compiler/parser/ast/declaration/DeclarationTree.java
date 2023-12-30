@@ -17,4 +17,29 @@ public interface DeclarationTree<T extends DeclaratorTree> extends Tree, Iterabl
 	default Iterator<T> iterator() {
 		return getDeclarators().iterator();
 	}
+
+	default ModifierTree getModifier(String mod) {
+		for (ModifierTree modifier : getModifiers()) {
+			if (modifier.getKeyword().text.equals(mod)) {
+				return modifier;
+			}
+		}
+		return null;
+	}
+
+	default boolean hasModifier(String mod) {
+		return getModifier(mod) != null;
+	}
+
+	default ModifierTree eatModifier(String mod) {
+		ModifierTree ret = null;
+		for (ModifierTree modifier : getModifiers()) {
+			if (modifier.getKeyword().text.equals(mod)) {
+				ret = modifier;
+				break;
+			}
+		}
+		getModifiers().remove(ret);
+		return ret;
+	}
 }

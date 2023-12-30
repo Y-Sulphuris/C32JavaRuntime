@@ -3,7 +3,9 @@ package c32.compiler.logical.tree;
 import c32.compiler.Location;
 import c32.compiler.except.CompilerException;
 import c32.compiler.parser.ast.ModifierTree;
+import c32.compiler.parser.ast.declaration.DeclarationTree;
 import c32.compiler.parser.ast.declaration.ParameterDeclaration;
+import c32.compiler.parser.ast.declaration.ValuedDeclarationTree;
 import c32.compiler.parser.ast.declarator.FunctionDeclaratorTree;
 import c32.compiler.parser.ast.type.TypeElementTree;
 import lombok.Getter;
@@ -12,14 +14,16 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Getter
-public class FunctionDeclarationInfo implements FunctionInfo {
+public class FunctionDeclarationInfo extends AbstractSymbolInfo implements FunctionInfo {
 	private final String name;
 	private final TypeInfo returnType;
 	private final List<VariableInfo> args = new ArrayList<>();
 	private final List<TypeInfo> throwTypes = new ArrayList<>();
 	private final SpaceInfo parent;
 
-	public FunctionDeclarationInfo(SpaceInfo parent, List<ModifierTree> modifiers, TypeElementTree retType, FunctionDeclaratorTree declarator, boolean hasAnImplementation) {
+
+
+	public FunctionDeclarationInfo(SpaceInfo parent, ValuedDeclarationTree decl, TypeElementTree retType, FunctionDeclaratorTree declarator, boolean hasAnImplementation) {
 		this.parent = parent;
 		assert declarator.getName() != null;
 		this.name = declarator.getName().text;
@@ -37,7 +41,17 @@ public class FunctionDeclarationInfo implements FunctionInfo {
 				assert param.getDeclarator().getName() != null;
 				argName = param.getDeclarator().getName().text;
 			} else argName = "$arg" + arg_i;
-			args.add(new VariableInfo(argName,new TypeRefInfo(param.getTypeElement().get_const() != null,param.getTypeElement().get_restrict() != null,parent.resolveType(parent,param.getTypeElement())),null));
+			ModifierTree mod_register = null;//todo: add modifiers to function parameters
+			args.add(
+					new VariableInfo(
+							argName,
+							new TypeRefInfo(
+									param.getTypeElement().get_const() != null,
+									param.getTypeElement().get_restrict() != null,
+									parent.resolveType(parent,param.getTypeElement())),
+							null,false,mod_register != null
+					)
+			);
 		}
 		if (declarator.getThrowsExceptions() != null)
 			for (TypeElementTree exceptionType : declarator.getThrowsExceptions().getExceptionTypes())
@@ -46,33 +60,23 @@ public class FunctionDeclarationInfo implements FunctionInfo {
 
 
 		Location modLocation = retType.getLocation();
+		List<ModifierTree> modifiers = decl.getModifiers();
+
 		if (!modifiers.isEmpty()) modLocation = Location.between(modifiers.get(0).getLocation(),modifiers.get(modifiers.size()-1).getLocation());
-		boolean _extern = false;
-		boolean _native = false;
-		{
-			Set<ModifierTree> forRemoval = new HashSet<>();
-			for (ModifierTree mod : modifiers) {
-				switch (mod.getKeyword().text) {
-					case "extern": {
-						if (mod.getAttributes() != null)
-							throw new CompilerException(mod.getAttributes().get(0).location,"unknown attribute");
-						_extern = true;
-						forRemoval.add(mod);
-					} break;
-					case "native": {
-						if (mod.getAttributes() != null)
-							throw new CompilerException(mod.getAttributes().get(0).location,"unknown attribute");
-						_native = true;
-						forRemoval.add(mod);
-					} break;
-				}
-			}
-			modifiers.removeAll(forRemoval);
-		}//	delete forRemoval;
+		ModifierTree mod_extern = decl.eatModifier("extern");
+		ModifierTree mod_native = decl.eatModifier("native");
+		//ModifierTree mod_static = decl.eatModifier("static");
+
+
 		if (!modifiers.isEmpty()) throw new CompilerException(
 				modLocation,
-				"unknown modifiers:" + modifiers
+				"unknown modifiers: " + modifiers.stream().map(m -> m.getKeyword().text).collect(Collectors.toList())
 		);
+
+		this._extern = mod_extern != null;
+		this._native = mod_native != null;
+		//this._static = mod_static != null;
+
 		if (hasAnImplementation) {
 			if (_extern) throw new CompilerException(modLocation,"'extern' modifier are not allowed for implemented function");
 			if (_native) throw new CompilerException(modLocation,"'native' modifier are not allowed for implemented function");
@@ -81,8 +85,6 @@ public class FunctionDeclarationInfo implements FunctionInfo {
 				throw new CompilerException(declarator.getLocation(), "implementation expected");
 			}
 		}
-		this._extern = _extern;
-		this._native = _native;
 
 
 		boolean _pure = false;
@@ -123,6 +125,7 @@ public class FunctionDeclarationInfo implements FunctionInfo {
 	}
 	private final boolean _extern;
 	private final boolean _native;
+	//private final boolean _static;
 
 	private final boolean _pure;
 	private final boolean _noexcept;

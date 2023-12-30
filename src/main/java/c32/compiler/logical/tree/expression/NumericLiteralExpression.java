@@ -11,7 +11,7 @@ import java.math.BigInteger;
 
 @Getter
 @RequiredArgsConstructor
-public class NumericLiteralExpression implements Expression {
+public class NumericLiteralExpression implements LiteralExpression {
 
     private final BigInteger number;
     private final TypeInfo returnType;

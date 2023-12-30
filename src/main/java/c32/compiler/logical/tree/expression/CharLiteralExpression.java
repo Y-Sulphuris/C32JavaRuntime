@@ -6,7 +6,7 @@ import c32.compiler.logical.tree.TypeInfo;
 import lombok.Getter;
 
 @Getter
-public class CharLiteralExpression implements Expression {
+public class CharLiteralExpression implements LiteralExpression {
     private final TypeInfo returnType;
     private final char ch;
     public CharLiteralExpression(Token literal, TypeInfo returnType) {

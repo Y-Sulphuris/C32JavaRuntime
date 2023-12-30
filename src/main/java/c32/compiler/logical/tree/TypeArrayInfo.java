@@ -1,30 +1,65 @@
 package c32.compiler.logical.tree;
 
+import c32.compiler.Location;
+import c32.compiler.except.CompilerException;
 import c32.compiler.logical.tree.expression.Expression;
+import c32.compiler.logical.tree.expression.NumericLiteralExpression;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Set;
+import java.util.*;
 
 @Getter
-public class TypeArrayInfo implements TypeInfo {
+public class TypeArrayInfo extends AbstractSymbolInfo implements TypeInfo {
 	private final TypeRefInfo elementType;
+	private final int staticLength;
 
-	private TypeArrayInfo(TypeRefInfo elementType) {
-		this.elementType = elementType;
+	public boolean isStaticArray() {
+		return staticLength != -1;
 	}
-	private static final HashMap<TypeRefInfo, TypeArrayInfo> arrayTypes = new HashMap<>();
+
+	private TypeArrayInfo(TypeRefInfo elementType, int staticLength) {
+		this.elementType = elementType;
+		this.staticLength = staticLength;
+	}
+
+	private static final HashMap<TypeRefInfo, Map<Integer, TypeArrayInfo>> arrayTypes = new HashMap<>();
+
 
 	@NotNull
-	public static TypeArrayInfo arrayOf(TypeRefInfo typeRefInfo) {
-		if (arrayTypes.containsKey(typeRefInfo))
-			return arrayTypes.get(typeRefInfo);
-		TypeArrayInfo arr = new TypeArrayInfo(typeRefInfo);
-		arrayTypes.put(typeRefInfo,arr);
+	public static TypeArrayInfo arrayOf(Location location, Expression expression, TypeRefInfo typeRefInfo) {
+		Expression cExpression = expression.calculate().asCompileTimeLiteralExpression();
+		if (cExpression instanceof NumericLiteralExpression) {
+			long num = ((NumericLiteralExpression) cExpression).getNumber().longValueExact();
+			if (num > Integer.MAX_VALUE || ((NumericLiteralExpression) cExpression).getNumber().bitLength() > 32) // 31?
+				throw new CompilerException(location,"Static array length overflow");
+			if (num < 0)
+				throw new CompilerException(location,"Static array length cannot be negative");
+			if (num == 0)
+				throw new CompilerException(location,"Static array with zero length will declare nothing");
+			return arrayOf((int)num,typeRefInfo);
+		}
+		throw new CompilerException(location,"Static array size expected");
+	}
+
+	@NotNull
+	public static TypeArrayInfo arrayOf(Integer length, TypeRefInfo typeRefInfo) {
+		Map<Integer, TypeArrayInfo> sizesMap;
+		if (!arrayTypes.containsKey(typeRefInfo)) {
+			sizesMap = new HashMap<>();
+			arrayTypes.put(typeRefInfo,sizesMap);
+		} else {
+			sizesMap = arrayTypes.get(typeRefInfo);
+		}
+
+		if (sizesMap.containsKey(length)) {
+			return sizesMap.get(length);
+		}
+		TypeArrayInfo arr = new TypeArrayInfo(typeRefInfo,length);
+		sizesMap.put(length,arr);
 		return arr;
 	}
+
 
 	@Override
 	public SpaceInfo getParent() {
@@ -58,6 +93,16 @@ public class TypeArrayInfo implements TypeInfo {
 
 	@Override
 	public FieldInfo addField(FieldInfo field) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public Collection<TypeStructInfo> getStructs() {
+		return Collections.emptySet();
+	}
+
+	@Override
+	public TypeStructInfo addStruct(TypeStructInfo struct) {
 		throw new UnsupportedOperationException();
 	}
 

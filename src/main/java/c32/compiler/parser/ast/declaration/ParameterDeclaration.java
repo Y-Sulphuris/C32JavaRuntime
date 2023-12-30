@@ -17,6 +17,7 @@ public class ParameterDeclaration implements Tree {
 
 	@Override
 	public Location getLocation() {
+		if (declarator == null) return typeElement.getLocation();
 		return Location.between(typeElement.getLocation(),declarator.getLocation());
 	}
 

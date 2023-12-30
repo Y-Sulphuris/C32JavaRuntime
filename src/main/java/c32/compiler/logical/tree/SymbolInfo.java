@@ -1,6 +1,30 @@
 package c32.compiler.logical.tree;
 
+import c32.compiler.logical.tree.expression.Expression;
+
+import java.util.Collection;
+import java.util.function.Consumer;
+
 public interface SymbolInfo {
+
+	Collection<Weak<Expression>> getUsages();
+
+	default void addUsage(Expression e) {
+		if (e == null) return;
+		getUsages().add(new Weak<>(e));
+	}
+
+	default void forEachUsage(Consumer<Expression> e) {
+		for (Weak<Expression> usage : getUsages()) {
+			if (usage.get() == null) continue;
+			e.accept(usage.get());
+		}
+	}
+
+	default boolean isUnused() {
+		return getUsages().isEmpty();
+	}
+
 	String getName();
 
 	boolean isAccessibleFrom(SpaceInfo space);

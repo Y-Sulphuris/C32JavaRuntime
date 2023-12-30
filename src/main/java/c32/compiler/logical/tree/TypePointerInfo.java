@@ -4,14 +4,15 @@ import c32.compiler.logical.tree.expression.Expression;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Set;
 
 @Getter
-public class TypePointerInfo implements TypeInfo {
-	private final TypeRefInfo targetType;
+public class TypePointerInfo extends AbstractSymbolInfo implements TypeInfo {
 
+	private final TypeRefInfo targetType;
 
 	private TypePointerInfo(TypeRefInfo targetType) {
 		this.targetType = targetType;
@@ -59,6 +60,16 @@ public class TypePointerInfo implements TypeInfo {
 
 	@Override
 	public FieldInfo addField(FieldInfo field) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public Collection<TypeStructInfo> getStructs() {
+		return Collections.emptySet();
+	}
+
+	@Override
+	public TypeStructInfo addStruct(TypeStructInfo struct) {
 		throw new UnsupportedOperationException();
 	}
 

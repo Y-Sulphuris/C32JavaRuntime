@@ -1,17 +1,7 @@
-package test;
-
-
-byte i = 5b + 4i; //todo: pofixit
-
-
-namespace bar {
-    int foo(const int i) {
-	    return i;
-    }
-}
 
 
 void main() {
-
+	byte[4] b;
+	byte b0 = b[3];
 }
 

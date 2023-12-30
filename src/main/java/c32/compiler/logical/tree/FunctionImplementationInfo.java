@@ -8,11 +8,12 @@ import c32.compiler.parser.ast.expr.ReferenceExprTree;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
 @Getter
-public class FunctionImplementationInfo implements FunctionInfo, SpaceInfo {
+public class FunctionImplementationInfo extends AbstractSymbolInfo implements FunctionInfo, SpaceInfo {
 	private final FunctionDeclarationInfo declaration;
 	private final BlockStatement implementation = new BlockStatement(this,null);
 
@@ -36,7 +37,7 @@ public class FunctionImplementationInfo implements FunctionInfo, SpaceInfo {
 	}
 
 	@Override
-	public Set<NamespaceInfo> getNamespaces() {
+	public Collection<NamespaceInfo> getNamespaces() {
 		return implementation.getNamespaces();
 	}
 
@@ -46,13 +47,23 @@ public class FunctionImplementationInfo implements FunctionInfo, SpaceInfo {
 	}
 
 	@Override
-	public Set<FieldInfo> getFields() {
+	public Collection<FieldInfo> getFields() {
 		return implementation.getFields();
 	}
 
 	@Override
 	public FieldInfo addField(FieldInfo field) {
 		return implementation.addField(field);
+	}
+
+	@Override
+	public Collection<TypeStructInfo> getStructs() {
+		return implementation.getStructs();
+	}
+
+	@Override
+	public TypeStructInfo addStruct(TypeStructInfo struct) {
+		return implementation.addStruct(struct);
 	}
 
 	@Override
@@ -103,7 +114,10 @@ public class FunctionImplementationInfo implements FunctionInfo, SpaceInfo {
 
 	@Override
 	public VariableRefExpression resolveVariable(SpaceInfo caller, ReferenceExprTree reference) {
-		//todo: arguments
+		for (VariableInfo arg : declaration.getArgs()) {
+			if (arg.getName().equals(reference.getIdentifier().text))
+				return new VariableRefExpression(arg);
+		}
 		return getParent().resolveVariable(caller,reference);
 	}
 }

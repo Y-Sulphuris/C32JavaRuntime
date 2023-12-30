@@ -1,7 +1,7 @@
 package c32.compiler;
 
 import c32.compiler.codegen.cs.CSGenerator;
-import c32.compiler.codegen.java.Generator;
+import c32.compiler.codegen.Generator;
 import c32.compiler.codegen.java.JavaGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.TreeNode;

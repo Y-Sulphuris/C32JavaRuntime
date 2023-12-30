@@ -8,11 +8,11 @@ import c32.compiler.logical.tree.TypeRefInfo;
 import lombok.Getter;
 
 @Getter
-public class StringLiteralExpression implements Expression {
+public class StringLiteralExpression implements LiteralExpression {
 	private final TypeInfo returnType;
 	private final String string;
 	public StringLiteralExpression(Token literal, TypeInfo returnType) {
-		TypeInfo arrType = TypeArrayInfo.arrayOf(new TypeRefInfo(true,false,TypeInfo.PrimitiveTypeInfo.CHAR));
+		TypeInfo arrType = TypeArrayInfo.arrayOf(-1,new TypeRefInfo(true,false,TypeInfo.PrimitiveTypeInfo.CHAR));
 		if (returnType != null && !returnType.canBeImplicitCastTo(arrType))
 			throw new CompilerException(literal.location,"cannot implicit cast 'const char[]' to '" + returnType.getCanonicalName() + "'");
 		this.returnType = returnType != null ? returnType : arrType;
