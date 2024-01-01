@@ -2,6 +2,9 @@ package std;
 
 extern void println(const char[] ch);
 
+extern void println(byte i);
+extern void println(ubyte i);
+
 extern void println(short i);
 extern void println(ushort i);
 

@@ -12,6 +12,7 @@ import c32.compiler.parser.ast.declarator.*;
 import c32.compiler.parser.ast.expr.*;
 import c32.compiler.parser.ast.statement.*;
 import c32.compiler.parser.ast.type.*;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
@@ -620,6 +621,8 @@ public class Parser {
 		} else if (isKeywordType(token)) {
 			type = new TypeKeywordElementTree(_const, _restrict, token);
 			token = nextToken();
+		} else if (token.text.equals("decltype")) {
+			type = parseDeclType(_const, _restrict);
 		} else if (token.type == TokenType.IDENTIFIER) {
 			StaticElementReferenceTree reference = parseStaticElementReference();
 			type = new TypeReferenceElementTree(_const, _restrict, reference, Location.between(startLocation,reference.getLocation()));
@@ -657,6 +660,14 @@ public class Parser {
 		return type;
 	}
 
+	private TypeElementTree parseDeclType(Token _const, Token _restrict) {
+		Token keyword = assertAndNext("decltype");
+		Token openRound = assertAndNext(TokenType.OPENROUND);
+		ExprTree expression = parseExpr();
+		Token closeRound = assertAndNext(TokenType.CLOSEROUND);
+		return new DeclTypeElementTree(_const,_restrict,keyword,openRound,expression,closeRound);
+	}
+
 	private StaticElementReferenceTree parseStaticElementReference() {
 		List<ReferenceExprTree> references = new ArrayList<>();
 		while (true) {
@@ -684,8 +695,8 @@ public class Parser {
 		token = nextToken();
 
 
-		if (token.type == TokenType.OPENSQUARE) {
-			return new IndexExprTree(lhs,parseIndexList());
+		while (token.type == TokenType.OPENSQUARE) {
+			lhs = new IndexExprTree(lhs,parseIndexList());
 		}
 
 		return parseBinOpRhs(0, lhs);
@@ -732,6 +743,22 @@ public class Parser {
 
 
 	private ExprTree parse_Primary() {
+		int startPos = curTok;
+		CompilerException typeException = null;
+		TRY_TO_READ_INIT_LIST:
+		try {
+			if (token.type == TokenType.IDENTIFIER || token.type == TokenType.KEYWORD) {
+				TypeElementTree type = parseTypeElement();
+				if (token.type == TokenType.OPEN)
+					return parse_InitializerList(type);
+			}
+		} catch (UnexpectedTokenException e){
+			typeException = e;
+		}
+		curTok = startPos;
+		token = currentToken();
+
+
 		Token prefixOperator = null;
 		int prefixPriority = 0;
 		if (token.type == TokenType.OPERATOR) {
@@ -842,6 +869,9 @@ public class Parser {
 	}
 
 	private InitializerListExprTree parse_InitializerList() {
+		return parse_InitializerList(null);
+	}
+	private InitializerListExprTree parse_InitializerList(@Nullable TypeElementTree type) {
 		Token open = assertAndNext(TokenType.OPEN);
 		List<ExprTree> initializers = new ArrayList<>();
 		while (token.type != TokenType.CLOSE) {
@@ -854,7 +884,7 @@ public class Parser {
 			throw new UnexpectedTokenException(token,"',' or '}' expected");
 		}
 		Token close = token;
-		return new InitializerListExprTree(open,initializers,close);
+		return new InitializerListExprTree(type,open,initializers,close);
 	}
 
 	private ExprTree parse_ParentExpr() {
@@ -998,5 +1028,7 @@ public class Parser {
 		keywordsTypes.add("char");
 		keywordsTypes.add("char8");
 		keywordsTypes.add("char32");
+
+		keywordsTypes.add("auto");
 	}
 }

@@ -2,28 +2,31 @@ package c32.compiler.logical.tree.expression;
 
 import c32.compiler.Location;
 import c32.compiler.except.CompilerException;
-import c32.compiler.logical.tree.SymbolInfo;
-import c32.compiler.logical.tree.TypeArrayInfo;
-import c32.compiler.logical.tree.TypeInfo;
-import c32.compiler.logical.tree.VariableInfo;
+import c32.compiler.logical.tree.*;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
 import java.math.BigInteger;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.function.Consumer;
 
 @Getter
+@RequiredArgsConstructor
 public class IndexExpression implements Expression {
 	private final Expression array;
 	private final List<Expression> args;
 
-	public VariableInfo arrayIsRegister() {
-		if (array.getReturnType() instanceof TypeArrayInfo) {
-			if (array instanceof VariableRefExpression) {
-				if (((VariableRefExpression) array).getVariable().isRegister())
-					return ((VariableRefExpression) array).getVariable();
-			}
-		}
-		return null;
+	@Override
+	public void forEachSubExpression(Consumer<Expression> act) {
+		args.forEach(act);
+		act.accept(array);
+	}
+
+	@Override
+	public boolean isAssignable() {
+		return array.isAssignable();
 	}
 
 	public IndexExpression(Location location, Expression array, List<Expression> args) {
@@ -43,11 +46,11 @@ public class IndexExpression implements Expression {
 				throw new CompilerException(location,"array index overflow");
 			int index = exprValue.intValue();
 			if (index < 0 || (arrayType.isStaticArray() && index >= arrayType.getStaticLength())) {
-				throw new CompilerException(location,"array index " + index + " out of bounds");
+				throw new CompilerException(location,"array index " + index + " out of bounds (length = " + arrayType.getStaticLength() + ")");
 			}
 		} else {
 			if (array instanceof VariableRefExpression && ((VariableRefExpression) array).getVariable().is_register()) {
-				throw new CompilerException(location,"register array length must be known in compile-time");
+				throw new CompilerException(location,"register array length must be known at compile-time");
 			}
 		}
 

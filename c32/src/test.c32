@@ -1,7 +1,14 @@
+package test;
 
 
 void main() {
-	byte[4] b;
-	byte b0 = b[3];
+	auto arr1 = byte[4]{3b,6b,1b,5b};
+	int i = 2;
+	arr1[1] = 5;
+	decltype(arr1) arr2 = arr1;
+	foo(arr2);
 }
 
+void foo(byte[4] b) {
+	std.println(b[0]);
+}

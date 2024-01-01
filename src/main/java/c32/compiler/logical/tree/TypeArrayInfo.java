@@ -123,18 +123,27 @@ public class TypeArrayInfo extends AbstractSymbolInfo implements TypeInfo {
 
 	@Override
 	public Expression getDefaultValue() {
+		//return null;
+
+
+
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
 	public String getCanonicalName() {
-		return (elementType.is_const() ? "const " : "") + (elementType.is_restrict() ? "restrict " : "") + elementType.getType().getCanonicalName() + "[]";
+		return
+				(elementType.is_const() ? "const " : "") +
+						(elementType.is_restrict() ? "restrict " : "") +
+						elementType.getType().getCanonicalName() +
+						"[" + (staticLength != -1 ? staticLength + "]" : "]");
 	}
 
 	@Override
 	public boolean canBeImplicitCastTo(TypeInfo type) {
 		if (type instanceof TypeArrayInfo) {
-			return TypeInfo.super.canBeImplicitCastTo(type) || this.getElementType().canBeImplicitCastTo(((TypeArrayInfo) type).getElementType());
+			if (((TypeArrayInfo) type).staticLength != this.staticLength) return false;
+			return TypeInfo.super.canBeImplicitCastTo(type) || this.getElementType().getType().equals(((TypeArrayInfo) type).getElementType().getType());
 		}
 		return TypeInfo.super.canBeImplicitCastTo(type);
 	}

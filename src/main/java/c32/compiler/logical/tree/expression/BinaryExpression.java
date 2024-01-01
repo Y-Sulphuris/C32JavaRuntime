@@ -9,7 +9,7 @@ import c32.compiler.logical.tree.TypeRefInfo;
 import lombok.Getter;
 
 import java.math.BigInteger;
-
+import java.util.function.Consumer;
 
 
 @Getter
@@ -18,8 +18,13 @@ public class BinaryExpression implements Expression {
 	private final BinaryOperator operator;
 	private final Expression rhs;
 
+	@Override
+	public void forEachSubExpression(Consumer<Expression> act) {
+		act.accept(lhs);
+		act.accept(rhs);
+	}
 
-	public BinaryExpression(Location location,Expression lhs, String operator, Expression rhs) {
+	public BinaryExpression(Location location, Expression lhs, String operator, Expression rhs) {
 		this.lhs = lhs;
 		this.operator = BinaryOperator.findOperator(location, lhs,operator,rhs);
 		this.rhs = rhs;

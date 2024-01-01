@@ -12,6 +12,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.math.BigInteger;
+import java.util.Collections;
+import java.util.List;
 
 public class JavaGenerator implements Generator {
 
@@ -170,7 +172,27 @@ public class JavaGenerator implements Generator {
 		} else if (expr instanceof BooleanLiteralExpression) {
 			out.print(((BooleanLiteralExpression) expr).isValue());
 		} else if (expr instanceof VariableRefExpression) {
-			out.print("("+((VariableRefExpression) expr).getVariable().getName()+")");
+			if (expr.getReturnType() instanceof TypeArrayInfo && ((VariableRefExpression) expr).getVariable().isRegister()) {
+				out.print("new ");
+				writeType(expr.getReturnType(),out);
+				out.print("{");
+				int len = ((TypeArrayInfo) expr.getReturnType()).getStaticLength();
+				for (int i = 0; i < len; i++) {
+					writeIndexExpression(
+							new IndexExpression(
+									expr,
+									Collections.singletonList(new NumericLiteralExpression(BigInteger.valueOf(i), TypeInfo.PrimitiveTypeInfo.INT)
+									)
+							),out
+					);
+					if(i != len-1) {
+						out.print(",");
+					}
+				}
+				out.print("}");
+			} else {
+				out.print("("+((VariableRefExpression) expr).getVariable().getName()+")");
+			}
 		} else if (expr instanceof BinaryExpression) {
 			out.print('(');
 			writeExpression(((BinaryExpression) expr).getLhs(),out);
@@ -207,28 +229,75 @@ public class JavaGenerator implements Generator {
 			if (parent != null) out.print(parent.getOp());
 			out.print("=");
 			writeExpression(((AssignExpression) expr).getRvalue(),out);
+			DEFAULT:
+			if (((AssignExpression) expr).getRvalue().getReturnType() instanceof TypeArrayInfo) {
+				if (((AssignExpression) expr).getRvalue() instanceof VariableRefExpression) {
+					if (((VariableRefExpression) ((AssignExpression) expr).getRvalue()).getVariable().isRegister()) {
+						break DEFAULT;
+					}
+				}
+				out.print(".clone()");
+			}
 		} else if (expr instanceof ExplicitCastExpression) {
 			out.print("(("+getJavaTypeName(((ExplicitCastExpression) expr).getTargetType()) + ")");
 			writeExpression(((ExplicitCastExpression) expr).getExpression(),out);
 			out.print(")");
 		} else if (expr instanceof IndexExpression) {
-			VariableInfo registerArray = ((IndexExpression) expr).arrayIsRegister();
-			if (registerArray != null) {
-				out.print(registerArray.getName() + "$");
-				if (((IndexExpression) expr).getArgs().get(0) instanceof NumericLiteralExpression) {
-					BigInteger index = ((NumericLiteralExpression) ((IndexExpression) expr).getArgs().get(0)).getNumber();
-					out.print(index);
-				} else throw new UnsupportedOperationException("what");
-			} else {
-				writeExpression(((IndexExpression) expr).getArray(),out);
-				out.print("[");
-				writeExpression(((IndexExpression) expr).getArgs().get(0),out);
-				out.print("]");
+			writeIndexExpression((IndexExpression) expr, out);
+		} else if (expr instanceof InitializerListExpression) {
+			out.print("new ");
+			writeType(expr.getReturnType(),out);
+			out.print("{");
+			List<Expression> args = ((InitializerListExpression) expr).getArgs();
+			for (int i = 0; i < args.size(); i++) {
+				Expression arg = args.get(i);
+				writeExpression(arg, out);
+				if (i != args.size()-1)
+					out.print(',');
 			}
+			out.print("}");
 		}
 		else
 			throw new UnsupportedOperationException(expr.getClass().getName());
 	}
+
+
+	private void writeIndexExpression(IndexExpression expr, PrintStream out) {
+		String registerArray = arrayIsRegister(expr);
+		if (registerArray != null) {
+			out.print(registerArray);
+		} else {
+			writeExpression(expr.getArray(),out);
+			out.print("[");
+			writeExpression(expr.getArgs().get(0),out);
+			out.print("]");
+		}
+	}
+
+	private static String arrayIsRegister(IndexExpression expr) {
+		Expression array = expr.getArray();
+		String registerArray = null;
+		if (array.getReturnType() instanceof TypeArrayInfo) {
+			if (array instanceof VariableRefExpression) {
+				if (((VariableRefExpression) array).getVariable().isRegister()) {
+					registerArray = ((VariableRefExpression) array).getVariable().getName();
+				}
+			} else if (array instanceof IndexExpression) {
+				registerArray = arrayIsRegister(((IndexExpression) array));
+			}
+			if (registerArray != null) {
+				registerArray += "$";
+				if (expr.getArgs().get(0) instanceof NumericLiteralExpression) {
+					BigInteger index = ((NumericLiteralExpression) expr.getArgs().get(0)).getNumber();
+					registerArray += index;
+					return registerArray;
+				} else throw new UnsupportedOperationException("what");
+			}
+		}
+		return null;
+	}
+
+
 	private void writeChar(String ch, PrintStream out) {
 		switch (ch) {
 			case "\n":
@@ -312,10 +381,23 @@ public class JavaGenerator implements Generator {
 			}
 			out.println(';');
 		} else if (variable.getTypeRef().getType() instanceof TypeArrayInfo) {
+			Expression initializer = variable.getInitializer();
 			if (variable.isRegister()) {
 				TypeArrayInfo array = ((TypeArrayInfo) variable.getTypeRef().getType());
 				for (int i = 0; i < array.getStaticLength(); i++) {
-					writeVariable(new VariableInfo(variable.getName()+"$"+i,array.getElementType(),array.getElementType().getType().getDefaultValue(), variable.is_static(),true),out);
+					Expression value = null;
+					if (initializer == null) {
+						value = array.getElementType().getType().getDefaultValue();
+					} else if (initializer instanceof InitializerListExpression) {
+						value = ((InitializerListExpression) initializer).getArgs().get(i);
+					} else if (initializer instanceof VariableRefExpression) {
+						/*if (((VariableRefExpression) initializer).getVariable().getTypeRef().canBeImplicitCastTo(variable.getTypeRef())) {
+
+						} else throw new UnsupportedOperationException();*/
+						value = new IndexExpression(initializer, Collections.singletonList(new NumericLiteralExpression(BigInteger.valueOf(i), TypeInfo.PrimitiveTypeInfo.INT)));
+					} else
+						throw new UnsupportedOperationException();
+					writeVariable(new VariableInfo(null,variable.getName()+"$"+i,array.getElementType(), value, variable.is_static(),true),out);
 				}
 			} else {
 				if (variable.getTypeRef().is_const()) out.print("final ");
@@ -325,6 +407,7 @@ public class JavaGenerator implements Generator {
 				if (variable.getInitializer() != null) {
 					out.print(" = ");
 					writeExpression(variable.getInitializer(),out);
+					out.println(';');
 				} else if (len != -1){
 					out.print(" = ");
 					out.print("new ");

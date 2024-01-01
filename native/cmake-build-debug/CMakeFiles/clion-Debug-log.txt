@@ -1,16 +1,16 @@
-D:\__Sys__\Users\lidia\Local\JetBrains\Toolbox\apps\CLion\ch-0\233.11799.287\bin\cmake\win\x64\bin\cmake.exe -DCMAKE_BUILD_TYPE=Debug -DCMAKE_MAKE_PROGRAM=D:/__Sys__/Users/lidia/Local/JetBrains/Toolbox/apps/CLion/ch-0/233.11799.287/bin/ninja/win/x64/ninja.exe -G Ninja -S G:\Project\JavaProject\C32JavaRuntime\native -B G:\Project\JavaProject\C32JavaRuntime\native\cmake-build-debug
+D:\__Sys__\Users\lidia\Local\JetBrains\Toolbox\apps\CLion\ch-0\233.13135.93\bin\cmake\win\x64\bin\cmake.exe -DCMAKE_BUILD_TYPE=Debug -DCMAKE_MAKE_PROGRAM=D:/__Sys__/Users/lidia/Local/JetBrains/Toolbox/apps/CLion/ch-0/233.13135.93/bin/ninja/win/x64/ninja.exe -G Ninja -S G:\Project\JavaProject\C32JavaRuntime\native -B G:\Project\JavaProject\C32JavaRuntime\native\cmake-build-debug
 -- The C compiler identification is GNU 13.1.0
 -- The CXX compiler identification is GNU 13.1.0
 -- Detecting C compiler ABI info
 -- Detecting C compiler ABI info - done
--- Check for working C compiler: D:/__Sys__/Users/lidia/Local/JetBrains/Toolbox/apps/CLion/ch-0/233.11799.287/bin/mingw/bin/gcc.exe - skipped
+-- Check for working C compiler: D:/__Sys__/Users/lidia/Local/JetBrains/Toolbox/apps/CLion/ch-0/233.13135.93/bin/mingw/bin/gcc.exe - skipped
 -- Detecting C compile features
 -- Detecting C compile features - done
 -- Detecting CXX compiler ABI info
 -- Detecting CXX compiler ABI info - done
--- Check for working CXX compiler: D:/__Sys__/Users/lidia/Local/JetBrains/Toolbox/apps/CLion/ch-0/233.11799.287/bin/mingw/bin/g++.exe - skipped
+-- Check for working CXX compiler: D:/__Sys__/Users/lidia/Local/JetBrains/Toolbox/apps/CLion/ch-0/233.13135.93/bin/mingw/bin/g++.exe - skipped
 -- Detecting CXX compile features
 -- Detecting CXX compile features - done
--- Configuring done (4.1s)
+-- Configuring done (12.7s)
 -- Generating done (0.0s)
 -- Build files have been written to: G:/Project/JavaProject/C32JavaRuntime/native/cmake-build-debug

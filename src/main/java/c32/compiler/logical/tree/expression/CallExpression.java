@@ -8,12 +8,18 @@ import lombok.RequiredArgsConstructor;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 @Getter
 @RequiredArgsConstructor
 public class CallExpression implements Expression {
 	private final FunctionInfo function;
 	private final List<Expression> args;
+
+	@Override
+	public void forEachSubExpression(Consumer<Expression> act) {
+		args.forEach(act);
+	}
 
 	@Override
 	public TypeInfo getReturnType() {

@@ -5,10 +5,17 @@ import c32.compiler.except.CompilerException;
 import c32.compiler.logical.tree.TypeInfo;
 import lombok.Getter;
 
+import java.util.function.Consumer;
+
 @Getter
 public class ExplicitCastExpression implements Expression {
 	private final TypeInfo targetType;
 	private final Expression expression;
+
+	@Override
+	public void forEachSubExpression(Consumer<Expression> act) {
+		act.accept(expression);
+	}
 
 	public ExplicitCastExpression(Location location, TypeInfo targetType, Expression expression) {
 		this.targetType = targetType;

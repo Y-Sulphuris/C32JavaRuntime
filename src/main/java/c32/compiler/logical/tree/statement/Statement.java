@@ -1,6 +1,7 @@
 package c32.compiler.logical.tree.statement;
 
 import c32.compiler.except.CompilerException;
+import c32.compiler.lexer.tokenizer.Token;
 import c32.compiler.logical.tree.*;
 import c32.compiler.logical.tree.expression.BinaryExpression;
 import c32.compiler.logical.tree.expression.Expression;
@@ -10,10 +11,13 @@ import c32.compiler.parser.ast.declarator.DeclaratorTree;
 import c32.compiler.parser.ast.declarator.VariableDeclaratorTree;
 import c32.compiler.parser.ast.expr.BinaryExprTree;
 import c32.compiler.parser.ast.statement.*;
+import c32.compiler.parser.ast.type.DeclTypeElementTree;
 import lombok.var;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public interface Statement {
@@ -31,7 +35,7 @@ public interface Statement {
 			List<VariableInfo> variables = new ArrayList<>();
 			for (DeclaratorTree declaratorTree : decl) {
 				var varDec = ((VariableDeclaratorTree) declaratorTree);
-				TypeInfo type = container.resolveType(container,decl.getTypeElement());
+				TypeInfo type = container.resolveType(container,decl.getTypeElement());;
 
 				ModifierTree mod_static = decl.eatModifier("static");
 				if (mod_static != null && mod_static.getAttributes() != null)
@@ -39,10 +43,24 @@ public interface Statement {
 							"unknown attributes: " + mod_static.getAttributes().stream().map(a -> a.text).collect(Collectors.toList()));
 
 				ModifierTree mod_register = decl.eatModifier("register");
+				boolean registerAllowed = true;
 				if (mod_register != null) {
-					if (mod_register.getAttributes() != null)
-						throw new CompilerException(mod_register.getLocation(),
-							"unknown attributes: " + mod_register.getAttributes().stream().map(a -> a.text).collect(Collectors.toList()));
+					if (mod_register.getAttributes() != null) {
+						if (mod_register.getAttributes().size() == 1) {
+							String attribute = mod_register.getAttributes().get(0).text;
+							if (attribute.equals("true")) {
+								//just an explicit forcing register
+							} else if (attribute.equals("false")){
+								registerAllowed = false;
+							} else {
+								throw new CompilerException(mod_register.getLocation(),
+										"unknown attributes: " + mod_register.getAttributes().stream().map(a -> a.text).collect(Collectors.toList()));
+							}
+						} else {
+							throw new CompilerException(mod_register.getLocation(),
+									"unknown attributes: " + mod_register.getAttributes().stream().map(a -> a.text).collect(Collectors.toList()));
+						}
+					}
 					if (type instanceof TypeArrayInfo && !((TypeArrayInfo) type).isStaticArray()) {
 						throw new CompilerException(mod_register.getLocation(),
 								"'register' is not available for dynamic arrays");
@@ -51,14 +69,26 @@ public interface Statement {
 
 				if (!decl.getModifiers().isEmpty())
 					throw new CompilerException(decl.getLocation(), "unknown modifiers: " + decl.getModifiers().stream().map(m -> m.getKeyword().text).collect(Collectors.toList()));
-				if (varDec.getName() != null) variables.add(new VariableInfo(varDec.getName().text,
+
+				Expression init = null;
+				if (varDec.getInitializer() != null) {
+					init = Expression.build(container,container, varDec.getInitializer(),type);
+					if (type == null) {
+						type = init.getReturnType();
+					}
+				}
+				if (type == null) {
+					throw new CompilerException(decl.getTypeElement().getLocation(), "'auto' is not allowed here");
+				}
+
+				if (varDec.getName() != null) variables.add(new VariableInfo(decl.getLocation(), varDec.getName().text,
 						new TypeRefInfo(
 								decl.getTypeElement().get_const() != null,
 								decl.getTypeElement().get_restrict() != null,
 								type
 						),
-						varDec.getInitializer() != null ? Expression.build(container,container, varDec.getInitializer(),type) : null,
-						mod_static != null,mod_register != null
+						init,
+						mod_static != null, registerAllowed ? mod_register != null : null
 				));
 			}
 			return new VariableDeclarationStatement(function, container, variables);

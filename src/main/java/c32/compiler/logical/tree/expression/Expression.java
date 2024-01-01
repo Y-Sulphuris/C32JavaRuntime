@@ -6,9 +6,10 @@ import c32.compiler.logical.tree.TypeInfo;
 import c32.compiler.logical.tree.VariableInfo;
 import c32.compiler.logical.tree.Weak;
 import c32.compiler.parser.ast.expr.*;
+import c32.compiler.parser.ast.type.TypeElementTree;
 
-import java.lang.ref.WeakReference;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public interface Expression {
@@ -22,23 +23,33 @@ public interface Expression {
 		return this;
 	}
 
-	default Set<Weak<VariableInfo>> getUsingVariables() {
-		return Collections.emptySet();
+	default Set<Weak<VariableInfo>> collectUsingVariables() {
+		Set<Weak<VariableInfo>> using = new HashSet<>();
+		forEachSubExpression(expression -> {
+			using.addAll(expression.collectUsingVariables());
+		});
+		return using;
 	}
 
-	default Set<Weak<VariableInfo>> getChangeVariables() {
-		return Collections.emptySet();
+	default Set<Weak<VariableInfo>> collectChangeVariables() {
+		Set<Weak<VariableInfo>> write = new HashSet<>();
+		forEachSubExpression(expression -> {
+			write.addAll(expression.collectChangeVariables());
+		});
+		return write;
+	}
+
+	default void forEachSubExpression(Consumer<Expression> act) {
+
 	}
 
 	default void addUsingVariable(VariableInfo var) {
 		if (var == null) return;
-		getUsingVariables().add(var.weakReference());
+		throw new UnsupportedOperationException();
 	}
 	default void addChangeVariable(VariableInfo var) {
 		if (var == null) return;
-		Weak<VariableInfo> weakPtr = var.weakReference();
-		getUsingVariables().add(weakPtr);
-		getChangeVariables().add(weakPtr);
+		throw new UnsupportedOperationException();
 	}
 
 	static Expression build(SpaceInfo caller, SpaceInfo container, ExprTree exprTree, TypeInfo returnType) {
@@ -107,6 +118,20 @@ public interface Expression {
 							Expression.build(caller,container,a,null))
 					.collect(Collectors.toList());
 			return new IndexExpression(exprTree.getLocation(),array,args);
+		} else if (exprTree instanceof InitializerListExprTree) {
+			TypeElementTree listTypeTree = ((InitializerListExprTree) exprTree).getExplicitType();
+			TypeInfo listType = null;
+			if (listTypeTree != null) {
+				listType = caller.resolveType(caller,listTypeTree);
+				if (returnType != null && !listType.canBeImplicitCastTo(returnType)) {
+					throw new CompilerException(listTypeTree.getLocation(),returnType.getCanonicalName() + " cannot be implicitly cast to " + listType.getCanonicalName());
+				}
+			}
+			List<Expression> expressions = new ArrayList<>();
+			for (ExprTree initializer : ((InitializerListExprTree) exprTree).getInitializers()) {
+				expressions.add(Expression.build(caller,container,initializer,null));//todo: specify return type if possible
+			}
+			return new InitializerListExpression(exprTree.getLocation(), listType,expressions);
 		}
 
 		throw new UnsupportedOperationException(exprTree.getClass().getName());
@@ -120,5 +145,11 @@ public interface Expression {
 	/*final*/ default void addUsageIfVariable(Expression expression) {
 		if (expression instanceof VariableRefExpression)
 			((VariableRefExpression) expression).getVariable().addUsage(this);
+	}
+
+	default boolean checkImplicitCastTo_mutable(TypeInfo type) {
+		if (this.getReturnType() != null)
+			return this.getReturnType().canBeImplicitCastTo(type);
+		return false;
 	}
 }

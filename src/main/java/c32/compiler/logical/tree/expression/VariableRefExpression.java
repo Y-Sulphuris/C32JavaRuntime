@@ -1,15 +1,21 @@
 package c32.compiler.logical.tree.expression;
 
-import c32.compiler.logical.tree.TypeInfo;
-import c32.compiler.logical.tree.TypeRefInfo;
-import c32.compiler.logical.tree.VariableInfo;
+import c32.compiler.logical.tree.*;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+
+import java.util.Collections;
+import java.util.Set;
 
 @Getter
 @RequiredArgsConstructor
 public class VariableRefExpression implements Expression {
 	private final VariableInfo variable;
+
+	@Override
+	public Set<Weak<VariableInfo>> collectUsingVariables() {
+		return Collections.singleton(variable.weakReference());
+	}
 
 	@Override
 	public TypeInfo getReturnType() {
@@ -18,6 +24,9 @@ public class VariableRefExpression implements Expression {
 
 	@Override
 	public boolean isAssignable() {
+		if (variable.getTypeRef().getType() instanceof TypeArrayInfo) {
+			return !((TypeArrayInfo) variable.getTypeRef().getType()).getElementType().is_const();
+		}
 		return !variable.getTypeRef().is_const();
 	}
 }

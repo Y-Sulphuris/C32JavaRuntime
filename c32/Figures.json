@@ -1,6 +1,6 @@
 {
   "source-path" : "src",
   "target" : ["java"],
-  "startup" : "main"
+  "startup" : "test.main"
 }
 

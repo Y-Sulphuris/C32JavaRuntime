@@ -82,7 +82,7 @@ public interface TypeInfo extends SpaceInfo {
 
 		@Override
 		public String toString() {
-			return "TypeInfo(" + name + ')';
+			return getCanonicalName();
 		}
 
 		private final String name;

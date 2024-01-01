@@ -28,6 +28,9 @@ public class FunctionDeclarationInfo extends AbstractSymbolInfo implements Funct
 		assert declarator.getName() != null;
 		this.name = declarator.getName().text;
 		this.returnType = parent.resolveType(parent,retType);
+		if (returnType == null) {
+			throw new CompilerException(retType.getLocation(),"'auto' is not allowed here");
+		}
 		if (retType.get_const() != null)
 			throw new CompilerException(retType.get_const().location, "modifier 'const' has no affect there");
 
@@ -41,15 +44,15 @@ public class FunctionDeclarationInfo extends AbstractSymbolInfo implements Funct
 				assert param.getDeclarator().getName() != null;
 				argName = param.getDeclarator().getName().text;
 			} else argName = "$arg" + arg_i;
-			ModifierTree mod_register = null;//todo: add modifiers to function parameters
+			//ModifierTree mod_register = null;//to do: add modifiers to function parameters или нет
 			args.add(
-					new VariableInfo(
+					new VariableInfo(param.getLocation(),
 							argName,
 							new TypeRefInfo(
 									param.getTypeElement().get_const() != null,
 									param.getTypeElement().get_restrict() != null,
 									parent.resolveType(parent,param.getTypeElement())),
-							null,false,mod_register != null
+							null,false,null
 					)
 			);
 		}

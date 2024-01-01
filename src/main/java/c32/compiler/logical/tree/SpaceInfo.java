@@ -96,6 +96,11 @@ public interface SpaceInfo extends SymbolInfo {
 				ReferenceExprTree namespaceRef = references.remove(0);
 				return resolveNamespace(caller, namespaceRef).resolveType(this, type);
 			}
+		} else if (type instanceof DeclTypeElementTree) {
+			Expression expression = Expression.build(caller,caller,((DeclTypeElementTree) type).getExpression(),null);
+			if (expression.getReturnType() == null)
+				throw new CompilerException(type.getLocation(), "cannot get type from expression");
+			return expression.getReturnType();
 		}
 
 		throw new UnsupportedOperationException(type.getClass().getName());

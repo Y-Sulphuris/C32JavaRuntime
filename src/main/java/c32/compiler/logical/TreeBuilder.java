@@ -1,5 +1,6 @@
 package c32.compiler.logical;
 
+import c32.compiler.Location;
 import c32.compiler.except.CompilerException;
 import c32.compiler.logical.tree.*;
 import c32.compiler.logical.tree.expression.Expression;
@@ -139,22 +140,34 @@ public class TreeBuilder {
 	private FieldInfo buildField(SpaceInfo container, ValuedDeclarationTree decl,VariableDeclaratorTree declarator) {
 		Objects.requireNonNull(declarator.getName());
 		boolean _const = decl.getTypeElement().get_const() != null;
-		TypeRefInfo type = new TypeRefInfo(
-				_const, decl.getTypeElement().get_restrict() != null, container.resolveType(container,decl.getTypeElement())
-		);
+		TypeInfo type = container.resolveType(container,decl.getTypeElement());
+
+
 		Expression init = null;
 		if (declarator.getInitializer() != null) {
-			init = Expression.build(container,container,declarator.getInitializer(),type.getType());
-		} else
-			if (_const) throw new CompilerException(declarator.getLocation(), "const variables must have an initializer");
+			init = Expression.build(container,container,declarator.getInitializer(),type);
+			if (type == null) {
+				type = init.getReturnType();
+			}
+		} else {
+			if (_const)
+				throw new CompilerException(declarator.getLocation(), "const variables must have an initializer");
+		}
 
+		if (type == null) {
+			throw new CompilerException(decl.getTypeElement().getLocation(), "'auto' is not allowed here");
+		}
+
+		TypeRefInfo typeRef = new TypeRefInfo(
+				_const, decl.getTypeElement().get_restrict() != null, type
+		);
 		boolean _static = decl.hasModifier("static");
 		return new FieldVariableInfo(
-				buildVariableInfo(declarator.getName().text,type,container,init,_static), container
+				buildVariableInfo(declarator,typeRef,container,init,_static), container
 		);
 	}
-	private VariableInfo buildVariableInfo(String name, TypeRefInfo type, SpaceInfo container, Expression init, boolean _static) {
-		return new VariableInfo(name, type, init, _static, false);
+	private VariableInfo buildVariableInfo(VariableDeclaratorTree declarator, TypeRefInfo type, SpaceInfo container, Expression init, boolean _static) {
+		return new VariableInfo(declarator.getLocation(), declarator.getName().text, type, init, _static, false);
 	}
 
 	private FunctionImplementationInfo buildFunctionImpl(SpaceInfo current, ValuedDeclarationTree decl, FunctionDefinitionTree definition) {
