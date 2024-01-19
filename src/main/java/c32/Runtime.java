@@ -1,36 +1,51 @@
 package c32;
 
+import com.IOUtils;
 import com.natives.NativesInit;
 
 public final class Runtime {
 	private Runtime() throws InstantiationException {
 		throw new InstantiationException();
 	}
+	private static boolean inited = false;
 	static {
 		initNatives();
 	}
 
 	public static void initNatives() {
+		if (inited) return;
+		String libName = null;
 		switch (NativesInit.getOs()) {
 			case NativesInit.WINDOWS_NAME:
 				if (NativesInit.is64bitOs()) {
-					NativesInit.addLibrary("c32rt_64.dll");
+					libName = ("c32rt_64.dll");
 				} else {
-					NativesInit.addLibrary("c32rt.dll");
+					libName = ("c32rt.dll");
 				}
 				break;
 			case NativesInit.LINUX_NAME:
 				if (NativesInit.is64bitOs()) {
-					NativesInit.addLibrary("c32rt_64.so");
+					libName = ("c32rt_64.so");
 				} else {
-					NativesInit.addLibrary("c32rt.so");
+					libName = ("c32rt.so");
 				}
 				break;
 			case NativesInit.MACOS_NAME:
-				NativesInit.addLibrary("c32rt.dylib");//todo
+				libName = ("c32rt.dylib");//todo
 				break;
 		}
+		if (libName != null)
+			NativesInit.addLibrary(libName);
 		NativesInit.extractNatives("native","c32/native");
+		System.load(IOUtils.toUserhome_path("c32/native/"+NativesInit.getOs()) + libName);
+		inited = true;
+	}
+
+	public static void pointer_println(long ptr) {
+		System.out.println(Long.toHexString(ptr));
+	}
+	public static void pointer_print(long ptr) {
+		System.out.print(Long.toHexString(ptr));
 	}
 
 	/*private static final long String_value_offset;

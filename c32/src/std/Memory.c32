@@ -1,0 +1,13 @@
+package std;
+
+
+extern void* malloc(size_t size);
+extern void* calloc(size_t size, size_t num);
+extern void* realloc(void* mem, size_t size);
+extern void free(void* mem);
+
+//эта штука примерно 150 раз переписывалась, а по итогу я всё стёр
+//тут были smart pointers из C++
+
+//для компилятора это было слишком жестоко. Проверяйте, прежде чем в тупую пихать сюда файлы из std
+//byte[sizeof(T)]& asRawByteArray<struct T>(T& any) -> *(byte[sizeof(T)]*)&T;

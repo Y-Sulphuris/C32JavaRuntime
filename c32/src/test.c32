@@ -1,14 +1,15 @@
 package test;
 
+const auto nullptr = (void*)0;
 
 void main() {
-	auto arr1 = byte[4]{3b,6b,1b,5b};
-	int i = 2;
-	arr1[1] = 5;
-	decltype(arr1) arr2 = arr1;
-	foo(arr2);
+	size_t size = 5ul;
+	int* mem = std.malloc(8);
+	*mem = 5;
+	mem[1] = 40;
+	std.println(*mem);
+	std.println(*(mem+1));
+	std.println(mem[0]);
+	std.println(mem[1]);
 }
 
-void foo(byte[4] b) {
-	std.println(b[0]);
-}

@@ -67,7 +67,7 @@ public interface Expression {
 		} else if (exprTree instanceof ReferenceExprTree) {
 			VariableRefExpression var = container.resolveVariable(container, (ReferenceExprTree)exprTree);
 			if (returnType != null) {
-				if (!var.getReturnType().canBeImplicitCastTo(returnType)){
+				if (!var.getReturnType().canBeImplicitlyCastTo(returnType)){
 					throw new CompilerException(exprTree.getLocation(), "cannot implicit cast '" + var.getReturnType().getCanonicalName() + "' to '" + returnType.getCanonicalName() + ";");
 				}
 			}
@@ -105,32 +105,47 @@ public interface Expression {
 				args.add(Expression.build(caller,caller,argument,null));
 			}
 			return new CallExpression(container.resolveFunction(container, (CallExprTree)exprTree, args), args);
-		} else if (exprTree instanceof UnaryPrefixExprTree) {
+		}
+		else if (exprTree instanceof UnaryPrefixExprTree)
+		{
 			Expression expression = Expression.build(caller,container,((UnaryPrefixExprTree) exprTree).getExpression(),null);
-			return new UnaryPrefixExpression(expression,((UnaryPrefixExprTree) exprTree).getOperator().text);
-		} else if (exprTree instanceof CastExprTree) {
+			boolean _const = false;
+			if (expression instanceof VariableRefExpression) {
+				_const = ((VariableRefExpression) expression).getVariable().getTypeRef().is_const();
+			}
+			return new UnaryPrefixExpression(exprTree.getLocation(), _const, expression,((UnaryPrefixExprTree) exprTree).getOperator().text);
+		}
+		else if (exprTree instanceof CastExprTree)
+		{
 			TypeInfo type = container.resolveType(container,((CastExprTree) exprTree).getTargetType());
 			return new ExplicitCastExpression(exprTree.getLocation(),type,Expression.build(caller,container,((CastExprTree) exprTree).getExpression(),null));
-		} else if (exprTree instanceof IndexExprTree) {
+		}
+		else if (exprTree instanceof IndexExprTree)
+		{
 			Expression array = Expression.build(caller,container,((IndexExprTree) exprTree).getExpr(), null);
 			List<Expression> args = ((IndexExprTree) exprTree).getArgs().getIndexes()
 					.stream().map(a ->
 							Expression.build(caller,container,a,null))
 					.collect(Collectors.toList());
 			return new IndexExpression(exprTree.getLocation(),array,args);
-		} else if (exprTree instanceof InitializerListExprTree) {
+		}
+		else if (exprTree instanceof InitializerListExprTree)
+		{
 			TypeElementTree listTypeTree = ((InitializerListExprTree) exprTree).getExplicitType();
 			TypeInfo listType = null;
+
 			if (listTypeTree != null) {
 				listType = caller.resolveType(caller,listTypeTree);
-				if (returnType != null && !listType.canBeImplicitCastTo(returnType)) {
+				if (returnType != null && !listType.canBeImplicitlyCastTo(returnType)) {
 					throw new CompilerException(listTypeTree.getLocation(),returnType.getCanonicalName() + " cannot be implicitly cast to " + listType.getCanonicalName());
 				}
 			}
+
 			List<Expression> expressions = new ArrayList<>();
 			for (ExprTree initializer : ((InitializerListExprTree) exprTree).getInitializers()) {
 				expressions.add(Expression.build(caller,container,initializer,null));//todo: specify return type if possible
 			}
+
 			return new InitializerListExpression(exprTree.getLocation(), listType,expressions);
 		}
 
@@ -149,7 +164,7 @@ public interface Expression {
 
 	default boolean checkImplicitCastTo_mutable(TypeInfo type) {
 		if (this.getReturnType() != null)
-			return this.getReturnType().canBeImplicitCastTo(type);
+			return this.getReturnType().canBeImplicitlyCastTo(type);
 		return false;
 	}
 }

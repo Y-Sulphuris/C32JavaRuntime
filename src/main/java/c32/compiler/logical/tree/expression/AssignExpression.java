@@ -3,14 +3,12 @@ package c32.compiler.logical.tree.expression;
 import c32.compiler.Location;
 import c32.compiler.except.CompilerException;
 import c32.compiler.logical.IllegalOperatorException;
-import c32.compiler.logical.tree.BinaryOperator;
 import c32.compiler.logical.tree.TypeInfo;
 import c32.compiler.logical.tree.VariableInfo;
 import c32.compiler.logical.tree.Weak;
 import lombok.Getter;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -56,7 +54,7 @@ public class AssignExpression implements Expression {
 
         if (this.parentOperator != null) {
             if (!this.parentOperator.getReturnType().equals(this.parentOperator.getLeftType())
-                    || !this.parentOperator.getLeftType().canBeImplicitCastTo(lvalue.getReturnType()))
+                    || !this.parentOperator.getLeftType().canBeImplicitlyCastTo(lvalue.getReturnType()))
                 throw new IllegalOperatorException(location,lvalue.getReturnType(),parentOperator,rvalue.getReturnType(),true);
         }
 

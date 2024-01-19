@@ -5,7 +5,6 @@ import c32.compiler.codegen.java.JavaGenerator;
 import c32.compiler.except.CompilerException;
 import c32.compiler.logical.TreeBuilder;
 import c32.compiler.logical.tree.NamespaceInfo;
-import c32.compiler.logical.tree.SpaceInfo;
 import c32.compiler.parser.Parser;
 import c32.compiler.parser.ast.CompilationUnitTree;
 import c32.compiler.lexer.tokenizer.ConfigurableTokenizer;
@@ -263,7 +262,7 @@ public class Compiler {
 
 		if (f.exists()) {
 			System.out.println("Starting process...\n");
-			proc("java -cp out/java/out/;../target/classes/ $package");
+			proc("java -cp out/java/out/;../target/classes/;../lib/NativesInit.jar $package");
 		} else {
 			System.out.println("Compilation error");
 		}

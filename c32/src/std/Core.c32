@@ -14,6 +14,8 @@ extern void println(uint i);
 extern void println(long i);
 extern void println(ulong i);
 
+extern void println(void* p);
+
 extern void println(float i);
 extern void println(double i);
 
@@ -31,11 +33,11 @@ extern void print(uint i);
 extern void print(long i);
 extern void print(ulong i);
 
+extern void print(void* p);
+
 extern void print(float i);
 extern void print(double i);
 
-
-//typename size_t = ulong, ptrdiff_t = long;
 
 namespace Core {
 	extern void gc();

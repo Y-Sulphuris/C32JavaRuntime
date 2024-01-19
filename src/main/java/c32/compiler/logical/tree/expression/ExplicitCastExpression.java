@@ -20,7 +20,7 @@ public class ExplicitCastExpression implements Expression {
 	public ExplicitCastExpression(Location location, TypeInfo targetType, Expression expression) {
 		this.targetType = targetType;
 		this.expression = expression;
-		if (!expression.getReturnType().canBeExplicitCastTo(targetType)) {
+		if (!expression.getReturnType().canBeExplicitlyCastTo(targetType)) {
 			throw new CompilerException(location,"cannot cast type '" + expression.getReturnType().getCanonicalName() + "' to '" + targetType.getCanonicalName() + "'");
 		}
 

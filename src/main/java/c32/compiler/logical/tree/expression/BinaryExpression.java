@@ -2,10 +2,7 @@ package c32.compiler.logical.tree.expression;
 
 import c32.compiler.Location;
 import c32.compiler.except.CompilerException;
-import c32.compiler.logical.tree.BinaryOperator;
-import c32.compiler.logical.tree.SymbolInfo;
 import c32.compiler.logical.tree.TypeInfo;
-import c32.compiler.logical.tree.TypeRefInfo;
 import lombok.Getter;
 
 import java.math.BigInteger;
@@ -35,7 +32,7 @@ public class BinaryExpression implements Expression {
 		this.operator = BinaryOperator.findOperator(location, lhs,operator,rhs);
 		this.rhs = rhs;
 		TypeInfo ret = this.operator.getReturnType();
-		if (returnType != null && !ret.canBeImplicitCastTo(returnType)) {
+		if (returnType != null && !ret.canBeImplicitlyCastTo(returnType)) {
 			throw new CompilerException(location,"cannot implicit cast '" + ret.getCanonicalName() + "' to '" + returnType.getCanonicalName() + "'");
 		}
 

@@ -1,20 +1,17 @@
 package c32.compiler.logical;
 
-import c32.compiler.Location;
 import c32.compiler.except.CompilerException;
 import c32.compiler.logical.tree.*;
 import c32.compiler.logical.tree.expression.Expression;
 import c32.compiler.logical.tree.statement.Statement;
 import c32.compiler.parser.ast.CompilationUnitTree;
-import c32.compiler.parser.ast.ModifierTree;
 import c32.compiler.parser.ast.PackageTree;
-import c32.compiler.parser.ast.declaration.DeclarationTree;
-import c32.compiler.parser.ast.declaration.NamespaceDeclaration;
-import c32.compiler.parser.ast.declaration.ValuedDeclarationTree;
+import c32.compiler.parser.ast.declaration.*;
 import c32.compiler.parser.ast.declarator.*;
 import c32.compiler.parser.ast.expr.ReferenceExprTree;
 import c32.compiler.parser.ast.statement.BlockStatementTree;
 import c32.compiler.parser.ast.statement.StatementTree;
+import lombok.var;
 
 import java.util.*;
 
@@ -23,6 +20,8 @@ public class TreeBuilder {
 	private final HashMap<FunctionImplementationInfo, BlockStatementTree> implementations = new HashMap<>();
 
 	public NamespaceInfo buildNamespace(Collection<CompilationUnitTree> units) {
+		HashMap<SpaceInfo, List<DeclarationTree<?>>> namespacesToFill = new HashMap<>();
+
 		NamespaceInfo root = new NamespaceInfo("",null,true);
 
 		for (CompilationUnitTree unit : units) {
@@ -37,8 +36,19 @@ public class TreeBuilder {
 				}
 			}
 
-			fillSpace(current,unit.getDeclarations());
+			if (namespacesToFill.containsKey(current)) {
+				namespacesToFill.get(current).addAll(unit.getDeclarations());
+			} else {
+				namespacesToFill.put(current,unit.getDeclarations());
+			}
 		}
+
+		performNamespaces(namespacesToFill);
+		performTypenames(namespacesToFill);
+		performFunctionDeclarations(namespacesToFill);
+
+
+		//add function impl
 		implementations.forEach((func, impl) -> {
 			for (StatementTree statement : impl.getStatements()) {
 				func.getImplementation().addStatement(Statement.build(func,func.getImplementation(),statement));
@@ -50,16 +60,91 @@ public class TreeBuilder {
 		return root;
 	}
 
+	private void performFunctionDeclarations(HashMap<SpaceInfo, List<DeclarationTree<?>>> namespacesToFill) {
+		for (Map.Entry<SpaceInfo, List<DeclarationTree<?>>> entry : namespacesToFill.entrySet()) {
+			fillSpaceFunctionDeclarations(entry.getKey(),entry.getValue());
+		}
+	}
 
 
+	private void performNamespaces(HashMap<SpaceInfo, List<DeclarationTree<?>>> namespacesToFill) {
+		HashMap<SpaceInfo, List<DeclarationTree<?>>> subSpaces = new HashMap<>();
+		for (Map.Entry<SpaceInfo,List<DeclarationTree<?>>> entry : namespacesToFill.entrySet()) {
+			var spaces = fillSpaceNamespaces(entry.getKey(),entry.getValue());
+			if (!spaces.isEmpty()   ) {
+				performNamespaces(spaces);
+				subSpaces.putAll(spaces);
+			}
+		}
 
-	private void fillSpace(SpaceInfo current, List<DeclarationTree<?>> declarations) {
+		for (Map.Entry<SpaceInfo, List<DeclarationTree<?>>> spaceInfoListEntry : subSpaces.entrySet()) {
+			if (namespacesToFill.containsKey(spaceInfoListEntry.getKey())) {
+				namespacesToFill.get(spaceInfoListEntry.getKey()).addAll(spaceInfoListEntry.getValue());
+			} else
+				namespacesToFill.put(spaceInfoListEntry.getKey(),spaceInfoListEntry.getValue());
+		}
+	}
+	private void performTypenames(HashMap<SpaceInfo, List<DeclarationTree<?>>> namespacesToFill) {
+		for (Map.Entry<SpaceInfo,List<DeclarationTree<?>>> entry : namespacesToFill.entrySet()) {
+			fillSpaceTypenames(entry.getKey(),entry.getValue());
+		}
+	}
+
+
+	private HashMap<SpaceInfo, List<DeclarationTree<?>>> fillSpaceNamespaces(SpaceInfo current, List<DeclarationTree<?>> declarations) {
+		HashMap<SpaceInfo, List<DeclarationTree<?>>> namespaces = new HashMap<>();
+		for (DeclarationTree<?> declaration : declarations) {
+			if (declaration instanceof NamespaceDeclaration) {
+				NamespaceDeclaration decl = (NamespaceDeclaration) declaration;
+				switch (decl.getKeyword().text) {
+					case "namespace":
+						for (NamespaceDeclarator declarator : decl) {
+							NamespaceInfo space = declarator.getName() != null ? current.getNamespace(declarator.getName().text) : null;
+							boolean news = space == null;
+							if (news) {
+								space = buildNamespace_noFill(current,decl,declarator);
+							}
+							namespaces.put(space,declarator.getDeclarations());
+							if (news) {
+								current.addNamespace(space);
+							}
+						}
+						break;
+					/*case "struct":
+						for (NamespaceDeclarator structDeclarator : decl) {
+							current.addStruct(buildStruct(current,decl,structDeclarator));
+						}
+						break;*/
+					default:
+						throw new CompilerException(decl.getLocation(),decl.getKeyword().text + " are not supported yet");
+				}
+			}
+		}
+		return namespaces;
+	}
+
+	private void fillSpaceTypenames(SpaceInfo current, List<DeclarationTree<?>> declarations) {
 		final Set<DeclarationTree<? extends DeclaratorTree>> forRemoval = new HashSet<>();
 
-		//add functions
-		final Set<DeclaratorTree> forRemovalDeclarators = new HashSet<>();
+		for (DeclarationTree<? extends DeclaratorTree> declaration : declarations) {
+			if (declaration instanceof TypenameDeclarationTree) {
+				for (TypenameDeclaratorTree typenameDeclaratorTree : ((TypenameDeclarationTree) declaration)) {
+					assert current instanceof AbstractSpaceInfo;
+					assert typenameDeclaratorTree.getName() != null;
+					current.addTypeName(typenameDeclaratorTree.getName().text,current.resolveType(current, typenameDeclaratorTree.getTargetType()));
+				}
+				forRemoval.add(declaration);
+			}
+		}
+		declarations.removeAll(forRemoval);
+	}
+
+	private void fillSpaceFunctionDeclarations(SpaceInfo current, List<DeclarationTree<?>> declarations) {
+		final Set<DeclarationTree<? extends DeclaratorTree>> forRemoval = new HashSet<>();
+
 		for (DeclarationTree<?> declaration : declarations) {
 			if (declaration instanceof ValuedDeclarationTree) {
+				final Set<DeclaratorTree> forRemovalDeclarators = new HashSet<>();
 				ValuedDeclarationTree decl = (ValuedDeclarationTree) declaration;
 				for (DeclaratorTree declarator : decl) {
 					if (declarator instanceof FunctionDeclaratorTree) {
@@ -71,13 +156,17 @@ public class TreeBuilder {
 					}
 				}
 				decl.getDeclarators().removeAll(forRemovalDeclarators);
-				forRemovalDeclarators.clear();
 			}
 			if (declaration.getDeclarators().isEmpty())
 				forRemoval.add(declaration);
 		}
 		declarations.removeAll(forRemoval);
-		forRemoval.clear();
+	}
+
+	private void fillSpace(SpaceInfo current, List<DeclarationTree<?>> declarations) {
+		final Set<DeclarationTree<? extends DeclaratorTree>> forRemoval = new HashSet<>();
+
+		final Set<DeclaratorTree> forRemovalDeclarators = new HashSet<>();
 
 		//add fields
 		for (DeclarationTree<?> declaration : declarations) {
@@ -98,26 +187,15 @@ public class TreeBuilder {
 		declarations.removeAll(forRemoval);
 		forRemoval.clear();
 
-		//add namespaces
-		for (DeclarationTree<?> declaration : declarations) {
-			if (declaration instanceof NamespaceDeclaration) {
-				NamespaceDeclaration decl = (NamespaceDeclaration) declaration;
-				switch (decl.getKeyword().text) {
-					case "namespace":
-						for (NamespaceDeclarator namespaceDeclarator : decl) {
-							current.addNamespace(buildNamespace(current,decl,namespaceDeclarator));
-						}
-						break;
-					case "struct":
-						for (NamespaceDeclarator structDeclarator : decl) {
-							current.addStruct(buildStruct(current,decl,structDeclarator));
-						}
-						break;
-					default:
-						throw new CompilerException(decl.getLocation(),decl.getKeyword().text + " are not supported yet");
-				}
-			} else throw new UnsupportedOperationException(declaration.toString());
-		}
+
+	}
+
+	private ImportInfo buildImport(SpaceInfo current, DeclarationTree<?> decl, ImportDeclaratorTree declarator) {
+		SpaceInfo symbol = current.resolveSpace(current, declarator.getSymbol());
+		String alias = null;
+		if (declarator.getName() != null)
+			alias = declarator.getName().text;
+		return new ImportInfo(current,symbol,alias,false);
 	}
 
 	private TypeStructInfo buildStruct(SpaceInfo current, NamespaceDeclaration decl, NamespaceDeclarator declarator) {
@@ -129,10 +207,9 @@ public class TreeBuilder {
 		return struct;
 	}
 
-	private NamespaceInfo buildNamespace(SpaceInfo current, NamespaceDeclaration decl, NamespaceDeclarator declarator) {
+	private NamespaceInfo buildNamespace_noFill(SpaceInfo current, NamespaceDeclaration decl, NamespaceDeclarator declarator) {
 		Objects.requireNonNull(declarator.getName());
 		NamespaceInfo space = new NamespaceInfo(declarator.getName().text,current,decl.hasModifier("static"));
-		fillSpace(space,declarator.getDeclarations());
 		return space;
 	}
 

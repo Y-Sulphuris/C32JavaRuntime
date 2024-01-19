@@ -43,4 +43,9 @@ public class CompilationUnitTree implements Tree {
 	public Location getLocation() {
 		return new Location(-1,-1,-1,-1,new File(fileName));
 	}
+
+	@Override
+	public String toString() {
+		return "CompilationUnit(" + fileName + ")";
+	}
 }

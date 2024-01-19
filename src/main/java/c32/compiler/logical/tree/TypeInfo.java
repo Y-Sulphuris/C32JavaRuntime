@@ -15,12 +15,12 @@ public interface TypeInfo extends SpaceInfo {
 
 	Expression getDefaultValue();
 
-	default boolean canBeImplicitCastTo(TypeInfo type) {
+	default boolean canBeImplicitlyCastTo(TypeInfo type) {
 		return this.equals(type);
 	}
 
-	default boolean canBeExplicitCastTo(TypeInfo type) {
-		return canBeImplicitCastTo(type);
+	default boolean canBeExplicitlyCastTo(TypeInfo type) {
+		return canBeImplicitlyCastTo(type);
 	}
 
 	class NumericPrimitiveTypeInfo extends PrimitiveTypeInfo {
@@ -66,8 +66,8 @@ public interface TypeInfo extends SpaceInfo {
 		}
 
 		@Override
-		public boolean canBeImplicitCastTo(TypeInfo type) {
-			return TypeInfo.super.canBeImplicitCastTo(type) || (type instanceof PrimitiveTypeInfo && implicitCast.contains(type));
+		public boolean canBeImplicitlyCastTo(TypeInfo type) {
+			return TypeInfo.super.canBeImplicitlyCastTo(type) || (type instanceof PrimitiveTypeInfo && implicitCast.contains(type));
 		}
 
 		private final Set<PrimitiveTypeInfo> explicitCast = new HashSet<>();
@@ -76,8 +76,11 @@ public interface TypeInfo extends SpaceInfo {
 		}
 
 		@Override
-		public boolean canBeExplicitCastTo(TypeInfo type) {
-			return TypeInfo.super.canBeExplicitCastTo(type) || (type instanceof PrimitiveTypeInfo && explicitCast.contains(type));
+		public boolean canBeExplicitlyCastTo(TypeInfo type) {
+			if (type instanceof TypePointerInfo) {
+				return this.canBeExplicitlyCastTo(PrimitiveTypeInfo.ULONG);
+			}
+			return TypeInfo.super.canBeExplicitlyCastTo(type) || (type instanceof PrimitiveTypeInfo && explicitCast.contains(type));
 		}
 
 		@Override
@@ -206,16 +209,6 @@ public interface TypeInfo extends SpaceInfo {
 			throw new UnsupportedOperationException("cannot add field to primitive type");
 		}
 
-
-		@Override
-		public Collection<TypeStructInfo> getStructs() {
-			return Collections.emptySet();
-		}
-
-		@Override
-		public TypeStructInfo addStruct(TypeStructInfo struct) {
-			throw new UnsupportedOperationException("cannot add struct to primitive type");
-		}
 
 		@Override
 		public boolean isAccessibleFrom(SpaceInfo namespace) {

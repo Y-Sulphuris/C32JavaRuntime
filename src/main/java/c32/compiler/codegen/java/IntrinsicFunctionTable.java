@@ -38,11 +38,15 @@ public final class IntrinsicFunctionTable {
 				"std.println$ushort",
 				"std.println$uint",
 				"std.println$ulong");
+		setOverload("c32.Runtime.pointer_println","void","std.println$__pointer__$void$");
 		setOverload("c32.Unsigned.print","void",
 				"std.print$ubyte",
 				"std.print$ushort",
 				"std.print$uint",
 				"std.print$ulong");
+		setOverload("c32.Runtime.pointer_print","void","std.print$__pointer__$void$");
+
+		setOverload("c32.memory.Memory.malloc","long","std.malloc$ulong");
 	}
 
 	private static void setOverload(String target, String retType, String... variations) {
@@ -59,7 +63,7 @@ public final class IntrinsicFunctionTable {
 			if (jRetTypes.get(fname).equals(jRetType))
 				return ret;
 		}
-		throw new CompilerException(null, "Extern function implementation not found: " + fname);
+		throw new CompilerException(null, "Extern function implementation not found: " + fname + " " + jRetType);
 	}
 
 }

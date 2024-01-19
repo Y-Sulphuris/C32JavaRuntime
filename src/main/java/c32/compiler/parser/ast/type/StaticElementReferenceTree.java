@@ -14,10 +14,11 @@ import java.util.List;
 @Data
 public final class StaticElementReferenceTree implements Tree {
 	private final List<ReferenceExprTree> references;
+	private final Location location;
 
-	@Override
-	public Location getLocation() {
-		return Location.between(references.get(0).getLocation(),references.get(references.size()-1).getLocation());
+	public StaticElementReferenceTree(List<ReferenceExprTree> references) {
+		this.references = references;
+		this.location = Location.between(references.get(0).getLocation(),references.get(references.size()-1).getLocation());
 	}
 
 	@Override

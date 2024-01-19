@@ -9,7 +9,7 @@ import java.util.stream.Collectors;
 
 public class FunctionNotFoundException extends CompilerException {
 	public FunctionNotFoundException(CallExprTree call, List<Expression> args) {
-		super(call.getLocation(),"cannot found function '" + call.getReference().getIdentifier() +
-				args.stream().map(e -> e.getReturnType().getCanonicalName()).collect(Collectors.toList()));
+		super(call.getLocation(),"cannot found function '" + call.getReference().getIdentifier().text +
+				args.stream().map(e -> e.getReturnType().getCanonicalName()).collect(Collectors.toList()) + "'");
 	}
 }

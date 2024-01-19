@@ -1,7 +1,9 @@
 package c32.memory;
 
+import c32.Runtime;
 import lombok.SneakyThrows;
 
+import java.lang.annotation.Native;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -13,6 +15,9 @@ public class Memory {
 		throw new InstantiationException();
 	}
 
+	static {
+		Runtime.initNatives();
+	}
 
 	//region #unsafe bindings
 
@@ -382,7 +387,7 @@ public class Memory {
 
 	public static native int pageSize();
 	public static native int addressSize();
-	public static final int NATIVE_ADDRESS_SIZE = addressSize();
+	//public static final int NATIVE_ADDRESS_SIZE = addressSize();
 
 	@SneakyThrows
 	public static long getAddress(long address) {

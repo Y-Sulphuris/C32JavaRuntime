@@ -3,7 +3,6 @@ package c32.compiler.logical.tree.expression;
 import c32.compiler.except.CompilerException;
 import c32.compiler.lexer.tokenizer.Token;
 import c32.compiler.logical.tree.TypeInfo;
-import c32.compiler.logical.tree.TypeRefInfo;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
@@ -66,7 +65,7 @@ public class NumericLiteralExpression implements LiteralExpression {
 		assert returnType != null;
         this.returnType = returnType;
 
-        if (returnType0 != null && !this.returnType.canBeImplicitCastTo(returnType0))
+        if (returnType0 != null && !this.returnType.canBeImplicitlyCastTo(returnType0))
             throw new CompilerException(token.location,"cannot apply type '" + returnType.getName() + "' to '" + returnType0.getCanonicalName() + '\'');
 
         try {

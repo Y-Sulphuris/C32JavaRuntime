@@ -57,16 +57,6 @@ public class FunctionImplementationInfo extends AbstractSymbolInfo implements Fu
 	}
 
 	@Override
-	public Collection<TypeStructInfo> getStructs() {
-		return implementation.getStructs();
-	}
-
-	@Override
-	public TypeStructInfo addStruct(TypeStructInfo struct) {
-		return implementation.addStruct(struct);
-	}
-
-	@Override
 	public boolean isAccessibleFrom(SpaceInfo namespace) {
 		return implementation.isAccessibleFrom(namespace);
 	}

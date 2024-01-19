@@ -97,16 +97,6 @@ public class TypeArrayInfo extends AbstractSymbolInfo implements TypeInfo {
 	}
 
 	@Override
-	public Collection<TypeStructInfo> getStructs() {
-		return Collections.emptySet();
-	}
-
-	@Override
-	public TypeStructInfo addStruct(TypeStructInfo struct) {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
 	public boolean isAccessibleFrom(SpaceInfo namespace) {
 		return true;
 	}
@@ -140,11 +130,11 @@ public class TypeArrayInfo extends AbstractSymbolInfo implements TypeInfo {
 	}
 
 	@Override
-	public boolean canBeImplicitCastTo(TypeInfo type) {
+	public boolean canBeImplicitlyCastTo(TypeInfo type) {
 		if (type instanceof TypeArrayInfo) {
 			if (((TypeArrayInfo) type).staticLength != this.staticLength) return false;
-			return TypeInfo.super.canBeImplicitCastTo(type) || this.getElementType().getType().equals(((TypeArrayInfo) type).getElementType().getType());
+			return TypeInfo.super.canBeImplicitlyCastTo(type) || this.getElementType().getType().equals(((TypeArrayInfo) type).getElementType().getType());
 		}
-		return TypeInfo.super.canBeImplicitCastTo(type);
+		return TypeInfo.super.canBeImplicitlyCastTo(type);
 	}
 }

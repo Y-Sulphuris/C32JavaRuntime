@@ -39,9 +39,9 @@ public class JavaGenerator implements Generator {
 			if (!packageName.isEmpty()) out.println("package " + packageName + ";");
 			out.println("public final class " + className + " {");
 			out.println("\tprivate " + className + "() throws java.lang.InstantiationException { throw new java.lang.InstantiationException(); }");
-			for (TypeStructInfo struct : space.getStructs()) {
+			/*for (TypeStructInfo struct : space.getStructs()) {
 				writeStruct(struct,out);
-			}
+			}*/
 			for (FunctionInfo function : space.getFunctions()) {
 				writeFunction(function,true,out);
 				writeFunctionNamespace(function,true,out);
@@ -89,9 +89,9 @@ public class JavaGenerator implements Generator {
 		for (NamespaceInfo space : struct.getStaticSpace().getNamespaces()) {
 			writeLocalNamespace(null,space,true,out);
 		}
-		for (TypeStructInfo str : struct.getStaticSpace().getStructs()) {
+		/*for (TypeStructInfo str : struct.getStaticSpace().getStructs()) {
 			writeStruct(str,out);
-		}
+		}*/
 		for (FunctionInfo function : struct.getStaticSpace().getFunctions()) {
 			writeFunction(function,true,out);
 			writeFunctionNamespace(function,true,out);
@@ -104,9 +104,9 @@ public class JavaGenerator implements Generator {
 		for (NamespaceInfo space : struct.getNamespaces()) {
 			writeLocalNamespace(null,space,false,out);
 		}
-		for (TypeStructInfo str : struct.getStructs()) {
+		/*for (TypeStructInfo str : struct.getStructs()) {
 			writeStruct(str,out);
-		}
+		}*/
 		for (FunctionInfo function : struct.getFunctions()) {
 			writeFunction(function,false,out);
 			writeFunctionNamespace(function,false,out);
@@ -123,9 +123,9 @@ public class JavaGenerator implements Generator {
 		for (NamespaceInfo space : namespace.getNamespaces()) {
 			writeLocalNamespace(thisPrefixName,space,_static,out);
 		}
-		for (TypeStructInfo str : namespace.getStructs()) {
+		/*for (TypeStructInfo str : namespace.getStructs()) {
 			writeStruct(thisPrefixName,str,out);
-		}
+		}*/
 		for (FunctionInfo function : namespace.getFunctions()) {
 			writeFunction(thisPrefixName,function,_static,out);
 			writeFunctionNamespace(thisPrefixName,function,_static,out);
@@ -197,7 +197,14 @@ public class JavaGenerator implements Generator {
 			out.print('(');
 			writeExpression(((BinaryExpression) expr).getLhs(),out);
 			out.print(((BinaryExpression) expr).getOperator().getOp());
-			writeExpression(((BinaryExpression) expr).getRhs(), out);
+			if (((BinaryExpression) expr).getLhs().getReturnType() instanceof TypePointerInfo) {
+				out.println("(");
+				writeExpression(((BinaryExpression) expr).getRhs(), out);
+				out.print("*" + ((TypePointerInfo) ((BinaryExpression) expr).getLhs().getReturnType()).getTargetType().getType().sizeof());
+				out.print(")");
+			} else {
+				writeExpression(((BinaryExpression) expr).getRhs(), out);
+			}
 			out.print(')');
 		} else if (expr instanceof CallExpression) {
 			String fname = getJavaFunctionName(((CallExpression) expr).getFunction());
@@ -219,24 +226,62 @@ public class JavaGenerator implements Generator {
 		} else if (expr instanceof CharLiteralExpression) {
 			writeChar(String.valueOf(((CharLiteralExpression) expr).getCh()),out);
 		} else if (expr instanceof UnaryPrefixExpression) {
-			out.print("((" + getJavaTypeName(expr.getReturnType()) + ")");
-			out.print(((UnaryPrefixExpression) expr).getOperator());
-			writeExpression(((UnaryPrefixExpression) expr).getExpr(),out);
-			out.print(")");
-		} else if (expr instanceof AssignExpression) {
-			writeExpression(((AssignExpression) expr).getLvalue(),out);
-			BinaryOperator parent = ((AssignExpression) expr).getParentOperator();
-			if (parent != null) out.print(parent.getOp());
-			out.print("=");
-			writeExpression(((AssignExpression) expr).getRvalue(),out);
-			DEFAULT:
-			if (((AssignExpression) expr).getRvalue().getReturnType() instanceof TypeArrayInfo) {
-				if (((AssignExpression) expr).getRvalue() instanceof VariableRefExpression) {
-					if (((VariableRefExpression) ((AssignExpression) expr).getRvalue()).getVariable().isRegister()) {
-						break DEFAULT;
-					}
+			UnaryPrefixOperator op = ((UnaryPrefixExpression) expr).getOperator();
+			switch (op.getOp()) {
+				case "*":
+					writePointerDereferencingFunctionGet(((UnaryPrefixExpression) expr).getExpr().getReturnType(),out);
+					out.print("(");
+					writeExpression(((UnaryPrefixExpression) expr).getExpr(),out);
+					out.print(")");
+					break;
+				default: {
+					out.print("((" + getJavaTypeName(expr.getReturnType()) + ")");
+					out.print(((UnaryPrefixExpression) expr).getOperator().getOp());
+					writeExpression(((UnaryPrefixExpression) expr).getExpr(),out);
+					out.print(")");
 				}
-				out.print(".clone()");
+			}
+		} else if (expr instanceof AssignExpression) {
+			boolean isDereferensing = ((AssignExpression) expr).getLvalue() instanceof UnaryPrefixExpression &&
+					((UnaryPrefixExpression) ((AssignExpression) expr).getLvalue()).getOperator().getOp().equals("*");
+			boolean isIndexedPointerAccess = ((AssignExpression) expr).getLvalue() instanceof IndexExpression &&
+					((IndexExpression) ((AssignExpression) expr).getLvalue()).getArray().getReturnType() instanceof TypePointerInfo;
+			if (isDereferensing || isIndexedPointerAccess) {
+				out.print("c32.memory.Memory.put");
+				char[] typeName = getJavaTypeName(((AssignExpression) expr).getLvalue().getReturnType()).toCharArray();
+				typeName[0] = Character.toUpperCase(typeName[0]);
+				out.print(typeName);
+
+				out.print("(");
+				if (isDereferensing) {
+					writeExpression(((UnaryPrefixExpression) ((AssignExpression) expr).getLvalue()).getExpr(),out);
+				} else {
+					writeExpression(((IndexExpression) ((AssignExpression) expr).getLvalue()).getArray(),out);
+					out.print("+(");
+					writeExpression(((IndexExpression) ((AssignExpression) expr).getLvalue()).getArgs().get(0),out);
+					out.print("*");
+					out.print(((IndexExpression) ((AssignExpression) expr).getLvalue()).getArgs().get(0).getReturnType().sizeof());
+					out.print(")");
+				}
+				out.print(", ");
+				writeExpression(((AssignExpression) expr).getRvalue(),out);
+				out.print(")");
+			} else {
+				writeExpression(((AssignExpression) expr).getLvalue(),out);
+				BinaryOperator parent = ((AssignExpression) expr).getParentOperator();
+				if (parent != null) out.print(parent.getOp());
+				out.print("=");
+				writeExpression(((AssignExpression) expr).getRvalue(),out);
+
+				DEFAULT:
+				if (((AssignExpression) expr).getRvalue().getReturnType() instanceof TypeArrayInfo) {
+					if (((AssignExpression) expr).getRvalue() instanceof VariableRefExpression) {
+						if (((VariableRefExpression) ((AssignExpression) expr).getRvalue()).getVariable().isRegister()) {
+							break DEFAULT;
+						}
+					}
+					out.print(".clone()");
+				}
 			}
 		} else if (expr instanceof ExplicitCastExpression) {
 			out.print("(("+getJavaTypeName(((ExplicitCastExpression) expr).getTargetType()) + ")");
@@ -261,16 +306,41 @@ public class JavaGenerator implements Generator {
 			throw new UnsupportedOperationException(expr.getClass().getName());
 	}
 
+	private void writePointerDereferencingFunctionGet(TypeInfo type, PrintStream out) {
+		out.print("c32.memory.Memory.get");
+		if (type instanceof TypePointerInfo) {
+			type = ((TypePointerInfo) type).getTargetType().getType();
+		} else throw new UnsupportedOperationException();
+
+		char[] typeName = getJavaTypeName(type).toCharArray();
+		typeName[0] = Character.toUpperCase(typeName[0]);
+		out.print(typeName);
+
+	}
+
 
 	private void writeIndexExpression(IndexExpression expr, PrintStream out) {
-		String registerArray = arrayIsRegister(expr);
-		if (registerArray != null) {
-			out.print(registerArray);
-		} else {
+		if (expr.getArray().getReturnType() instanceof TypePointerInfo) {
+			writePointerDereferencingFunctionGet((expr).getArray().getReturnType(),out);
+			out.print("(");
 			writeExpression(expr.getArray(),out);
-			out.print("[");
+			out.print("+");
+			out.print("(");
 			writeExpression(expr.getArgs().get(0),out);
-			out.print("]");
+			out.print("*");
+			out.print(expr.getArgs().get(0).getReturnType().sizeof());
+			out.print(")");
+			out.print(")");
+		} else {
+			String registerArray = arrayIsRegister(expr);
+			if (registerArray != null) {
+				out.print(registerArray);
+			} else {
+				writeExpression(expr.getArray(),out);
+				out.print("[");
+				writeExpression(expr.getArgs().get(0),out);
+				out.print("]");
+			}
 		}
 	}
 
@@ -360,17 +430,19 @@ public class JavaGenerator implements Generator {
 		writeType(type,-1,out);
 	}
 	private void writeType(TypeInfo type, int writeArrayLength, PrintStream out) {
-		if (type instanceof TypeInfo.PrimitiveTypeInfo) {
+		if (type instanceof TypeInfo.PrimitiveTypeInfo || type instanceof TypePointerInfo) {
 			out.print(getJavaTypeName(type));
 		} else if (type instanceof TypeArrayInfo) {
 			writeType(((TypeArrayInfo) type).getElementType().getType(), out);
 			if (writeArrayLength != -1) out.print("["+writeArrayLength+"]");
 			else out.print("[]");
 		}
+		else
+			throw new UnsupportedOperationException(type.getClass().getName());
 	}
 
 	private void writeVariable(VariableInfo variable, PrintStream out) {
-		if (variable.getTypeRef().getType() instanceof TypeInfo.PrimitiveTypeInfo) {
+		if (variable.getTypeRef().getType() instanceof TypeInfo.PrimitiveTypeInfo || variable.getTypeRef().getType() instanceof TypePointerInfo) {
 			out.print("\t\t");
 			if (variable.getTypeRef().is_const()) out.print("final ");
 			writeType(variable.getTypeRef().getType(),out);
@@ -504,6 +576,9 @@ public class JavaGenerator implements Generator {
 		}
 		if (type instanceof TypeStructInfo) {
 			return type.getName();
+		}
+		if (type instanceof TypePointerInfo) {
+			return "long";
 		}
 		throw new UnsupportedOperationException(type.getCanonicalName() + " not implemented yet");
 	}

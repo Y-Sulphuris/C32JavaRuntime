@@ -25,9 +25,11 @@ JNIEXPORT jlong JNICALL Memory(calloc)(JNIEnv *, jclass, jlong NumOfElements, jl
 JNIEXPORT void JNICALL Memory(free)(JNIEnv *, jclass, jlong ptr) {
 	free((void*)ptr);
 }
+
 JNIEXPORT void JNICALL MemoryCritical(free)(jlong ptr) {
 	free((void*)ptr);
 }
+
 
 const uint32_t ADD_SHIFT = 2;
 

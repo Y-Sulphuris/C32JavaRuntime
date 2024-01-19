@@ -1,18 +1,29 @@
 package c32.compiler.logical.tree.expression;
 
+import c32.compiler.Location;
+import c32.compiler.logical.IllegalOperatorException;
 import c32.compiler.logical.tree.TypeInfo;
 import c32.compiler.logical.tree.TypePointerInfo;
+import c32.compiler.logical.tree.TypeRefInfo;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 
-@RequiredArgsConstructor
 @Getter
-//todo: re-code
 public class UnaryPrefixExpression implements Expression {
     private final Expression expr;
-    private final String operator;//операторы надо будет полностью переделать, а то это бред какой-то
+    private final UnaryPrefixOperator operator;
+
+	public UnaryPrefixExpression(Location location, boolean _const, Expression expr, String operator) {
+		this.expr = expr;
+		this.operator = UnaryPrefixOperator.findOperator(location, new TypeRefInfo(_const,false,expr.getReturnType()), operator);
+	}
 
 	@Override
 	public void forEachSubExpression(Consumer<Expression> act) {
@@ -21,9 +32,12 @@ public class UnaryPrefixExpression implements Expression {
 
 	@Override
     public TypeInfo getReturnType() {
-        if (operator.equals("*")) {
-            return ((TypePointerInfo) expr.getReturnType()).getTargetType().getType();
-        }
-        return expr.getReturnType();
+        return operator.getReturnType();
     }
+
+	@Override
+	public boolean isAssignable() {
+		return operator.getOp().equals("*");
+	}
 }
+

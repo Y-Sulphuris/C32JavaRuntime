@@ -51,8 +51,4 @@ public class TypeStructInfo extends AbstractSpaceInfo implements TypeInfo {
 		return super.addField(field);
 	}
 
-	@Override
-	public TypeStructInfo addStruct(TypeStructInfo struct) {
-		throw new UnsupportedOperationException();
-	}
 }

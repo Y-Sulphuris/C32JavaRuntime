@@ -8,11 +8,13 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.Getter;
+import lombok.Setter;
 import org.jetbrains.annotations.Nullable;
 
-@Data
+
 @AllArgsConstructor
 @Getter
+@Setter
 public abstract class TypeElementTree implements Tree {
 	@Nullable private Token _const;
 	@Nullable private Token _restrict;

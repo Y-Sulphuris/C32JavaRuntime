@@ -1,8 +1,9 @@
-package c32.compiler.logical.tree;
+package c32.compiler.logical.tree.expression;
 
 import c32.compiler.Location;
 import c32.compiler.logical.IllegalOperatorException;
-import c32.compiler.logical.tree.expression.Expression;
+import c32.compiler.logical.tree.TypeInfo;
+import c32.compiler.logical.tree.TypePointerInfo;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -26,12 +27,16 @@ public class BinaryOperator {
 	}
 
 	private static final Set<BinaryOperator> registeredOperators = new HashSet<>();
-    private static void registerBinary(TypeInfo left, String op, TypeInfo right, TypeInfo returnType) {
-        registeredOperators.add(new BinaryOperator(left,op,right,returnType));
 
+    private static BinaryOperator registerBinary(TypeInfo left, String op, TypeInfo right, TypeInfo returnType) {
+		BinaryOperator bin = new BinaryOperator(left,op,right,returnType);
+        registeredOperators.add(bin);
+
+		//осторожно
         //это костыль
         registeredOperators.add(new BinaryOperator(left,op+'=',right,returnType));
         //это костыль
+	    return bin;
     }
     static {
         TypeInfo.PrimitiveTypeInfo.forEachNumeric(TYPE -> {
@@ -84,7 +89,7 @@ public class BinaryOperator {
             }
         }
 	    for (BinaryOperator op : possiblyOperators) {
-		    if (lvalue.getReturnType().canBeImplicitCastTo(op.getLeftType()) && rvalue.getReturnType().equals(op.getRightType())) {
+		    if (lvalue.getReturnType().canBeImplicitlyCastTo(op.getLeftType()) && rvalue.getReturnType().equals(op.getRightType())) {
 			    /*System.out.println("IE operator for " +
 					    lvalue.getReturnType().getCanonicalName() +
 					    " " + operator + " " +
@@ -93,7 +98,7 @@ public class BinaryOperator {
 		    }
 	    }
 	    for (BinaryOperator op : possiblyOperators) {
-		    if (lvalue.getReturnType().equals(op.getLeftType()) && rvalue.getReturnType().canBeImplicitCastTo(op.getRightType())) {
+		    if (lvalue.getReturnType().equals(op.getLeftType()) && rvalue.getReturnType().canBeImplicitlyCastTo(op.getRightType())) {
 			    /*System.out.println("EI operator for " +
 					    lvalue.getReturnType().getCanonicalName() +
 					    " " + operator + " " +
@@ -102,7 +107,7 @@ public class BinaryOperator {
 		    }
 	    }
         for (BinaryOperator op : possiblyOperators) {
-            if (lvalue.getReturnType().canBeImplicitCastTo(op.getLeftType()) && rvalue.getReturnType().canBeImplicitCastTo(op.getRightType())) {
+            if (lvalue.getReturnType().canBeImplicitlyCastTo(op.getLeftType()) && rvalue.getReturnType().canBeImplicitlyCastTo(op.getRightType())) {
 	            /*System.out.println("II operator for " +
 			            lvalue.getReturnType().getCanonicalName() +
 			            " " + operator + " " +
@@ -110,6 +115,10 @@ public class BinaryOperator {
                 return op;
             }
         }
+
+		if (operator.equals("+")) if (lvalue.getReturnType() instanceof TypePointerInfo && (rvalue.getReturnType().canBeImplicitlyCastTo(LONG) || rvalue.getReturnType().canBeImplicitlyCastTo(ULONG))) {
+			return registerBinary(lvalue.getReturnType(),operator,rvalue.getReturnType(),lvalue.getReturnType());
+		}
         throw new IllegalOperatorException(location, lvalue.getReturnType(),operator,rvalue.getReturnType(),false);
     }
 }

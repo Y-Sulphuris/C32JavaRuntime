@@ -4,7 +4,6 @@ import c32.compiler.logical.tree.expression.Expression;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Set;
@@ -64,16 +63,6 @@ public class TypePointerInfo extends AbstractSymbolInfo implements TypeInfo {
 	}
 
 	@Override
-	public Collection<TypeStructInfo> getStructs() {
-		return Collections.emptySet();
-	}
-
-	@Override
-	public TypeStructInfo addStruct(TypeStructInfo struct) {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
 	public boolean isAccessibleFrom(SpaceInfo namespace) {
 		return true;
 	}
@@ -96,5 +85,26 @@ public class TypePointerInfo extends AbstractSymbolInfo implements TypeInfo {
 	@Override
 	public String getCanonicalName() {
 		return (targetType.is_const() ? "const " : "") + (targetType.is_restrict() ? "restrict " : "") + targetType.getType().getCanonicalName() + "*";
+	}
+
+	@Override
+	public boolean canBeImplicitlyCastTo(TypeInfo type) {
+		if (type instanceof TypePointerInfo) {
+			TypeRefInfo typeRef = ((TypePointerInfo) type).getTargetType();
+			TypeRefInfo thisRef = this.getTargetType();
+
+			if (thisRef.getType() == PrimitiveTypeInfo.VOID || typeRef.getType() == PrimitiveTypeInfo.VOID || typeRef.getType().equals(thisRef.getType())) {
+				return !thisRef.is_const() || typeRef.is_const();
+			}
+			return typeRef.equals(this.targetType);
+		}
+		return TypeInfo.super.canBeImplicitlyCastTo(type);
+	}
+
+	@Override
+	public boolean canBeExplicitlyCastTo(TypeInfo type) {
+		if (TypeInfo.super.canBeExplicitlyCastTo(type))
+			return true;
+		return type.canBeImplicitlyCastTo(PrimitiveTypeInfo.LONG);
 	}
 }

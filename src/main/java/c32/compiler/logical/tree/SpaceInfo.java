@@ -11,9 +11,7 @@ import c32.compiler.parser.ast.expr.CallExprTree;
 import c32.compiler.parser.ast.expr.ReferenceExprTree;
 import c32.compiler.parser.ast.type.*;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public interface SpaceInfo extends SymbolInfo {
 	SpaceInfo getParent();
@@ -46,31 +44,43 @@ public interface SpaceInfo extends SymbolInfo {
 
 
 
-	Collection<TypeStructInfo> getStructs();
-	default TypeStructInfo getStruct(String name) {
-		for (TypeStructInfo struct : getStructs()) {
-			if (struct.getName().equals(name)) return struct;
-		}
-		return null;
+	default Map<String,TypeInfo> getTypenames() {
+		return Collections.emptyMap();
 	}
-	TypeStructInfo addStruct(TypeStructInfo struct);
+
+	default TypeInfo addTypeName(String name, TypeInfo type) {
+		Map<String,TypeInfo> typenames = getTypenames();
+		if (typenames.containsKey(name))
+			throw new UnsupportedOperationException();
+		typenames.put(name,type);
+		return type;
+	}
 
 
 	default TypeInfo resolveType(SpaceInfo caller, TypeElementTree type) {
-		if (type instanceof TypeKeywordElementTree) {
+		if (type instanceof TypeKeywordElementTree)
+		{
 			return TypeInfo.PrimitiveTypeInfo.resolve((TypeKeywordElementTree)type);
-		} else if (type instanceof StaticArrayTypeElementTree) {
+		}
+		else if (type instanceof StaticArrayTypeElementTree)
+		{
 			if (type.get_restrict() != null) throw new CompilerException(type.getLocation(),"arrays cannot be restrict");
 			return TypeArrayInfo.arrayOf(
 					((StaticArrayTypeElementTree) type).getSize().getLocation(),
 					Expression.build(caller,caller,((StaticArrayTypeElementTree) type).getSize(), TypeInfo.PrimitiveTypeInfo.LONG),
 					new TypeRefInfo(((ArrayTypeElementTree) type).getElementType().get_const() != null, false,
 					this.resolveType(caller,((ArrayTypeElementTree) type).getElementType())));
-		} else if (type instanceof ArrayTypeElementTree) {
+
+		}
+		else if (type instanceof ArrayTypeElementTree)
+		{
 			if (type.get_restrict() != null) throw new CompilerException(type.getLocation(),"arrays cannot be restrict");
 			return TypeArrayInfo.arrayOf(-1, new TypeRefInfo(((ArrayTypeElementTree) type).getElementType().get_const() != null, false,
 							this.resolveType(caller,((ArrayTypeElementTree) type).getElementType())));
-		} else if (type instanceof PointerTypeElementTree) {
+
+		}
+		else if (type instanceof PointerTypeElementTree)
+		{
 			return TypePointerInfo.pointerOf(
 					new TypeRefInfo(
 							((PointerTypeElementTree) type).getElementType().get_const() != null,
@@ -78,19 +88,34 @@ public interface SpaceInfo extends SymbolInfo {
 							this.resolveType(caller,((PointerTypeElementTree) type).getElementType())));
 		} else if (type instanceof TypeReferenceElementTree) {
 			if (((TypeReferenceElementTree) type).getReference().getReferences().size() == 1) {
-				//trying to find struct
-				TypeStructInfo struct = getStruct(((TypeReferenceElementTree) type).getReference().getReferences().get(0).getIdentifier().text);
-				if (struct != null) return struct;
+				//trying to find typename
+				if (true) {
+					String ref = ((TypeReferenceElementTree) type).getReference().getReferences().get(0).getIdentifier().text;
+					TypeInfo typeInfo = this.getTypenames().get(ref);
+					if (typeInfo != null) return typeInfo;
+					else {
+						if (getParent() != null)
+							return getParent().resolveType(caller,type);
+						else
+							throw new TypeNotFoundException(caller,type);
+					}
+				} else {
+					if (true) throw new UnsupportedOperationException(this.getClass().getName());
+					//todo: make all typename
+					//trying to find typename
+					/*TypeInfo struct = getStruct(((TypeReferenceElementTree) type).getReference().getReferences().get(0).getIdentifier().text);
+					if (struct != null) return struct;
 
-				//if we failed, trying to find it from parent space
-				if (getParent() != null) {
-					TypeInfo ref = getParent().resolveType(caller,type);
-					if (ref == null) throw new TypeNotFoundException(caller,type);
-					if (ref.isAccessibleFrom(caller)) {
-						return ref;
-					} else throw new CompilerAccessException(type.getLocation(), caller, ref);
+					//if we failed, trying to find it from parent space
+					if (getParent() != null) {
+						TypeInfo ref = getParent().resolveType(caller,type);
+						if (ref == null) throw new TypeNotFoundException(caller,type);
+						if (ref.isAccessibleFrom(caller)) {
+							return ref;
+						} else throw new CompilerAccessException(type.getLocation(), caller, ref);
+					}
+					return null;*/
 				}
-				return null;
 			} else {
 				List<ReferenceExprTree> references = ((TypeReferenceElementTree) type).getReference().getReferences();
 				ReferenceExprTree namespaceRef = references.remove(0);
@@ -99,7 +124,7 @@ public interface SpaceInfo extends SymbolInfo {
 		} else if (type instanceof DeclTypeElementTree) {
 			Expression expression = Expression.build(caller,caller,((DeclTypeElementTree) type).getExpression(),null);
 			if (expression.getReturnType() == null)
-				throw new CompilerException(type.getLocation(), "cannot get type from expression");
+				throw new CompilerException(type.getLocation(), "cannot get type from given expression");
 			return expression.getReturnType();
 		}
 
@@ -109,7 +134,11 @@ public interface SpaceInfo extends SymbolInfo {
 	default SpaceInfo resolveSpace(SpaceInfo caller, StaticElementReferenceTree reference) {
 		List<ReferenceExprTree> references = reference.getReferences();
 		if (references.isEmpty()) return this;
-		String current = references.remove(0).getIdentifier().text;
+		ReferenceExprTree currentRef = references.remove(0);
+		if (references.size() == 1) {
+			return resolveSpace(caller,currentRef);
+		}
+		String current = currentRef.getIdentifier().text;
 		for (NamespaceInfo namespace : getNamespaces()) {
 			if (namespace.getName().equals(current)) {
 				SpaceInfo space = namespace.resolveSpace(caller,reference);
@@ -158,8 +187,10 @@ public interface SpaceInfo extends SymbolInfo {
 
 	default FunctionInfo resolveFunction(SpaceInfo caller, CallExprTree call, List<Expression> args) {
 		String fname = call.getReference().getIdentifier().text;
+		Collection<FunctionInfo> functions = getFunctions();
+
 		EXIT:
-		for (FunctionInfo function : getFunctions()) {
+		for (FunctionInfo function : functions) {
 			if (!function.getName().equals(fname)) continue;
 			if (args.size() != function.getArgs().size()) continue;
 			for (int i = 0; i < args.size(); i++) {
@@ -173,11 +204,11 @@ public interface SpaceInfo extends SymbolInfo {
 		}
 
 		EXIT_IMPLICIT:
-		for (FunctionInfo function : getFunctions()) {
+		for (FunctionInfo function : functions) {
 			if (!function.getName().equals(fname)) continue;
 			if (args.size() != function.getArgs().size()) continue;
 			for (int i = 0; i < args.size(); i++) {
-				if (!args.get(i).getReturnType().canBeImplicitCastTo(function.getArgs().get(i).getTypeRef().getType())) {
+				if (!args.get(i).getReturnType().canBeImplicitlyCastTo(function.getArgs().get(i).getTypeRef().getType())) {
 					continue EXIT_IMPLICIT;
 				}
 			}
@@ -191,4 +222,11 @@ public interface SpaceInfo extends SymbolInfo {
 		}
 		return getParent().resolveFunction(caller,call,args);
 	}
+
+	default boolean containsOrThisRecursive(SpaceInfo space) {
+		if (space == this) return true;
+		if (space.getParent() == null) return false;
+		return this.containsOrThisRecursive(space.getParent());
+	}
+
 }

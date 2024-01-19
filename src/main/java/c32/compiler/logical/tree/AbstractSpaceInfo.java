@@ -6,15 +6,27 @@ import java.util.*;
 
 @Getter
 public abstract class AbstractSpaceInfo extends AbstractSymbolInfo implements SpaceInfo {
-	private final Set<FunctionInfo> functions = new HashSet<>();
+	private final Map<String,Set<FunctionInfo>> functions = new HashMap<>();
 	private final Map<String,NamespaceInfo> namespaces = new HashMap<>();
 	private final Map<String,FieldInfo> fields = new HashMap<>();
-	private final Map<String,TypeStructInfo> structs = new HashMap<>();
+	private final Map<String,TypeInfo> typenames = new HashMap<>();
 
 
 	@Override
+	public Set<FunctionInfo> getFunctions() {
+		Set<FunctionInfo> set = new HashSet<>();
+		for (Set<FunctionInfo> value : functions.values()) {
+			set.addAll(value);
+		}
+		return set;
+	}
+
+	@Override
 	public FunctionInfo addFunction(FunctionInfo function) {
-		functions.add(function);
+		Set<FunctionInfo> functionSet = functions.computeIfAbsent(function.getName(), k -> new HashSet<>());
+		if (functionSet.contains(function))
+			throw new UnsupportedOperationException();
+		functionSet.add(function);
 		return function;
 	}
 
@@ -51,21 +63,5 @@ public abstract class AbstractSpaceInfo extends AbstractSymbolInfo implements Sp
 			throw new UnsupportedOperationException();
 		fields.put(field.getName(),field);
 		return field;
-	}
-
-	public Collection<TypeStructInfo> getStructs() {
-		return structs.values();
-	}
-
-	@Override
-	public TypeStructInfo getStruct(String name) {
-		return structs.get(name);
-	}
-	@Override
-	public TypeStructInfo addStruct(TypeStructInfo struct) {
-		if (structs.containsKey(struct.getName()))
-			throw new UnsupportedOperationException();
-		structs.put(struct.getName(),struct);
-		return struct;
 	}
 }
