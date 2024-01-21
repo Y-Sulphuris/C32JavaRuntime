@@ -1,5 +1,6 @@
 package c32.compiler.logical.tree.expression;
 
+import c32.compiler.Location;
 import c32.compiler.except.CompilerException;
 import c32.compiler.lexer.tokenizer.Token;
 import c32.compiler.logical.tree.TypeInfo;
@@ -14,12 +15,14 @@ public class NumericLiteralExpression implements LiteralExpression {
 
     private final BigInteger number;
     private final TypeInfo returnType;
+	private final Location location;
 
     public NumericLiteralExpression(Token token) {
         this(token,null);
     }
 
     public NumericLiteralExpression(Token token, final TypeInfo returnType0) {
+		this.location = token.location;
         String number = token.text;
         TypeInfo.NumericPrimitiveTypeInfo returnType = null;
 

@@ -1,5 +1,6 @@
 package c32.compiler.logical.tree;
 
+import c32.compiler.Location;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 

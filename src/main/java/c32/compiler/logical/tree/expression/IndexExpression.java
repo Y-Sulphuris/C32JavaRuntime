@@ -15,6 +15,8 @@ import java.util.function.Consumer;
 public class IndexExpression implements Expression {
 	private final Expression array;
 	private final List<Expression> args;
+	private final Location location;
+
 
 	@Override
 	public void forEachSubExpression(Consumer<Expression> act) {
@@ -28,6 +30,7 @@ public class IndexExpression implements Expression {
 	}
 
 	public IndexExpression(Location location, Expression array, List<Expression> args) {
+		this.location = location;
 		if (array.getReturnType() instanceof TypePointerInfo) {
 
 		} else {

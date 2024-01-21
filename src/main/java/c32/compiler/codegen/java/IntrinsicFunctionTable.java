@@ -33,18 +33,18 @@ public final class IntrinsicFunctionTable {
 				"std.print$double",
 				"std.print$__array__$char$");
 
-		setOverload("c32.Unsigned.println","void",
+		setOverload("c32.extern.Unsigned.println","void",
 				"std.println$ubyte",
 				"std.println$ushort",
 				"std.println$uint",
 				"std.println$ulong");
-		setOverload("c32.Runtime.pointer_println","void","std.println$__pointer__$void$");
-		setOverload("c32.Unsigned.print","void",
+		setOverload("c32.extern.Runtime.pointer_println","void","std.println$__pointer__$void$");
+		setOverload("c32.extern.Unsigned.print","void",
 				"std.print$ubyte",
 				"std.print$ushort",
 				"std.print$uint",
 				"std.print$ulong");
-		setOverload("c32.Runtime.pointer_print","void","std.print$__pointer__$void$");
+		setOverload("c32.extern.Runtime.pointer_print","void","std.print$__pointer__$void$");
 
 		setOverload("c32.memory.Memory.malloc","long","std.malloc$ulong");
 	}

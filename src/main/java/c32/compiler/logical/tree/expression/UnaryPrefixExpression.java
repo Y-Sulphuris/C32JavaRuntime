@@ -19,8 +19,10 @@ import java.util.function.Consumer;
 public class UnaryPrefixExpression implements Expression {
     private final Expression expr;
     private final UnaryPrefixOperator operator;
+	private final Location location;
 
 	public UnaryPrefixExpression(Location location, boolean _const, Expression expr, String operator) {
+		this.location = location;
 		this.expr = expr;
 		this.operator = UnaryPrefixOperator.findOperator(location, new TypeRefInfo(_const,false,expr.getReturnType()), operator);
 	}

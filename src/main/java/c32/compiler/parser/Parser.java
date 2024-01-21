@@ -342,17 +342,17 @@ public class Parser {
 		return new BreakStatementTree(keyword,endLine);
 	}
 
-	private GotoStatement parseGotoStatement() {
+	private GotoStatementTree parseGotoStatement() {
 		Token keyword = assertAndNext("goto");
 		Token labelName = assertAndNext(TokenType.IDENTIFIER,"label name");
 		Token endLine = assertAndNext(TokenType.ENDLINE);
-		return new GotoStatement(keyword,labelName,endLine);
+		return new GotoStatementTree(keyword,labelName,endLine);
 	}
 
-	private LabelStatement parseLabelStatement() {
+	private LabelStatementTree parseLabelStatement() {
 		Token name = assertAndNext(TokenType.IDENTIFIER);
 		Token colon = assertAndNext(":");
-		return new LabelStatement(name,colon);
+		return new LabelStatementTree(name,colon);
 	}
 
 	private NopStatementTree parseNopStatement() {

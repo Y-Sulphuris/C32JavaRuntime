@@ -16,14 +16,17 @@ public class VariableInfo extends AbstractSymbolInfo {
 	private final TypeRefInfo typeRef;
 	@Getter
 	@Nullable private final Expression initializer;
+	@Getter
+	private final Location location;
 
 	public VariableInfo(Location location, String name, TypeRefInfo typeRef, @Nullable Expression initializer, boolean _static, Boolean _register) {
+		this.location = location;
 		this.name = name;
 		this.typeRef = typeRef;
 		this.initializer = initializer;
 		this._static = _static;
 		this._register = _register;
-		if (initializer != null && !initializer.checkImplicitCastTo_mutable(typeRef.getType())) {
+		if (initializer != null && initializer.getReturnType() != null && !initializer.checkImplicitCastTo_mutable(typeRef.getType())) {
 			throw new CompilerException(location,"cannot cast " + initializer.getReturnType() + " to " + typeRef.getType());
 		}
 	}
@@ -42,9 +45,9 @@ public class VariableInfo extends AbstractSymbolInfo {
 	private final boolean _static;
 
 	/*
-	true - force register (has register modifier)
-	false - unknown, but can be register (has no register modifier)
-	null - force no register (register modifier are not allowed, or register[false] is used)
+	register[true]	true - force register (has register modifier)
+	-				false - unknown, but can be register (has no register modifier)
+	register[false]	null - force no register (register modifier are not allowed, or register[false] is used)
 	 */
 	private final Boolean _register;
 

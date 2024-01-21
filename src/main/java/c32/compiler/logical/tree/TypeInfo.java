@@ -43,7 +43,7 @@ public interface TypeInfo extends SpaceInfo {
 
 		@Override
 		public Expression getDefaultValue() {
-			return new NumericLiteralExpression(BigInteger.valueOf(0L),this);
+			return new NumericLiteralExpression(BigInteger.valueOf(0L),this,null);
 		}
 	}
 	class UnsignedIntegerPrimitiveTypeInfo extends IntegerPrimitiveTypeInfo {
@@ -102,10 +102,13 @@ public interface TypeInfo extends SpaceInfo {
 		public static final UnsignedIntegerPrimitiveTypeInfo    UINT = new UnsignedIntegerPrimitiveTypeInfo("uint",4);
 		public static final IntegerPrimitiveTypeInfo            LONG = new IntegerPrimitiveTypeInfo("long",8);
 		public static final UnsignedIntegerPrimitiveTypeInfo    ULONG = new UnsignedIntegerPrimitiveTypeInfo("ulong",8);
+		public static final NumericPrimitiveTypeInfo            HALF = new NumericPrimitiveTypeInfo("half",2);
 		public static final NumericPrimitiveTypeInfo            FLOAT = new NumericPrimitiveTypeInfo("float",4);
 		public static final NumericPrimitiveTypeInfo            DOUBLE = new NumericPrimitiveTypeInfo("double",8);
 
+		public static final CharPrimitiveTypeInfo               CHAR8 = new CharPrimitiveTypeInfo("char8",1);
 		public static final CharPrimitiveTypeInfo               CHAR = new CharPrimitiveTypeInfo("char",2);
+		public static final CharPrimitiveTypeInfo               CHAR32 = new CharPrimitiveTypeInfo("char32",4);
 
 		static {
 			BYTE.addImplicitCast(SHORT,USHORT,INT,UINT,LONG,ULONG,FLOAT,DOUBLE);

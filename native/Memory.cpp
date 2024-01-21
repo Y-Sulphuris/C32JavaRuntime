@@ -4,14 +4,14 @@
 #include <cstdlib>
 #include <cstdint>
 #include <cstring>
-#include "c32_memory_Memory.h"
+#include "c32_extern_Memory.h"
 
 extern "C" {
 
 #define bitcast(T) *(T*)&
 
-#define Memory(T) Java_c32_memory_Memory_##T
-#define MemoryCritical(T) JavaCritical_c32_memory_Memory_##T
+#define Memory(T) Java_c32_extern_Memory_##T
+#define MemoryCritical(T) JavaCritical_c32_extern_Memory_##T
 
 
 JNIEXPORT jlong JNICALL Memory(malloc)(JNIEnv *, jclass, jlong Size) {

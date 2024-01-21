@@ -178,7 +178,7 @@ public interface SpaceInfo extends SymbolInfo {
 	default VariableRefExpression resolveVariable(SpaceInfo caller, ReferenceExprTree reference) {
 		for (FieldInfo field : getFields()) {
 			if (field.getName().equals(reference.getIdentifier().text) && field.getVariable().isAccessibleFrom(this)) {
-				return new VariableRefExpression(field.getVariable());
+				return new VariableRefExpression(field.getVariable(),reference.getLocation());
 			}
 		}
 		if (getParent() != null) return getParent().resolveVariable(caller, reference);

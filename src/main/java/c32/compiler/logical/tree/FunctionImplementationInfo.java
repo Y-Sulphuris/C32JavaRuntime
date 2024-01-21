@@ -1,5 +1,6 @@
 package c32.compiler.logical.tree;
 
+import c32.compiler.Location;
 import c32.compiler.logical.tree.expression.VariableRefExpression;
 import c32.compiler.logical.tree.statement.BlockStatement;
 import c32.compiler.logical.tree.statement.Statement;
@@ -15,10 +16,13 @@ import java.util.Set;
 @Getter
 public class FunctionImplementationInfo extends AbstractSymbolInfo implements FunctionInfo, SpaceInfo {
 	private final FunctionDeclarationInfo declaration;
-	private final BlockStatement implementation = new BlockStatement(this,null);
+	private final Location location;
+	private final BlockStatement implementation;
 
 	public FunctionImplementationInfo(FunctionDeclarationInfo declaration) {
 		this.declaration = declaration;
+		this.location = declaration.getLocation();
+		implementation = new BlockStatement(this,null,this.location);
 	}
 
 	@Override
@@ -106,7 +110,7 @@ public class FunctionImplementationInfo extends AbstractSymbolInfo implements Fu
 	public VariableRefExpression resolveVariable(SpaceInfo caller, ReferenceExprTree reference) {
 		for (VariableInfo arg : declaration.getArgs()) {
 			if (arg.getName().equals(reference.getIdentifier().text))
-				return new VariableRefExpression(arg);
+				return new VariableRefExpression(arg,reference.getLocation());
 		}
 		return getParent().resolveVariable(caller,reference);
 	}

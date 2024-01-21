@@ -20,6 +20,7 @@ public class AssignExpression implements Expression {
     @Nullable
     private final BinaryOperator parentOperator;
     private final Expression rvalue;
+	private final Location location;
 
 	@Override
 	public Set<Weak<VariableInfo>> collectChangeVariables() {
@@ -45,6 +46,7 @@ public class AssignExpression implements Expression {
 	}
 
 	public AssignExpression(Location location, Expression lvalue, String parentOperator, Expression rvalue) {
+		this.location = location;
         this.lvalue = lvalue;
         if (!lvalue.isAssignable())
             throw new CompilerException(location,lvalue + " is not assignable");

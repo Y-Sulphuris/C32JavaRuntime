@@ -20,11 +20,12 @@ public class FunctionDeclarationInfo extends AbstractSymbolInfo implements Funct
 	private final List<VariableInfo> args = new ArrayList<>();
 	private final List<TypeInfo> throwTypes = new ArrayList<>();
 	private final SpaceInfo parent;
-
+	private final Location location;
 
 
 	public FunctionDeclarationInfo(SpaceInfo parent, ValuedDeclarationTree decl, TypeElementTree retType, FunctionDeclaratorTree declarator, boolean hasAnImplementation) {
 		this.parent = parent;
+		this.location = declarator.getLocation();
 		assert declarator.getName() != null;
 		this.name = declarator.getName().text;
 		this.returnType = parent.resolveType(parent,retType);

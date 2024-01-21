@@ -2,14 +2,29 @@ package test;
 
 const auto nullptr = (void*)0;
 
+byte test() {
+	return 5b;
+}
+void test2(byte b) {
+	std::println(b);
+	return;
+}
+void test3(int i2, int* l, int i6) {
+	int b3 = i2;
+	return;
+}
+
 void main() {
+	ushort s = 5us;
+	std::println(s);
 	size_t size = 5ul;
-	int* mem = std.malloc(8);
-	*mem = 5;
-	mem[1] = 40;
-	std.println(*mem);
-	std.println(*(mem+1));
-	std.println(mem[0]);
-	std.println(mem[1]);
+	int* mem = std::malloc(8);
+	*(mem+1) = 5;
+	mem[0] = 40;
+	std::println(*mem);
+	std::println(*(mem+1));
+	std::println(mem[0]);
+	std::println(mem[1]);
+	return;
 }
 

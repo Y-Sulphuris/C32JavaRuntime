@@ -55,87 +55,89 @@ public class Compiler {
 	public static final Set<String> keywords = new HashSet<>();
 	static {
 		Collections.addAll(keywords,(
-				"abstract\n" +
-				"assert\n" +
-				"auto\n" +
-				"bool\n" +
-				"break\n" +
-				"byte\n" +
-				"case\n" +
-				"catch\n" +
-				"char\n" +
-				"char32\n" +
-				"char8\n" +
-				"class\n" +
-				"concept\n" +
-				"const\n" +
-				"constexpr\n" +
-				"continue\n" +
-				"decltype\n" +
-				"default\n" +
-				"delete\n" +
-				"do\n" +
-				"double\n" +
-				"else\n" +
-				"enum\n" +
-				"extends\n" +
-				"extern\n" +
-				"false\n" +
-				"final\n" +
-				"finally\n" +
-				"float\n" +
-				"for\n" +
-				"goto\n" +
-				"half\n" +
-				"if\n" +
-				"implements\n" +
-				"import\n" +
-				"instanceof\n" +
-				"int\n" +
-				"interface\n" +
-				"internal\n" +
-				"long\n" +
-				"mutable\n" +
-				"namespace\n" +
-				"native\n" +
-				"new\n" +
-				"noexcept\n" +
-				"null\n" +
-				"octuple\n" +
-				"operator\n" +
-				"over\n" +
-				"package\n" +
-				"private\n" +
-				"protected\n" +
-				"public\n" +
-				"pure\n" +
-				"quadruple\n" +
-				"register\n" +
-				"requires\n" +
-				"restrict\n" +
-				"return\n" +
-				"short\n" +
-				"sizeof\n" +
-				"static\n" +
-				"struct\n" +
-				"super\n" +
-				"switch\n" +
-				"template\n" +
-				"this\n" +
-				"throw\n" +
-				"throws\n" +
-				"true\n" +
-				"try\n" +
-				"typedef\n" +
-				"typename\n" +
-				"ubyte\n" +
-				"uint\n" +
-				"ulong\n" +
-				"union\n" +
-				"ushort\n" +
-				"virtual\n" +
-				"void\n" +
-				"while").split("\n"));
+		"abstract\n" +
+		"assert\n" +
+		"auto\n" +
+		"bool\n" +
+		"break\n" +
+		"byte\n" +
+		"case\n" +
+		"catch\n" +
+		"char\n" +
+		"char32\n" +
+		"char8\n" +
+		"class\n" +
+		"concept\n" +
+		"const\n" +
+		"consteval\n" +
+		"constexpr\n" +
+		"continue\n" +
+		"decltype\n" +
+		"default\n" +
+		"delete\n" +
+		"do\n" +
+		"double\n" +
+		"else\n" +
+		"enum\n" +
+		"extends\n" +
+		"extern\n" +
+		"false\n" +
+		"final\n" +
+		"finally\n" +
+		"float\n" +
+		"for\n" +
+		"goto\n" +
+		"half\n" +
+		"if\n" +
+		"implements\n" +
+		"import\n" +
+		"instanceof\n" +
+		"int\n" +
+		"interface\n" +
+		"internal\n" +
+		"long\n" +
+		"mutable\n" +
+		"namespace\n" +
+		"native\n" +
+		"new\n" +
+		"noexcept\n" +
+		"nop\n" +
+		"null\n" +
+		"octuple\n" +
+		"operator\n" +
+		"over\n" +
+		"package\n" +
+		"private\n" +
+		"protected\n" +
+		"public\n" +
+		"pure\n" +
+		"quadruple\n" +
+		"register\n" +
+		"requires\n" +
+		"restrict\n" +
+		"return\n" +
+		"short\n" +
+		"sizeof\n" +
+		"static\n" +
+		"struct\n" +
+		"super\n" +
+		"switch\n" +
+		"template\n" +
+		"this\n" +
+		"throw\n" +
+		"throws\n" +
+		"true\n" +
+		"try\n" +
+		"typedef\n" +
+		"typename\n" +
+		"ubyte\n" +
+		"uint\n" +
+		"ulong\n" +
+		"union\n" +
+		"ushort\n" +
+		"virtual\n" +
+		"void\n" +
+		"while").split("\n"));
 	}
 
 	public static final String[] validOperators = ("=;" +
@@ -148,7 +150,7 @@ public class Compiler {
 		"||;&&;!;" +
 		"==;!=;>;<;>=;<=;" +
 		"++;--;" +
-		".;,;->;?;:").split(";");
+		".;,;->;?;:;::").split(";");
 	static Tokenizer tokenizer = new ConfigurableTokenizer().addKeywords(keywords).addOperators(validOperators);
 
 
@@ -225,7 +227,9 @@ public class Compiler {
 
 
 	public static CompilerConfig config = null;
-	public static void main(String... args) throws IOException{
+	public static void main(String... args) throws IOException {
+		System.out.println("Compiling...");
+		long start = System.currentTimeMillis();
 		try {
 			String filename = "Main";
 			if (args.length == 0) throw new RuntimeException();
@@ -245,6 +249,8 @@ public class Compiler {
 				throw ee;
 			}
 			compile(allC32Files(config.getSrc()),config.getTargets());
+			long end = System.currentTimeMillis();
+			System.out.println("Finished (" + (end - start) + "ms)");
 		}
 
 		/*AST.brewJava().forEach((file) -> {
@@ -255,14 +261,13 @@ public class Compiler {
 			}
 		});*/
 
-		File f = new File("out/java/out/");
-		f.mkdirs();
-		System.out.println("Compiling...");
-		proc("javac -d out/java/out -cp ../target/classes/;out/java/ out/java/$package.java");
+		File f = new File("out/jvm/");
+		//f.mkdirs();
+		//proc("javac -d out/java/out -cp ../target/classes/;out/java/ out/java/$package.java");
 
 		if (f.exists()) {
 			System.out.println("Starting process...\n");
-			proc("java -cp out/java/out/;../target/classes/;../lib/NativesInit.jar $package");
+			proc("java -cp out/jvm/;../target/classes/;../lib/NativesInit.jar c32.$package");
 		} else {
 			System.out.println("Compilation error");
 		}

@@ -1,5 +1,6 @@
 package c32.compiler.logical.tree.statement;
 
+import c32.compiler.Location;
 import c32.compiler.logical.tree.*;
 import c32.compiler.logical.tree.expression.VariableRefExpression;
 import c32.compiler.parser.ast.expr.ReferenceExprTree;
@@ -15,8 +16,16 @@ import java.util.*;
 public class BlockStatement extends AbstractSpaceInfo implements Statement, SpaceInfo {
 	private final FunctionImplementationInfo function;
 	private final BlockStatement container;
+	private final Location location;
 
 	private final Collection<Statement> statements = new ArrayList<>();
+
+	@Override
+	public void resolveAll() {
+		for (Statement statement : statements) {
+			statement.resolveAll();
+		}
+	}
 
 	public Statement addStatement(Statement statement) {
 		this.statements.add(statement);
@@ -24,7 +33,7 @@ public class BlockStatement extends AbstractSpaceInfo implements Statement, Spac
 	}
 
 	public static BlockStatement build(FunctionImplementationInfo function, BlockStatement container, BlockStatementTree statement) {
-		BlockStatement block = new BlockStatement(function,container);
+		BlockStatement block = new BlockStatement(function,container,statement.getLocation());
 
 		for (StatementTree state : statement.getStatements()) {
 			block.addStatement(Statement.build(function,block,state));
@@ -69,7 +78,7 @@ public class BlockStatement extends AbstractSpaceInfo implements Statement, Spac
 			if (statement instanceof VariableDeclarationStatement) {
 				for (VariableInfo variableInfo : ((VariableDeclarationStatement) statement).getVariables()) {
 					if (variableInfo.getName().equals(reference.getIdentifier().text))
-						return new VariableRefExpression(variableInfo);
+						return new VariableRefExpression(variableInfo,reference.getLocation());
 				}
 			}
 		}

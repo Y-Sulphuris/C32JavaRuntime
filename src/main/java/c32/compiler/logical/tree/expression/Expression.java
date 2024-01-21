@@ -1,5 +1,6 @@
 package c32.compiler.logical.tree.expression;
 
+import c32.compiler.Location;
 import c32.compiler.except.CompilerException;
 import c32.compiler.logical.tree.SpaceInfo;
 import c32.compiler.logical.tree.TypeInfo;
@@ -73,7 +74,7 @@ public interface Expression {
 			}
 			return var;
 		} else if (exprTree instanceof BinaryExprTree) {
-			if (((BinaryExprTree) exprTree).getOperator().text.equals(".") && ((BinaryExprTree) exprTree).getLhs() instanceof ReferenceExprTree) {
+			if ((((BinaryExprTree) exprTree).getOperator().text.equals(".") || ((BinaryExprTree) exprTree).getOperator().text.equals("::")) && ((BinaryExprTree) exprTree).getLhs() instanceof ReferenceExprTree) {
 				SpaceInfo space = container.resolveSpace(container,((ReferenceExprTree) ((BinaryExprTree) exprTree).getLhs()));
 				Expression ret = Expression.build(caller,space,((BinaryExprTree) exprTree).getRhs(),returnType);
 				space.addUsage(ret);
@@ -104,7 +105,7 @@ public interface Expression {
 			for (ExprTree argument : ((CallExprTree) exprTree).getArgumentList().getArguments()) {
 				args.add(Expression.build(caller,caller,argument,null));
 			}
-			return new CallExpression(container.resolveFunction(container, (CallExprTree)exprTree, args), args);
+			return new CallExpression(container.resolveFunction(container, (CallExprTree)exprTree, args), args, exprTree.getLocation());
 		}
 		else if (exprTree instanceof UnaryPrefixExprTree)
 		{
@@ -167,4 +168,6 @@ public interface Expression {
 			return this.getReturnType().canBeImplicitlyCastTo(type);
 		return false;
 	}
+
+	Location getLocation();
 }

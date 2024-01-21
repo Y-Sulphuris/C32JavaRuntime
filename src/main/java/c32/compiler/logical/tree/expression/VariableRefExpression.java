@@ -1,5 +1,6 @@
 package c32.compiler.logical.tree.expression;
 
+import c32.compiler.Location;
 import c32.compiler.logical.tree.*;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -11,6 +12,7 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class VariableRefExpression implements Expression {
 	private final VariableInfo variable;
+	private final Location location;
 
 	@Override
 	public Set<Weak<VariableInfo>> collectUsingVariables() {

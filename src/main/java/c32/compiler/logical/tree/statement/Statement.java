@@ -1,23 +1,18 @@
 package c32.compiler.logical.tree.statement;
 
+import c32.compiler.Location;
 import c32.compiler.except.CompilerException;
-import c32.compiler.lexer.tokenizer.Token;
 import c32.compiler.logical.tree.*;
-import c32.compiler.logical.tree.expression.BinaryExpression;
 import c32.compiler.logical.tree.expression.Expression;
 import c32.compiler.parser.ast.ModifierTree;
 import c32.compiler.parser.ast.declaration.ValuedDeclarationTree;
 import c32.compiler.parser.ast.declarator.DeclaratorTree;
 import c32.compiler.parser.ast.declarator.VariableDeclaratorTree;
-import c32.compiler.parser.ast.expr.BinaryExprTree;
 import c32.compiler.parser.ast.statement.*;
-import c32.compiler.parser.ast.type.DeclTypeElementTree;
 import lombok.var;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 public interface Statement {
@@ -25,6 +20,12 @@ public interface Statement {
 	FunctionImplementationInfo getFunction();
 
 	BlockStatement getContainer();
+
+	Location getLocation();
+
+	default void resolveAll() {
+		//nop;
+	}
 
 	static Statement build(FunctionImplementationInfo function, BlockStatement container, StatementTree statement) {
 		if (statement instanceof BlockStatementTree) {
@@ -91,7 +92,7 @@ public interface Statement {
 						mod_static != null, registerAllowed ? mod_register != null : null
 				));
 			}
-			return new VariableDeclarationStatement(function, container, variables);
+			return new VariableDeclarationStatement(function, container, variables, statement.getLocation());
 		} else if (statement instanceof IfStatementTree) {
 			Expression condition = Expression.build(container,container,((IfStatementTree) statement).getCondition(), TypeInfo.PrimitiveTypeInfo.BOOL);
 			Statement block = Statement.build(function,container,((IfStatementTree) statement).getStatement());
@@ -99,13 +100,13 @@ public interface Statement {
 			if (((IfStatementTree) statement).getElseStatement() != null) {
 				elseBlock = Statement.build(function,container,((IfStatementTree) statement).getElseStatement());
 			}
-			return new IfStatement(function, container, condition,block,elseBlock);
+			return new IfStatement(function, container, condition,block,elseBlock,statement.getLocation());
 		} else if (statement instanceof WhileStatementTree) {
 			Expression condition = Expression.build(container,container, ((WhileStatementTree) statement).getCondition(), TypeInfo.PrimitiveTypeInfo.BOOL);
 			Statement block = Statement.build(function, container, ((WhileStatementTree) statement).getStatement());
-			return new WhileStatement(function, container, condition, block);
+			return new WhileStatement(function, container, condition, block,statement.getLocation());
 		} else if (statement instanceof BreakStatementTree) {
-			return new BreakStatement(function, container);
+			return new BreakStatement(function, container, statement.getLocation());
 		} else if (statement instanceof ReturnStatementTree) {
 			Expression expr = null;
 			TypeInfo retType = function.getReturnType();
@@ -116,10 +117,16 @@ public interface Statement {
 					throw new CompilerException(statement.getLocation(), "expression expected");
 				}
 			}
-			return new ReturnStatement(function,container,expr);
+			return new ReturnStatement(function,container,expr,statement.getLocation());
 		} else if (statement instanceof ExpressionStatementTree) {
 			Expression expr = Expression.build(container,container,((ExpressionStatementTree) statement).getExpression(),null);
 			return new ExpressionStatement(function,container,expr);
+		} else if (statement instanceof LabelStatementTree) {
+			String label = ((LabelStatementTree) statement).getLabelName().text;
+			return new LabelStatement(function,container,label,statement.getLocation());
+		} else if (statement instanceof GotoStatementTree) {
+			String label = ((GotoStatementTree) statement).getLabelName().text;
+			return new GotoStatement(function,container,label,statement.getLocation());
 		}
 
 		throw new UnsupportedOperationException(statement.getClass().toString());

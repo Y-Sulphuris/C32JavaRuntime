@@ -15,6 +15,7 @@ public class InitializerListExpression implements Expression {
 
 	@Nullable private TypeInfo returnType;
 	private final List<Expression> args;
+	private final Location location;
 
 	@Override
 	public void forEachSubExpression(Consumer<Expression> act) {
@@ -22,6 +23,7 @@ public class InitializerListExpression implements Expression {
 	}
 
 	public InitializerListExpression(Location location, @Nullable TypeInfo returnType, List<Expression> args) {
+		this.location = location;
 		this.returnType = returnType;
 		this.args = args;
 		String error = checkTypeCompatibility(returnType);

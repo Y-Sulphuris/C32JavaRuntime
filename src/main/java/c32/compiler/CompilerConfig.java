@@ -1,5 +1,6 @@
 package c32.compiler;
 
+import c32.compiler.codegen.bytecode.JVMGenerator;
 import c32.compiler.codegen.cs.CSGenerator;
 import c32.compiler.codegen.Generator;
 import c32.compiler.codegen.java.JavaGenerator;
@@ -32,12 +33,16 @@ public final class CompilerConfig {
 				case "java":
 					targets.add(new JavaGenerator());
 					break;
+				case "jvm":
+					targets.add(new JVMGenerator());
+					break;
 				case "cs":
 				case "c#":
 					targets.add(new CSGenerator());
 					break;
 				default:
 					System.err.println("Unknown target type: " + str);
+					System.exit(-1);
 			}
 		}
 		parser.close();

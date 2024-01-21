@@ -46,6 +46,7 @@ public class TreeBuilder {
 		performNamespaces(namespacesToFill);
 		performTypenames(namespacesToFill);
 		performFunctionDeclarations(namespacesToFill);
+		performFields(namespacesToFill);
 
 
 		//add function impl
@@ -53,11 +54,18 @@ public class TreeBuilder {
 			for (StatementTree statement : impl.getStatements()) {
 				func.getImplementation().addStatement(Statement.build(func,func.getImplementation(),statement));
 			}
+			func.getImplementation().resolveAll();
 		});
 
 		//resolve all
 
 		return root;
+	}
+
+	private void performFields(HashMap<SpaceInfo, List<DeclarationTree<?>>> namespacesToFill) {
+		for (Map.Entry<SpaceInfo, List<DeclarationTree<?>>> entry : namespacesToFill.entrySet()) {
+			fillSpaceFields(entry.getKey(),entry.getValue());
+		}
 	}
 
 	private void performFunctionDeclarations(HashMap<SpaceInfo, List<DeclarationTree<?>>> namespacesToFill) {
@@ -71,7 +79,7 @@ public class TreeBuilder {
 		HashMap<SpaceInfo, List<DeclarationTree<?>>> subSpaces = new HashMap<>();
 		for (Map.Entry<SpaceInfo,List<DeclarationTree<?>>> entry : namespacesToFill.entrySet()) {
 			var spaces = fillSpaceNamespaces(entry.getKey(),entry.getValue());
-			if (!spaces.isEmpty()   ) {
+			if (!spaces.isEmpty()) {
 				performNamespaces(spaces);
 				subSpaces.putAll(spaces);
 			}
@@ -163,7 +171,7 @@ public class TreeBuilder {
 		declarations.removeAll(forRemoval);
 	}
 
-	private void fillSpace(SpaceInfo current, List<DeclarationTree<?>> declarations) {
+	private void fillSpaceFields(SpaceInfo current, List<DeclarationTree<?>> declarations) {
 		final Set<DeclarationTree<? extends DeclaratorTree>> forRemoval = new HashSet<>();
 
 		final Set<DeclaratorTree> forRemovalDeclarators = new HashSet<>();
@@ -203,7 +211,7 @@ public class TreeBuilder {
 		TypeStructInfo struct = new TypeStructInfo(declarator.getName().text,current,
 				new NamespaceInfo(declarator.getName().text,current,true)
 		);
-		fillSpace(struct,declarator.getDeclarations());
+		fillSpaceFields(struct,declarator.getDeclarations());
 		return struct;
 	}
 

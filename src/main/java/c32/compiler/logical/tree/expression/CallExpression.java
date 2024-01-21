@@ -1,5 +1,6 @@
 package c32.compiler.logical.tree.expression;
 
+import c32.compiler.Location;
 import c32.compiler.logical.tree.FunctionInfo;
 import c32.compiler.logical.tree.TypeInfo;
 import c32.compiler.logical.tree.TypeRefInfo;
@@ -15,6 +16,7 @@ import java.util.function.Consumer;
 public class CallExpression implements Expression {
 	private final FunctionInfo function;
 	private final List<Expression> args;
+	private final Location location;
 
 	@Override
 	public void forEachSubExpression(Consumer<Expression> act) {

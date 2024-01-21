@@ -14,6 +14,7 @@ public class BinaryExpression implements Expression {
 	private final Expression lhs;
 	private final BinaryOperator operator;
 	private final Expression rhs;
+	private final Location location;
 
 	@Override
 	public void forEachSubExpression(Consumer<Expression> act) {
@@ -25,12 +26,14 @@ public class BinaryExpression implements Expression {
 		this.lhs = lhs;
 		this.operator = BinaryOperator.findOperator(location, lhs,operator,rhs);
 		this.rhs = rhs;
+		this.location = location;
 	}
 
 	public BinaryExpression(Location location, Expression lhs, String operator, Expression rhs, TypeInfo returnType) {
 		this.lhs = lhs;
 		this.operator = BinaryOperator.findOperator(location, lhs,operator,rhs);
 		this.rhs = rhs;
+		this.location = location;
 		TypeInfo ret = this.operator.getReturnType();
 		if (returnType != null && !ret.canBeImplicitlyCastTo(returnType)) {
 			throw new CompilerException(location,"cannot implicit cast '" + ret.getCanonicalName() + "' to '" + returnType.getCanonicalName() + "'");
@@ -71,10 +74,8 @@ public class BinaryExpression implements Expression {
 				}
 			}
 			if (result != null)
-				return new NumericLiteralExpression(result,operator.getReturnType());
+				return new NumericLiteralExpression(result,operator.getReturnType(),this.getLocation());
 		}
 		return this;
 	}
 }
-
-//TODO: ВЕСЬ ЭТОТ КЛАСС НАДО ПЕРЕПИСАТЬ, ОН КРИВОЙ

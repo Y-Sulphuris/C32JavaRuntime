@@ -1,5 +1,6 @@
 package c32.compiler.logical.tree;
 
+import c32.compiler.Location;
 import c32.compiler.logical.tree.expression.Expression;
 
 import java.util.Collection;
@@ -41,7 +42,9 @@ public interface SymbolInfo {
     }
 
     default String getFullName() {
-        if (getParent() == null) return getName();
-        else return getParent().getFullName() + "$$$" + getName();
+	    return getCanonicalName();
+	    //if (getParent() == null) return getName();
+	    // else return getParent().getFullName() + "." + getName();
     }
+
 }

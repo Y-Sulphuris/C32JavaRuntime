@@ -64,7 +64,7 @@ public class JavaGenerator implements Generator {
 					mainFunc = function;
 				}
 				if (mainFunc == null)
-					throw new LinkerException("no main function found");
+					throw new LinkerException(null,"no main function found");
 
 				out.println("public static void main(String... args) {");
 				out.print(getJavaFunctionName(mainFunc) + "();");
@@ -178,16 +178,17 @@ public class JavaGenerator implements Generator {
 				out.print("{");
 				int len = ((TypeArrayInfo) expr.getReturnType()).getStaticLength();
 				for (int i = 0; i < len; i++) {
-					writeIndexExpression(
+					throw new UnsupportedOperationException("java generator is unsupported");
+					/*writeIndexExpression(
 							new IndexExpression(
 									expr,
-									Collections.singletonList(new NumericLiteralExpression(BigInteger.valueOf(i), TypeInfo.PrimitiveTypeInfo.INT)
+									Collections.singletonList(new NumericLiteralExpression(BigInteger.valueOf(i), TypeInfo.PrimitiveTypeInfo.INT, expr.getLocation())
 									)
 							),out
-					);
-					if(i != len-1) {
+					);*/
+					/*if(i != len-1) {
 						out.print(",");
-					}
+					}*/
 				}
 				out.print("}");
 			} else {
@@ -466,7 +467,8 @@ public class JavaGenerator implements Generator {
 						/*if (((VariableRefExpression) initializer).getVariable().getTypeRef().canBeImplicitCastTo(variable.getTypeRef())) {
 
 						} else throw new UnsupportedOperationException();*/
-						value = new IndexExpression(initializer, Collections.singletonList(new NumericLiteralExpression(BigInteger.valueOf(i), TypeInfo.PrimitiveTypeInfo.INT)));
+						throw new UnsupportedOperationException("java generator is unsupported");
+						//value = new IndexExpression(initializer, Collections.singletonList(new NumericLiteralExpression(BigInteger.valueOf(i), TypeInfo.PrimitiveTypeInfo.INT)));
 					} else
 						throw new UnsupportedOperationException();
 					writeVariable(new VariableInfo(null,variable.getName()+"$"+i,array.getElementType(), value, variable.is_static(),true),out);
@@ -515,7 +517,8 @@ public class JavaGenerator implements Generator {
 				writeStatement(((IfStatement) state).getStatement(),out);
 			}
 		} else if (state instanceof WhileStatement) {
-			if (((WhileStatement) state).getCondition() instanceof BooleanLiteralExpression && !((BooleanLiteralExpression) ((WhileStatement) state).getCondition()).isValue()) {
+			if (((WhileStatement) state).getCondition() instanceof BooleanLiteralExpression &&
+					!((BooleanLiteralExpression) ((WhileStatement) state).getCondition()).isValue()) {
 				//while (false)
 			} else {
 				out.print("while (");
@@ -560,7 +563,7 @@ public class JavaGenerator implements Generator {
 		if (function.getArgs().isEmpty()) return function.getCanonicalName();
 		StringBuilder builder = new StringBuilder(function.getCanonicalName());
 		for (VariableInfo arg : function.getArgs()) {
-			builder.append("$").append(arg.getTypeRef().getType().getFullName());
+			builder.append("$").append(arg.getTypeRef().getType().getFullName().replace(".","$$$"));
 		}
 		return builder.toString();
 	}

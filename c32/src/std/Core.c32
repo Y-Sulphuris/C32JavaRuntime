@@ -19,6 +19,8 @@ extern void println(void* p);
 extern void println(float i);
 extern void println(double i);
 
+extern void println();
+
 extern void print(const char[] ch);
 
 extern void print(byte i);

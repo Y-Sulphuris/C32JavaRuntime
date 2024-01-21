@@ -11,6 +11,7 @@ import java.util.function.Consumer;
 public class ExplicitCastExpression implements Expression {
 	private final TypeInfo targetType;
 	private final Expression expression;
+	private final Location location;
 
 	@Override
 	public void forEachSubExpression(Consumer<Expression> act) {
@@ -20,6 +21,7 @@ public class ExplicitCastExpression implements Expression {
 	public ExplicitCastExpression(Location location, TypeInfo targetType, Expression expression) {
 		this.targetType = targetType;
 		this.expression = expression;
+		this.location = location;
 		if (!expression.getReturnType().canBeExplicitlyCastTo(targetType)) {
 			throw new CompilerException(location,"cannot cast type '" + expression.getReturnType().getCanonicalName() + "' to '" + targetType.getCanonicalName() + "'");
 		}
