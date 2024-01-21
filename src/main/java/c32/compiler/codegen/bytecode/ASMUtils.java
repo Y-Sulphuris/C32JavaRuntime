@@ -80,7 +80,9 @@ final class ASMUtils {
 	}
 
 	public static Label mkLabel(MethodVisitor mv, Location location) {
-		Label l = new Label();
+		return mkLabel(mv,new Label(),location);
+	}
+	public static Label mkLabel(MethodVisitor mv, Label l, Location location) {
 		mv.visitLabel(l);
 		mv.visitLineNumber(location == null ? -1 : location.getStartLine(),l);
 		return l;

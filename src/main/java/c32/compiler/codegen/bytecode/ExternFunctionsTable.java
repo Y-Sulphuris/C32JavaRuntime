@@ -26,6 +26,7 @@ public class ExternFunctionsTable {
 		table.put("c32/std/$package::println£byte",new ExternFunctionInfo("c32/extern/Runtime","println",   "(B)V"));
 		table.put("c32/std/$package::println£ushort",new ExternFunctionInfo("c32/extern/Runtime","uprintln","(S)V"));
 		table.put("c32/std/$package::println£int",new ExternFunctionInfo("c32/extern/Runtime","println","(I)V"));
+		table.put("c32/std/$package::println£long",new ExternFunctionInfo("c32/extern/Runtime","println","(J)V"));
 
 		table.put("c32/std/$package::malloc£ulong",new ExternFunctionInfo("c32/extern/Memory","malloc","(J)J"));
 	}

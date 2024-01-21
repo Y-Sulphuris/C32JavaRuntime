@@ -1,5 +1,6 @@
 package c32.compiler.codegen.bytecode;
 
+import c32.compiler.Location;
 import c32.compiler.logical.tree.*;
 import c32.compiler.logical.tree.expression.*;
 import c32.compiler.logical.tree.statement.*;
@@ -10,6 +11,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 
 import static c32.compiler.codegen.bytecode.ASMUtils.*;
@@ -169,18 +171,55 @@ public class JVMGenerator implements c32.compiler.codegen.Generator {
 			writeLabel(mv, (LabelStatement)statement);
 		} else if (statement instanceof GotoStatement) {
 			writeGoto(mv, (GotoStatement)statement);
+		} else if (statement instanceof IfStatement) {
+			writeIfStatement(mv,func, (IfStatement)statement);
 		}
 		else {
 			throw new UnsupportedOperationException(statement.getClass().getName());
 		}
 	}
 
+	private void writeIfStatement(MethodVisitor mv, FunctionImplementationInfo func, IfStatement statement) {
+		pushExpression(mv,statement.getCondition());
+		Label stateLabel = new Label();
+		Label elseLabel = new Label();
+		Label nextLabel = new Label();
+
+		mv.visitJumpInsn(IFEQ,elseLabel);
+		Statement ifState = statement.getStatement();
+		Statement elState = statement.getElseStatement();
+
+		mkLabel(mv,stateLabel,ifState.getLocation());
+
+		writeStatement(mv,func,ifState);
+		if (elState != null) {
+			mv.visitJumpInsn(GOTO,nextLabel);
+		}
+
+		if (elState != null){
+			mkLabel(mv,elseLabel,elState.getLocation());
+			writeStatement(mv,func,elState);
+		}
+		mkLabel(mv,nextLabel,statement.getLocation());
+	}
+
+	private HashMap<LabelStatement,Label> usedlabels = new HashMap<>();
+
 	private void writeGoto(MethodVisitor mv, GotoStatement statement) {
-		mv.visitJumpInsn(GOTO,labels.get(statement.getLabel()));
+		Label l = labels.get(statement.getLabel());
+		if (l == null) {
+			l = new Label();
+			usedlabels.put(statement.getLabel(),l);
+		}
+		mv.visitJumpInsn(GOTO,l);
 	}
 
 	private void writeLabel(MethodVisitor mv, LabelStatement statement) {
-		labels.put(statement,ASMUtils.mkLabel(mv,statement.getLocation()));
+		Label l = usedlabels.get(statement);
+		if (l == null) {
+			l = new Label();
+		}
+		labels.put(statement,ASMUtils.mkLabel(mv,l,statement.getLocation()));
 	}
 
 	private void writeReturn(MethodVisitor mv, ReturnStatement statement) {
@@ -226,6 +265,8 @@ public class JVMGenerator implements c32.compiler.codegen.Generator {
 			pushUnaryPrefixExpression(mv, (UnaryPrefixExpression)expr);
 		} else if (expr instanceof IndexExpression) {
 			pushIndexExpression(mv, (IndexExpression)expr);
+		} else if (expr instanceof BooleanLiteralExpression) {
+			mv.visitInsn(((BooleanLiteralExpression) expr).isValue() ? ICONST_1 : ICONST_0);
 		}
 		else {
 			throw new UnsupportedOperationException(expr.getClass().getName());
