@@ -127,30 +127,39 @@ public final class FunctionWriter {
 	}
 
 	private void writeIfStatement(IfStatement statement) {
-		loadExpression(statement.getCondition());
-		//if (...) {
-		Label STATE_LABEL = new Label();
-		//} else {
-		Label ELSE_LABEL = new Label();
-		//}
-		Label NEXT_LABEL = new Label();
+		Expression cond = statement.getCondition();
+		Runnable ifTrue = () -> {
+			writeStatement(statement.getStatement());
+		};
 
-		Statement ifState = statement.getStatement();
-		Statement elState = statement.getElseStatement();
-		mv.visitJumpInsn(IFEQ, elState == null ? NEXT_LABEL : ELSE_LABEL);
-
-		writeLabel(STATE_LABEL,ifState.getLocation());
-
-		writeStatement(ifState);
-
-		if (elState != null){
-			mv.visitJumpInsn(GOTO, NEXT_LABEL);
-			writeLabel(ELSE_LABEL,elState.getLocation());
-			writeStatement(elState);
+		Runnable ifFalse = null;
+		if (statement.getElseStatement() != null) {
+			ifFalse = () -> {
+				writeStatement(statement.getElseStatement());
+			};
 		}
-		//writeLabel(NEXT_LABEL,statement.getLocation());
+		Label NEXT_LABEL = new Label();
+		if (cond instanceof BinaryExpression) {
+			BinaryOperator op = ((BinaryExpression) cond).getOperator();
+			switch (op.getOp()) {
+				case "==":
+				case "!=":
+				case ">":
+				case "<":
+				case ">=":
+				case "<=":
+					loadExpression(((BinaryExpression) cond).getLhs(),((BinaryExpression) cond).getOperator().getLeftType());
+					loadExpression(((BinaryExpression) cond).getRhs(),((BinaryExpression) cond).getOperator().getRightType());
+					applyComparator(op.getLeftType(), op, ifTrue, ifFalse, NEXT_LABEL);
+					this.NEXT_LABEL = NEXT_LABEL;
+					return;
+			}
+		}
+		loadExpression(cond);
+		applyCompareEquals(cond.getReturnType(),ifTrue,ifFalse);
 		this.NEXT_LABEL = NEXT_LABEL;
 	}
+
 
 	private void writeReturn(ReturnStatement statement) {
 		if (statement.getExpr() == null) {
@@ -465,15 +474,38 @@ public final class FunctionWriter {
 			}
 		}
 
-		switch (op.getOp()) {
-			case "==":
-				applyCompareEquals(expr.getOperator().getLeftType());
-				return;
+		if (applyComparator(op.getLeftType(),op, () -> loadBoolValue(true),() -> loadBoolValue(false))) {
+			return;
 		}
 
+		mv.visitInsn(ASMUtils.binaryOpcode(op));
+	}
+
+	private boolean applyComparator(TypeInfo type, BinaryOperator op, Runnable ifTrue, Runnable ifFalse) {
+		Label NEXT = new Label();
+		boolean result = applyComparator(type,op,ifTrue,ifFalse,NEXT);
+		mv.visitLabel(NEXT);
+		return result;
+	}
+	private boolean applyComparator(TypeInfo type, BinaryOperator op, Runnable ifTrue, Runnable ifFalse, Label NEXT) {
+		switch (op.getOp()) {
+			case "==":
+				applyCompareEquals(type,ifTrue,ifFalse);
+				return true;
+			case "!=":
+				applyCompareEquals(type,ifFalse,ifTrue);
+				return true;
+			case ">":
+			case ">=":
+			case "<":
+			case "<=":
+			default:
+				return false;
+		}
+/*
 		int cmp = 0;
 
-		int cmpType = getCmpType(op.getLeftType());
+		int cmpType = getCmpType(type);
 		switch (op.getOp()) {
 			case "==":
 				cmp = IFNE;
@@ -496,42 +528,46 @@ public final class FunctionWriter {
 			default:
 		}
 		if (cmp == 0) {
-			mv.visitInsn(ASMUtils.binaryOpcode(op));
+			throw new IllegalArgumentException(type.getCanonicalName());
 		} else {
 			Label FALSE = new Label();
-			Label STORE = new Label();
 			if (cmpType != 0) {
 				mv.visitInsn(cmpType);          // DCMPL?
 			} else {
 				cmp += 6;
 			}
-			applyComparator(cmp, () -> loadBoolValue(true), FALSE, () -> loadBoolValue(false), STORE);
-		}
+			applyComparator(cmp, ifTrue, FALSE, ifFalse, NEXT);
+		}*/
 	}
-
+//	private void applyCompareEquals(TypeInfo type) {
+//		applyCompareEquals(type, () -> loadBoolValue(true), () -> loadBoolValue(false));
+//	}
 	private void applyCompareEquals(TypeInfo type, Runnable ifTrue, Runnable ifFalse) {
 		int cmp;
 		if (type != TypeInfo.PrimitiveTypeInfo.FLOAT && type.sizeof() <= 4) {
-			cmp = IF_ACMPNE;
+			cmp = IF_ICMPNE;
 		} else {
 			cmp = IFNE;
 			mv.visitInsn(getCmpType(type));
 		}
-		applyComparator(cmp,ifTrue,new Label(),ifFalse,new Label());
+		applyComparator(cmp,ifTrue,ifFalse);
 	}
 
 	private void applyComparator(int cmp, Runnable ifTrue, Runnable ifFalse) {
-		applyComparator(cmp,ifTrue,new Label(),ifFalse,new Label());
+		Label NEXT = new Label();
+		applyComparator(cmp,ifTrue,new Label(),ifFalse,NEXT);
+		mv.visitLabel(NEXT);                // STORE: (return)
 	}
 
 	private void applyComparator(int cmp, Runnable ifTrue, Label FALSE, Runnable ifFalse, Label NEXT) {
-		mv.visitJumpInsn(cmp, FALSE);       //  if false goto FALSE;
+		mv.visitJumpInsn(cmp, ifFalse == null ? NEXT : FALSE);       //  if false goto FALSE;
 		ifTrue.run();                       //  set true
 		mv.visitJumpInsn(GOTO,NEXT);        //  goto STORE;
 
-		mv.visitLabel(FALSE);               // FALSE:
-		ifFalse.run();                      // set false
-		mv.visitLabel(NEXT);                // STORE: (return)
+		if (ifFalse != null) {
+			mv.visitLabel(FALSE);           //  FALSE:
+			ifFalse.run();                  //  set false
+		}
 	}
 
 	private void loadAssignExpression(AssignExpression expr) {
