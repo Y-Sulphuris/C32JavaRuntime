@@ -17,9 +17,11 @@ void test3(int i2, int* l, int i6) {
 }
 
 void main() {
-	goto RET;
-	bool b = false;
-	RET:
+	int i = 64;
+
+	bool b = i == 100;
+	std::println(b);
+
 	return;
 }
 

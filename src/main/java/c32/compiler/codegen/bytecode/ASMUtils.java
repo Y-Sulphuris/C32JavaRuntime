@@ -3,6 +3,10 @@ package c32.compiler.codegen.bytecode;
 import c32.compiler.Location;
 import c32.compiler.logical.tree.*;
 import c32.compiler.logical.tree.expression.BinaryOperator;
+import c32.compiler.logical.tree.statement.BlockStatement;
+import c32.compiler.logical.tree.statement.LabelStatement;
+import c32.compiler.logical.tree.statement.NopStatement;
+import c32.compiler.logical.tree.statement.Statement;
 import org.jetbrains.annotations.Nullable;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
@@ -79,14 +83,6 @@ final class ASMUtils {
 		return desc.toString();
 	}
 
-	public static Label mkLabel(MethodVisitor mv, Location location) {
-		return mkLabel(mv,new Label(),location);
-	}
-	public static Label mkLabel(MethodVisitor mv, Label l, Location location) {
-		mv.visitLabel(l);
-		mv.visitLineNumber(location == null ? -1 : location.getStartLine(),l);
-		return l;
-	}
 
 	/*public static void alloca_reg(MethodVisitor mv, Class<?>[] types, Expression[] initializers) {
 		if (types.length != initializers.length)
@@ -104,31 +100,15 @@ final class ASMUtils {
 
 
 
-	public static void store_register(MethodVisitor mv, Class<?> type, @Nullable VariableInfo var) {
-		int index = ++JVMGenerator.localVariableIndex;
-		if (type == long.class || type == double.class)
-			++JVMGenerator.localVariableIndex;
-
-		int opcode;
-		if (type == float.class) {
-			opcode = FSTORE;
-		} else if (type == long.class) {
-			opcode = LSTORE;
-		} else if (type == double.class) {
-			opcode = DSTORE;
-		} else {
-			if (type == int.class || type == byte.class || type == short.class || type == char.class || type == boolean.class) {
-				opcode = ISTORE;
-			} else {
-				throw new IllegalArgumentException(type.getName());
-			}
-		}
-		//store X
-		mv.visitVarInsn(opcode,index);
-		if (var != null)
-			storeRegisterVariable(var,index);
+	@SuppressWarnings("RedundantIfStatement")
+	public static boolean needSeparateLabel(Statement statement) {
+		if (statement instanceof LabelStatement || statement instanceof NopStatement) return false;
+		if (statement instanceof BlockStatement && !((BlockStatement) statement).getStatements().isEmpty()) return false;
+		return true;
 	}
-	public static void storeRegisterVariable(VariableInfo var, int index) {
+
+
+	public static void addRegisterVariableHandle(VariableInfo var, int index) {
 		varHandles.put(var,new IndexedVariableHandle(var,index));
 	}
 
@@ -156,17 +136,17 @@ final class ASMUtils {
 	}
 
 	public static int getLoadInstruction(TypeInfo type) {
-		Class<?> cls = asJavaPrimitive(type);
-		if (cls == null)
-			throw new UnsupportedOperationException(type.getCanonicalName());
-		if (cls == double.class) {
+		if (type == DOUBLE) {
 			return DLOAD;
 		}
-		if (cls == float.class) {
+		if (type == FLOAT) {
 			return FLOAD;
 		}
-		if (cls == long.class) {
+		if (type.sizeof() == 8) {
 			return LLOAD;
+		}
+		if (type.sizeof() > 4) {
+			throw new UnsupportedOperationException(type.getCanonicalName());
 		}
 		return ILOAD;
 	}
@@ -214,6 +194,16 @@ final class ASMUtils {
 		return op + typeBase;
 	}
 
+	public static int getCmpType(TypeInfo type) {
+		if (type == TypeInfo.PrimitiveTypeInfo.DOUBLE) {
+			return DCMPL;
+		} else if (type == TypeInfo.PrimitiveTypeInfo.FLOAT) {
+			return FCMPL;
+		} else if (type == TypeInfo.PrimitiveTypeInfo.LONG) {
+			return LCMP;
+		}
+		return 0;
+	}
 
 	public static void generateMainFunction(ClassWriter cw) {
 		MethodVisitor mv = cw.visitMethod(ACC_PUBLIC | ACC_STATIC,"main","([Ljava/lang/String;)V",null,null);
@@ -230,5 +220,9 @@ final class ASMUtils {
 		mv.visitInsn(RETURN);
 		mv.visitMaxs(4,3);
 		mv.visitEnd();
+	}
+
+	public static int calcStackFrameSize(FunctionInfo function) {
+		return 0;
 	}
 }

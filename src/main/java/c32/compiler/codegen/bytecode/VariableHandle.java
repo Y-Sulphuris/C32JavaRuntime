@@ -10,7 +10,7 @@ import org.objectweb.asm.MethodVisitor;
 public abstract class VariableHandle {
 	private final VariableInfo targetVariable;
 
-	public abstract void push(MethodVisitor mv);
+	public abstract void loadMe(MethodVisitor mv);
 }
 @Getter
 class IndexedVariableHandle extends VariableHandle {
@@ -23,7 +23,7 @@ class IndexedVariableHandle extends VariableHandle {
 	}
 
 	@Override
-	public void push(MethodVisitor mv) {
+	public void loadMe(MethodVisitor mv) {
 		mv.visitVarInsn(ASMUtils.getLoadInstruction(this.getTargetVariable().getTypeRef().getType()), index);
 	}
 }

@@ -127,6 +127,8 @@ public interface Statement {
 		} else if (statement instanceof GotoStatementTree) {
 			String label = ((GotoStatementTree) statement).getLabelName().text;
 			return new GotoStatement(function,container,label,statement.getLocation());
+		} else if (statement instanceof NopStatementTree) {
+			return new NopStatement(function,container,statement.getLocation(),((NopStatementTree) statement).getNop() != null);
 		}
 
 		throw new UnsupportedOperationException(statement.getClass().toString());

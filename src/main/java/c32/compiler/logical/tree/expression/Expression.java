@@ -2,10 +2,8 @@ package c32.compiler.logical.tree.expression;
 
 import c32.compiler.Location;
 import c32.compiler.except.CompilerException;
-import c32.compiler.logical.tree.SpaceInfo;
-import c32.compiler.logical.tree.TypeInfo;
-import c32.compiler.logical.tree.VariableInfo;
-import c32.compiler.logical.tree.Weak;
+import c32.compiler.lexer.tokenizer.TokenType;
+import c32.compiler.logical.tree.*;
 import c32.compiler.parser.ast.expr.*;
 import c32.compiler.parser.ast.type.TypeElementTree;
 
@@ -66,6 +64,9 @@ public interface Expression {
 					return new NumericLiteralExpression(((LiteralExprTree) exprTree).getLiteral(),returnType);
 			}
 		} else if (exprTree instanceof ReferenceExprTree) {
+			if (((ReferenceExprTree) exprTree).getIdentifier().type == TokenType.KEYWORD) {
+				return findCompileTimeConstant(((ReferenceExprTree) exprTree).getIdentifier().text,((ReferenceExprTree) exprTree).getIdentifier().location);
+			}
 			VariableRefExpression var = container.resolveVariable(container, (ReferenceExprTree)exprTree);
 			if (returnType != null) {
 				if (!var.getReturnType().canBeImplicitlyCastTo(returnType)){
@@ -151,6 +152,13 @@ public interface Expression {
 		}
 
 		throw new UnsupportedOperationException(exprTree.getClass().getName());
+	}
+
+	static Expression findCompileTimeConstant(String text, Location location) {
+		if (text.equals("null")) {
+			return new NullLiteralExpression(location);
+		}
+		throw new UnsupportedOperationException();
 	}
 
 	default boolean isAssignable() {

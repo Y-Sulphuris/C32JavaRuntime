@@ -21,28 +21,36 @@ public class UnaryPrefixOperator {
 	private final TypeRefInfo targetType;
 	private final TypeInfo returnType;
 
-	private static final Map<TypeRefInfo, Set<UnaryPrefixOperator>> registeredOperators = new HashMap<>();
+	private static final Map<TypeInfo, Set<UnaryPrefixOperator>> registeredOperators = new HashMap<>();
+	static {
+		registerUnaryPrefix("!",new TypeRefInfo(true,false, TypeInfo.PrimitiveTypeInfo.BOOL),TypeInfo.PrimitiveTypeInfo.BOOL);
+		TypeInfo.PrimitiveTypeInfo.forEachNumeric(TYPE -> {
+			registerUnaryPrefix("++",new TypeRefInfo(false,false, TYPE), TYPE);
+			registerUnaryPrefix("--",new TypeRefInfo(false,false, TYPE), TYPE);
+		});
+	}
 
 	private static UnaryPrefixOperator registerUnaryPrefix(String op, TypeRefInfo targetType, TypeInfo returnType) {
 		UnaryPrefixOperator operator = new UnaryPrefixOperator(op,targetType,returnType);
-		Set<UnaryPrefixOperator> operators = registeredOperators.computeIfAbsent(targetType, k -> new HashSet<>());
+		Set<UnaryPrefixOperator> operators = registeredOperators.computeIfAbsent(targetType.getType(), k -> new HashSet<>());
 		operators.add(operator);
 		return operator;
 	}
 
 	public static UnaryPrefixOperator findOperator(Location location, TypeRefInfo targetType, String op) {
-		Set<UnaryPrefixOperator> operators = registeredOperators.computeIfAbsent(targetType, k -> new HashSet<>());
+		Set<UnaryPrefixOperator> operators = registeredOperators.computeIfAbsent(targetType.getType(), k -> new HashSet<>());
 		for (UnaryPrefixOperator registeredOperator : operators) {
 			if (!registeredOperator.op.equals(op)) continue;
+			if (!targetType.canBeImplicitlyCastTo(registeredOperator.targetType)) break;
 			return registeredOperator;
 		}
 		switch (op) {
-			case "*": if (targetType.getType() instanceof TypePointerInfo) {
+			case "*": if (targetType.getType() instanceof TypePointerInfo && ((TypePointerInfo) targetType.getType()).getTargetType().getType().sizeof() != 0) {
 				return registerUnaryPrefix(op,targetType,((TypePointerInfo) targetType.getType()).getTargetType().getType());
-			}
+			} break;
 			case "&": {
 				return registerUnaryPrefix(op,targetType,TypePointerInfo.pointerOf(targetType));
-			}
+			} //break;
 		}
 
 		throw new IllegalOperatorException(location,op,targetType.getType());

@@ -194,19 +194,37 @@ public class Compiler {
 	}
 
 	private static void compile(Collection<File> files, Collection<Generator> generators) {
-		Collection<CompilationUnitTree> units = files.stream().map((file) -> {
-			try {
-				return getAST(file);
-			} catch (IOException e) {
-				throw new RuntimeException(e);
-			}
-		}).collect(Collectors.toList());
+		Collection<CompilationUnitTree> units;
+		{
+			long start = System.currentTimeMillis();
+
+			units = files.stream().map((file) -> {
+				try {
+					return getAST(file);
+				} catch (IOException e) {
+					throw new RuntimeException(e);
+				}
+			}).collect(Collectors.toList());
+
+			long end = System.currentTimeMillis();
+
+			System.out.println("Parsing (stage 1): " + (end - start) + "ms");
+		}
 
 		deleteDirectory(new File("out"));
 		try {
+			long start = System.currentTimeMillis();
+
 			NamespaceInfo space = build(units);
+
+			long end = System.currentTimeMillis();
+			System.out.println("Parsing (stage 2): " + (end - start) + "ms");
 			for (Generator generator : generators) {
+				long gstart = System.currentTimeMillis();
 				generator.generate(space);
+				long gend = System.currentTimeMillis();
+				System.out.println("Generating for target '" + generator.getClass().getSimpleName().replace("Generator","") + "': "
+						+ (gend - gstart) + "ms");
 			}
 		} catch (CompilerException e) {
 			if (e.getLocation() == null || e.getLocation().getSourceFile() == null)
@@ -230,7 +248,7 @@ public class Compiler {
 	public static void main(String... args) throws IOException {
 		System.out.println("Compiling...");
 		long start = System.currentTimeMillis();
-		try {
+		/*try {
 			String filename = "Main";
 			if (args.length == 0) throw new RuntimeException();
 			filename = args[args.length-1];
@@ -240,17 +258,19 @@ public class Compiler {
 			compile(Collections.singleton(new File(filename)),Collections.singleton(new JavaGenerator()));
 
 			return;
-		} catch (RuntimeException e) {
+		} catch (RuntimeException e)*/ {
 			try {
 				File configFile = new File("Figures.json");
 				Compiler.config = CompilerConfig.parse(configFile);
+				long end = System.currentTimeMillis();
+				System.out.println("Config parsed: " + (end - start) + "ms\n");
 			} catch (Exception ee) {
 				System.err.println("Invalid configuration format");
 				throw ee;
 			}
 			compile(allC32Files(config.getSrc()),config.getTargets());
 			long end = System.currentTimeMillis();
-			System.out.println("Finished (" + (end - start) + "ms)");
+			System.out.println("Finished (total: " + (end - start) + "ms)\n");
 		}
 
 		/*AST.brewJava().forEach((file) -> {

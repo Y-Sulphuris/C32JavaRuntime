@@ -16,7 +16,7 @@ public class BooleanLiteralExpression implements LiteralExpression {
 		this.location = literal.location;
 		if (returnType != null && !returnType.canBeImplicitlyCastTo(TypeInfo.PrimitiveTypeInfo.BOOL))
 			throw new CompilerException(literal.location,"cannot implicit cast 'bool' to '" + returnType.getCanonicalName() + "'");
-		this.returnType = returnType;
+		this.returnType = TypeInfo.PrimitiveTypeInfo.BOOL;//returnType;
 		this.value = literal.text.equals("true");
 	}
 }

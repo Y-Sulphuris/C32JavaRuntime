@@ -2,6 +2,8 @@ package std;
 
 extern void println(const char[] ch);
 
+extern void println(bool b);
+
 extern void println(byte i);
 extern void println(ubyte i);
 
@@ -22,6 +24,8 @@ extern void println(double i);
 extern void println();
 
 extern void print(const char[] ch);
+
+extern void print(bool b);
 
 extern void print(byte i);
 extern void print(ubyte i);

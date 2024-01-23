@@ -49,6 +49,9 @@ public final class Runtime {
 		System.out.print(Long.toHexString(ptr));
 	}
 
+	public static void println(boolean b) {
+		System.out.println(b);
+	}
 	public static void println(byte b) {
 		System.out.println(b);
 	}
@@ -62,6 +65,9 @@ public final class Runtime {
 		System.out.println(l);
 	}
 
+	public static void print(boolean b) {
+		System.out.print(b);
+	}
 
 	public static void uprintln(byte x) {
 		System.out.println(Byte.toUnsignedInt(x));

@@ -252,6 +252,8 @@ public class Parser {
 						return parseTryCatchFinallyStatement();
 					case "throw":
 						return parseThrowStatement();
+					case "nop":
+						return parseNopStatement();
 					/*case "assert":
 						return parseAssertStatement();
 					case "switch":
@@ -356,8 +358,15 @@ public class Parser {
 	}
 
 	private NopStatementTree parseNopStatement() {
-		Token endLine = assertAndNext(TokenType.ENDLINE);
-		return new NopStatementTree(endLine);
+		Token nop = token;
+		if (nop.text.equals("nop")) {
+			token = nextToken();
+			Token endLine = assertAndNext(TokenType.ENDLINE);
+			return new NopStatementTree(nop,endLine);
+		} else {
+			assertAndNext(TokenType.ENDLINE);
+			return new NopStatementTree(null,nop);
+		}
 	}
 
 	private ForStatementTree parseForStatement() {

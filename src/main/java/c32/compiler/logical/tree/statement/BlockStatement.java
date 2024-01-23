@@ -2,6 +2,7 @@ package c32.compiler.logical.tree.statement;
 
 import c32.compiler.Location;
 import c32.compiler.logical.tree.*;
+import c32.compiler.logical.tree.expression.NumericLiteralExpression;
 import c32.compiler.logical.tree.expression.VariableRefExpression;
 import c32.compiler.parser.ast.expr.ReferenceExprTree;
 import c32.compiler.parser.ast.statement.BlockStatementTree;
@@ -9,6 +10,7 @@ import c32.compiler.parser.ast.statement.StatementTree;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
+import java.math.BigInteger;
 import java.util.*;
 
 @RequiredArgsConstructor

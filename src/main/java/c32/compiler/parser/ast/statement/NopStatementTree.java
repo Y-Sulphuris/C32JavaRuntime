@@ -6,9 +6,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.Data;
+import org.jetbrains.annotations.Nullable;
 
 @Data
 public class NopStatementTree implements StatementTree {
+	@Nullable private final Token nop;
 	private final Token endLine;
 	@Override
 	public Location getLocation() {
