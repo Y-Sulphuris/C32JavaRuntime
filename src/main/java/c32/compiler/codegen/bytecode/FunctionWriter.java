@@ -150,9 +150,10 @@ public final class FunctionWriter {
 				case "<=":
 					loadExpression(((BinaryExpression) cond).getLhs(),((BinaryExpression) cond).getOperator().getLeftType());
 					loadExpression(((BinaryExpression) cond).getRhs(),((BinaryExpression) cond).getOperator().getRightType());
-					applyComparator(op.getLeftType(), op, ifTrue, ifFalse, NEXT_LABEL);
+					applyCompare(op.getLeftType(), op, ifTrue, ifFalse, NEXT_LABEL);
 					this.NEXT_LABEL = NEXT_LABEL;
 					return;
+				default:
 			}
 		}
 		loadExpression(cond);
@@ -474,31 +475,39 @@ public final class FunctionWriter {
 			}
 		}
 
-		if (applyComparator(op.getLeftType(),op, () -> loadBoolValue(true),() -> loadBoolValue(false))) {
+		if (applyCompare(op.getLeftType(),op,() -> loadBoolValue(true),() -> loadBoolValue(false))) {
 			return;
 		}
 
 		mv.visitInsn(ASMUtils.binaryOpcode(op));
 	}
 
-	private boolean applyComparator(TypeInfo type, BinaryOperator op, Runnable ifTrue, Runnable ifFalse) {
+	private boolean applyCompare(TypeInfo type, BinaryOperator op, Runnable ifTrue, Runnable ifFalse) {
 		Label NEXT = new Label();
-		boolean result = applyComparator(type,op,ifTrue,ifFalse,NEXT);
+		boolean result = applyCompare(type,op,ifTrue,ifFalse,NEXT);
 		mv.visitLabel(NEXT);
 		return result;
 	}
-	private boolean applyComparator(TypeInfo type, BinaryOperator op, Runnable ifTrue, Runnable ifFalse, Label NEXT) {
+	private boolean applyCompare(TypeInfo type, BinaryOperator op, Runnable ifTrue, Runnable ifFalse, Label NEXT) {
 		switch (op.getOp()) {
 			case "==":
 				applyCompareEquals(type,ifTrue,ifFalse);
 				return true;
 			case "!=":
-				applyCompareEquals(type,ifFalse,ifTrue);
+				applyCompareNotEquals(type,ifTrue,ifFalse);
 				return true;
 			case ">":
+				applyCompareGreater(type,ifTrue,ifFalse);
+				return true;
 			case ">=":
+				applyCompareGreaterOrEquals(type,ifTrue,ifFalse);
+				return true;
 			case "<":
+				applyCompareSmaller(type,ifTrue,ifFalse);
+				return true;
 			case "<=":
+				applyCompareSmallerOrEquals(type,ifTrue,ifFalse);
+				return true;
 			default:
 				return false;
 		}
@@ -539,27 +548,42 @@ public final class FunctionWriter {
 			applyComparator(cmp, ifTrue, FALSE, ifFalse, NEXT);
 		}*/
 	}
-//	private void applyCompareEquals(TypeInfo type) {
-//		applyCompareEquals(type, () -> loadBoolValue(true), () -> loadBoolValue(false));
-//	}
-	private void applyCompareEquals(TypeInfo type, Runnable ifTrue, Runnable ifFalse) {
-		int cmp;
+
+	private void applyCmpAs(TypeInfo type, int cmp_base, Runnable ifTrue, Runnable ifFalse) {
+		int cmp = cmp_base;
 		if (type != TypeInfo.PrimitiveTypeInfo.FLOAT && type.sizeof() <= 4) {
-			cmp = IF_ICMPNE;
+			if (type != TypeInfo.PrimitiveTypeInfo.BOOL) cmp += 6;
 		} else {
-			cmp = IFNE;
 			mv.visitInsn(getCmpType(type));
 		}
-		applyComparator(cmp,ifTrue,ifFalse);
+		applyCompare(cmp,ifTrue,ifFalse);
+	}
+	private void applyCompareSmaller(TypeInfo type, Runnable ifTrue, Runnable ifFalse) {
+		applyCmpAs(type,IFGE,ifTrue,ifFalse);
+	}
+	private void applyCompareSmallerOrEquals(TypeInfo type, Runnable ifTrue, Runnable ifFalse) {
+		applyCmpAs(type,IFGT,ifTrue,ifFalse);
+	}
+	private void applyCompareGreater(TypeInfo type, Runnable ifTrue, Runnable ifFalse) {
+		applyCmpAs(type,IFLE,ifTrue,ifFalse);
+	}
+	private void applyCompareGreaterOrEquals(TypeInfo type, Runnable ifTrue, Runnable ifFalse) {
+		applyCmpAs(type,IFLT,ifTrue,ifFalse);
+	}
+	private void applyCompareNotEquals(TypeInfo type, Runnable ifTrue, Runnable ifFalse) {
+		applyCmpAs(type,IFEQ,ifTrue,ifFalse);
+	}
+	private void applyCompareEquals(TypeInfo type, Runnable ifTrue, Runnable ifFalse) {
+		applyCmpAs(type,IFNE,ifTrue,ifFalse);
 	}
 
-	private void applyComparator(int cmp, Runnable ifTrue, Runnable ifFalse) {
+	private void applyCompare(int cmp, Runnable ifTrue, Runnable ifFalse) {
 		Label NEXT = new Label();
-		applyComparator(cmp,ifTrue,new Label(),ifFalse,NEXT);
+		applyCompare(cmp,ifTrue,new Label(),ifFalse,NEXT);
 		mv.visitLabel(NEXT);                // STORE: (return)
 	}
 
-	private void applyComparator(int cmp, Runnable ifTrue, Label FALSE, Runnable ifFalse, Label NEXT) {
+	private void applyCompare(int cmp, Runnable ifTrue, Label FALSE, Runnable ifFalse, Label NEXT) {
 		mv.visitJumpInsn(cmp, ifFalse == null ? NEXT : FALSE);       //  if false goto FALSE;
 		ifTrue.run();                       //  set true
 		mv.visitJumpInsn(GOTO,NEXT);        //  goto STORE;

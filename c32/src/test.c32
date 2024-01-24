@@ -17,13 +17,15 @@ void test3(int i2, int* l, int i6) {
 }
 
 void main() {
-	long i = 64;
-	if(i != 64) {
-		bool b = i == 65;
-    	std::println(b);
+	int i = 64;
+	bool b1 = i == 64;
+	if(!b1) {
+		bool b = i != 65;
+    	std::println(true);
     } else {
-    	std::println(5);
+    	std::println(false);
     }
+    std::println(0);
 	return;
 }
 
