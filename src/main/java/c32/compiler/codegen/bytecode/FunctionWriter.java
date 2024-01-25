@@ -91,7 +91,7 @@ public final class FunctionWriter {
 	private void writeVariableDeclarationStatement(VariableDeclarationStatement statement) {
 		for (VariableInfo variable : statement.getVariables()) {
 			loadExpression(variable.getInitializer(), variable.getTypeRef().getType());
-			storeVariable(variable);
+			storeNewVariable(variable);
 		}
 	}
 
@@ -213,7 +213,7 @@ public final class FunctionWriter {
 	}
 
 
-	private void storeVariable(VariableInfo variable) {
+	private void storeNewVariable(VariableInfo variable) {
 		if (ASMUtils.canBePresentAsJavaPrimitive(variable.getTypeRef().getType())) {
 			Class<?> cls = ASMUtils.asJavaPrimitive(variable.getTypeRef().getType());
 			store_register(cls,variable);
@@ -221,12 +221,26 @@ public final class FunctionWriter {
 			throw new UnsupportedOperationException(variable.getTypeRef().getType().toString());
 		}
 	}
+	private void storeVariable(VariableInfo variable) {
+		VariableHandle handle = getHandle(variable);
+		handle.storeToMe(mv);
+	}
 
 
 	private void storeToAddress(Expression pointer, Expression offset) {
 		//stack: {value}
 		loadPointerExpression(pointer, offset); //stack: {value, address}
-		mv.visitInsn(SWAP); //stack: {address, value}
+		//TODO: исправить long/double
+		if (((TypePointerInfo)pointer.getReturnType()).getTargetType().getType().sizeof() > 4) {//если на стеке лежит long/double
+			//swap long and int
+			mv.visitInsn(DUP2_X2);
+			mv.visitInsn(POP2); //stack: {address, value}
+			//mv.visitInsn(SWAP);
+		} else {
+			//swap long and int
+			mv.visitInsn(DUP2_X1);
+			mv.visitInsn(POP2); //stack: {address, value}
+		}
 		TypeInfo p_type = ((TypePointerInfo) pointer.getReturnType()).getTargetType().getType();
 		Class<?> primitive = asJavaPrimitive(p_type);
 		char[] name = primitive.getCanonicalName().toCharArray();
@@ -418,38 +432,27 @@ public final class FunctionWriter {
 				applyBoolNot();
 				break;
 			case "++":
-				if (op.getReturnType() == TypeInfo.PrimitiveTypeInfo.LONG) {
-					mv.visitInsn(LCONST_1);
-					mv.visitInsn(LADD);
-				} else if (op.getReturnType() == TypeInfo.PrimitiveTypeInfo.DOUBLE) {
-					mv.visitInsn(DCONST_1);
-					mv.visitInsn(DADD);
-				} else if (op.getReturnType() == TypeInfo.PrimitiveTypeInfo.FLOAT) {
-					mv.visitInsn(FCONST_1);
-					mv.visitInsn(FADD);
-				} else {
-					mv.visitInsn(ICONST_1);
-					mv.visitInsn(IADD);
-				}
-				storeExpression(expr.getExpr());
-				loadExpression(expr.getExpr());
-				break;
 			case "--":
+				int ADD = 0;
+				if (op.getOp().equals("--")) ADD += 4;
 				if (op.getReturnType() == TypeInfo.PrimitiveTypeInfo.LONG) {
 					mv.visitInsn(LCONST_1);
-					mv.visitInsn(LSUB);
+					mv.visitInsn(LADD + ADD);
+					mv.visitInsn(DUP2);
 				} else if (op.getReturnType() == TypeInfo.PrimitiveTypeInfo.DOUBLE) {
 					mv.visitInsn(DCONST_1);
-					mv.visitInsn(DSUB);
+					mv.visitInsn(DADD + ADD);
+					mv.visitInsn(DUP2);
 				} else if (op.getReturnType() == TypeInfo.PrimitiveTypeInfo.FLOAT) {
 					mv.visitInsn(FCONST_1);
-					mv.visitInsn(FSUB);
+					mv.visitInsn(FADD + ADD);
+					mv.visitInsn(DUP);
 				} else {
 					mv.visitInsn(ICONST_1);
-					mv.visitInsn(ISUB);
+					mv.visitInsn(IADD + ADD);
+					mv.visitInsn(DUP);
 				}
 				storeExpression(expr.getExpr());
-				loadExpression(expr.getExpr());
 				break;
 			default:
 				throw new UnsupportedOperationException();

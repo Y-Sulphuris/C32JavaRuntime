@@ -82,19 +82,27 @@ public interface Statement {
 					throw new CompilerException(decl.getTypeElement().getLocation(), "'auto' is not allowed here");
 				}
 
-				if (varDec.getName() != null) variables.add(new VariableInfo(decl.getLocation(), varDec.getName().text,
-						new TypeRefInfo(
-								decl.getTypeElement().get_const() != null,
-								decl.getTypeElement().get_restrict() != null,
-								type
-						),
-						init,
-						mod_static != null, registerAllowed ? mod_register != null : null
-				));
+				if (varDec.getName() != null) {
+					String name = varDec.getName().text;
+					if (container.getVisibleLocalVariable(name) != null) {
+						throw new CompilerException(varDec.getLocation(),"variable '" + name + "' has already defined");
+					}
+					variables.add(new VariableInfo(decl.getLocation(), varDec.getName().text,
+							new TypeRefInfo(
+									decl.getTypeElement().get_const() != null,
+									decl.getTypeElement().get_restrict() != null,
+									type
+							),
+							init,
+							mod_static != null, registerAllowed ? mod_register != null : null
+					));
+				}
 			}
 			return new VariableDeclarationStatement(function, container, variables, statement.getLocation());
 		} else if (statement instanceof IfStatementTree) {
 			Expression condition = Expression.build(container,container,((IfStatementTree) statement).getCondition(), TypeInfo.PrimitiveTypeInfo.BOOL);
+			if (!condition.getReturnType().canBeImplicitlyCastTo(TypeInfo.PrimitiveTypeInfo.BOOL))
+				throw new CompilerException(condition.getLocation(),"condition must be a bool value");
 			Statement block = Statement.build(function,container,((IfStatementTree) statement).getStatement());
 			Statement elseBlock = null;
 			if (((IfStatementTree) statement).getElseStatement() != null) {

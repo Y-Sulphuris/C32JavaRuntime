@@ -2,7 +2,6 @@ package c32.compiler.logical.tree.statement;
 
 import c32.compiler.Location;
 import c32.compiler.logical.tree.*;
-import c32.compiler.logical.tree.expression.NumericLiteralExpression;
 import c32.compiler.logical.tree.expression.VariableRefExpression;
 import c32.compiler.parser.ast.expr.ReferenceExprTree;
 import c32.compiler.parser.ast.statement.BlockStatementTree;
@@ -10,7 +9,6 @@ import c32.compiler.parser.ast.statement.StatementTree;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
-import java.math.BigInteger;
 import java.util.*;
 
 @RequiredArgsConstructor
@@ -85,5 +83,24 @@ public class BlockStatement extends AbstractSpaceInfo implements Statement, Spac
 			}
 		}
 		return getParent().resolveVariable(caller, reference);
+	}
+
+	public VariableInfo getLocalVariable(String name) {
+		for (Statement statement : getStatements()) {
+			if (statement instanceof VariableDeclarationStatement) {
+				for (VariableInfo variableInfo : ((VariableDeclarationStatement) statement).getVariables()) {
+					if (variableInfo.getName().equals(name))
+						return variableInfo;
+				}
+			}
+		}
+		return null;
+	}
+
+	public VariableInfo getVisibleLocalVariable(String name) {
+		VariableInfo var = getLocalVariable(name);
+		if (var == null && getParent() instanceof BlockStatement)
+			return ((BlockStatement) getParent()).getLocalVariable(name);
+		return var;
 	}
 }

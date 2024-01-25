@@ -17,15 +17,9 @@ void test3(int i2, int* l, int i6) {
 }
 
 void main() {
-	int i = 64;
-	bool b1 = i == 64;
-	if(!b1) {
-		bool b = i != 65;
-    	std::println(true);
-    } else {
-    	std::println(false);
-    }
-    std::println(0);
+	long* i = std::malloc(64);
+	i[0] = 5;
+	std::println(i[0]);
 	return;
 }
 

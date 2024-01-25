@@ -31,7 +31,10 @@ public class ExternFunctionsTable {
 		table.put("std.println[int]",new EFSign("c32/extern/Runtime","println",     "(I)V"));
 		table.put("std.println[uint]",new EFSign("c32/extern/Runtime","uprintln",   "(I)V"));
 		table.put("std.println[long]",new EFSign("c32/extern/Runtime","println",    "(J)V"));
+		table.put("std.println[void*]",new EFSign("c32/extern/Runtime","pprintln",  "(J)V"));
+
 		table.put("std.println[ulong]",new EFSign("c32/extern/Runtime","uprintln",  "(J)V"));
+		table.put("std.print[void*]",new EFSign("c32/extern/Runtime","pprint",  "(J)V"));
 
 		table.put("std.malloc[ulong]",new EFSign("c32/extern/Memory","malloc",      "(J)J"));
 	}
