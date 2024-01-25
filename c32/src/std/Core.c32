@@ -51,4 +51,6 @@ namespace Core {
 	extern long currentTimeMills();
 
 	extern long nanoTime();
+
+	extern void sleep(long mills);
 }

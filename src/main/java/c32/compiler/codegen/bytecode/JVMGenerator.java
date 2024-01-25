@@ -141,7 +141,7 @@ public class JVMGenerator implements c32.compiler.codegen.Generator {
 
 
 	private ClassWriter writeNamespaceItself(NamespaceInfo namespace) {
-		ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
+		ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS | (version >= 7 ? ClassWriter.COMPUTE_FRAMES : 0));
 		cw.visit(classVersion(),
 			ACC_PUBLIC | ACC_SUPER | ACC_FINAL,
 			asClassName(namespace),

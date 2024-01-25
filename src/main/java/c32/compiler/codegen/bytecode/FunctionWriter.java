@@ -41,7 +41,7 @@ public final class FunctionWriter {
 		writeBlockStatement(func.getImplementation());
 
 		//args will be ignored
-		mv.visitMaxs(16,16);
+		mv.visitMaxs(1,1);
 	}
 
 	private void writeStatement(Statement statement) {
@@ -230,7 +230,6 @@ public final class FunctionWriter {
 	private void storeToAddress(Expression pointer, Expression offset) {
 		//stack: {value}
 		loadPointerExpression(pointer, offset); //stack: {value, address}
-		//TODO: исправить long/double
 		if (((TypePointerInfo)pointer.getReturnType()).getTargetType().getType().sizeof() > 4) {//если на стеке лежит long/double
 			//swap long and int
 			mv.visitInsn(DUP2_X2);
@@ -601,7 +600,7 @@ public final class FunctionWriter {
 		Expression lv = expr.getLvalue();
 		if (expr.getParentOperator() != null)
 			throw new UnsupportedOperationException(expr.getParentOperator().getOp());
-		loadExpression(expr.getRvalue());
+		loadExpression(expr.getRvalue(),lv.getReturnType());
 		storeExpression(lv);
 		loadExpression(lv);//assign expr must returns lvalue
 	}

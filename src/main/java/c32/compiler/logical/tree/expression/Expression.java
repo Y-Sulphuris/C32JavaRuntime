@@ -3,6 +3,7 @@ package c32.compiler.logical.tree.expression;
 import c32.compiler.Location;
 import c32.compiler.except.CompilerException;
 import c32.compiler.lexer.tokenizer.TokenType;
+import c32.compiler.logical.VariableNotFoundException;
 import c32.compiler.logical.tree.*;
 import c32.compiler.parser.ast.expr.*;
 import c32.compiler.parser.ast.type.TypeElementTree;
@@ -64,29 +65,43 @@ public interface Expression {
 					return new NumericLiteralExpression(((LiteralExprTree) exprTree).getLiteral(),returnType);
 			}
 		} else if (exprTree instanceof ReferenceExprTree) {
-			if (((ReferenceExprTree) exprTree).getIdentifier().type == TokenType.KEYWORD) {
-				return findCompileTimeConstant(((ReferenceExprTree) exprTree).getIdentifier().text,((ReferenceExprTree) exprTree).getIdentifier().location);
+			ReferenceExprTree refExprTree = (ReferenceExprTree) exprTree;
+			if (refExprTree.getIdentifier().type == TokenType.KEYWORD) {
+				return findCompileTimeConstant(refExprTree.getIdentifier().text,refExprTree.getIdentifier().location);
 			}
-			VariableRefExpression var = container.resolveVariable(container, (ReferenceExprTree)exprTree);
-			if (returnType != null) {
-				if (!var.getReturnType().canBeImplicitlyCastTo(returnType)){
-					throw new CompilerException(exprTree.getLocation(), "cannot implicit cast '" + var.getReturnType().getCanonicalName() + "' to '" + returnType.getCanonicalName() + ";");
+			try {
+				VariableRefExpression var = container.resolveVariable(container, refExprTree);
+				if (returnType != null) {
+					if (!var.getReturnType().canBeImplicitlyCastTo(returnType)){
+						throw new CompilerException(refExprTree.getLocation(), "cannot implicit cast '" + var.getReturnType().getCanonicalName() + "' to '" + returnType.getCanonicalName() + ";");
+					}
 				}
+				return var;
+			} catch (VariableNotFoundException e) {
+				if (returnType != null) throw e;
+				SpaceInfo space = container.resolveSpace(container,(ReferenceExprTree)exprTree);
+				return new SpaceRefExpression(refExprTree.getLocation(), space);
 			}
-			return var;
 		} else if (exprTree instanceof BinaryExprTree) {
-			if ((((BinaryExprTree) exprTree).getOperator().text.equals(".") || ((BinaryExprTree) exprTree).getOperator().text.equals("::")) && ((BinaryExprTree) exprTree).getLhs() instanceof ReferenceExprTree) {
-				SpaceInfo space = container.resolveSpace(container,((ReferenceExprTree) ((BinaryExprTree) exprTree).getLhs()));
-				Expression ret = Expression.build(caller,space,((BinaryExprTree) exprTree).getRhs(),returnType);
-				space.addUsage(ret);
-				return ret;
+			BinaryExprTree binExprTree = (BinaryExprTree) exprTree;
+			if (binExprTree.getOperator().text.equals(".") || binExprTree.getOperator().text.equals("::")) {
+				if (binExprTree.getLhs() instanceof ReferenceExprTree) {
+					//TODO: namespace types
+					// different semantic for '::' and '.'
+					// :: - get static member from expression with type 'space'
+					// . - non-static members
+					SpaceInfo space = container.resolveSpace(container,((ReferenceExprTree) binExprTree.getLhs()));
+					Expression ret = Expression.build(caller,space,binExprTree.getRhs(),returnType);
+					space.addUsage(ret);
+					return ret;
+				}
 			}//это наверное надо будет педелелать, но это не точно
 
 
-			Expression lhs = Expression.build(caller, container, ((BinaryExprTree) exprTree).getLhs(), null),
-			rhs = Expression.build(caller,container, ((BinaryExprTree) exprTree).getRhs(), null);
-			if (((BinaryExprTree) exprTree).getOperator().text.endsWith("=")) {
-				switch (((BinaryExprTree) exprTree).getOperator().text) {
+			Expression lhs = Expression.build(caller, container, binExprTree.getLhs(), null),
+			rhs = Expression.build(caller,container, binExprTree.getRhs(), null);
+			if (binExprTree.getOperator().text.endsWith("=")) {
+				switch (binExprTree.getOperator().text) {
 					case "==":
 					case "!=":
 					case "<=":
@@ -95,18 +110,18 @@ public interface Expression {
 					case "!==":
 						break;
 					default:
-						String op = ((BinaryExprTree) exprTree).getOperator().text;
+						String op = binExprTree.getOperator().text;
 						op = op.substring(0,op.length()-1);
-						return new AssignExpression(exprTree.getLocation(), lhs, op, rhs);
+						return new AssignExpression(binExprTree.getLocation(), lhs, op, rhs);
 				}
 			}
-			return new BinaryExpression(exprTree.getLocation(), lhs, ((BinaryExprTree) exprTree).getOperator().text, rhs, returnType).calculate();
+			return new BinaryExpression(binExprTree.getLocation(), lhs, binExprTree.getOperator().text, rhs, returnType).calculate();
 		} else if (exprTree instanceof CallExprTree) {
 			List<Expression> args = new ArrayList<>();
 			for (ExprTree argument : ((CallExprTree) exprTree).getArgumentList().getArguments()) {
 				args.add(Expression.build(caller,caller,argument,null));
 			}
-			return new CallExpression(container.resolveFunction(container, (CallExprTree)exprTree, args), args, exprTree.getLocation());
+			return new CallExpression(container.resolveFunction(caller, (CallExprTree)exprTree, args), args, exprTree.getLocation());
 		}
 		else if (exprTree instanceof UnaryPrefixExprTree)
 		{

@@ -17,9 +17,20 @@ void test3(int i2, int* l, int i6) {
 }
 
 void main() {
-	long* i = std::malloc(64);
-	i[0] = 5;
-	std::println(i[0]);
+	const int len = 64;
+	int* p_i = std::malloc(len);
+    p_i[0] = 50;
+	int index = 0;
+	//NEXT:
+	if(index == len) return;
+	std::println(p_i[index]);
+	std::Core::sleep(100);
+	std::println(p_i[++index]);
+	std::Core::sleep(100);
+	std::println(p_i[++index]);
+	std::Core::sleep(100);
+	std::println(p_i[++index]);
+	//goto NEXT;
 	return;
 }
 

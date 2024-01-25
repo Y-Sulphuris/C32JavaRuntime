@@ -50,6 +50,9 @@ public class AssignExpression implements Expression {
         this.lvalue = lvalue;
         if (!lvalue.isAssignable())
             throw new CompilerException(location,lvalue + " is not assignable");
+		if (!rvalue.getReturnType().canBeImplicitlyCastTo(lvalue.getReturnType())) {
+			throw new CompilerException(location,"cannot implicitly cast " + rvalue.getReturnType().getCanonicalName() + " to " + lvalue.getReturnType().getCanonicalName());
+		}
         if (parentOperator.isEmpty())
             this.parentOperator = null;
         else this.parentOperator = BinaryOperator.findOperator(location,lvalue,parentOperator,rvalue);
