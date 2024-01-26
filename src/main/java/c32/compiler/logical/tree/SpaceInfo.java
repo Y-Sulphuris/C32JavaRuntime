@@ -162,7 +162,7 @@ public interface SpaceInfo extends SymbolInfo {
 			}
 		}
 		if (getParent() == null)
-			throw new CompilerException(reference.getLocation(), "cannot find anything from '" + caller.getCanonicalName() + "' for '" + reference + "'");
+			throw new CompilerException(reference.getLocation(), "cannot find anything from '" + caller.getCanonicalName() + "' for '" + reference.getIdentifier().text + "'");
 		return getParent().resolveSpace(caller,reference);
 	}
 

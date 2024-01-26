@@ -6,13 +6,12 @@ import c32.compiler.logical.tree.expression.CallExpression;
 import c32.compiler.logical.tree.expression.Expression;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import org.objectweb.asm.MethodVisitor;
 
 import java.util.HashMap;
 
 import static org.objectweb.asm.Opcodes.INVOKESTATIC;
 
-public class ExternFunctionsTable {
+public class IntrinsicFunctionsTable {
 	@RequiredArgsConstructor
 	@Getter
 	private static final class EFSign { //Extern Function Signature
@@ -34,10 +33,14 @@ public class ExternFunctionsTable {
 		table.put("std.println[void*]",new EFSign("c32/extern/Runtime","pprintln",  "(J)V"));
 
 		table.put("std.println[ulong]",new EFSign("c32/extern/Runtime","uprintln",  "(J)V"));
-		table.put("std.print[void*]",new EFSign("c32/extern/Runtime","pprint",  "(J)V"));
+		table.put("std.print[void*]",new EFSign("c32/extern/Runtime","pprint",      "(J)V"));
 
 		table.put("std.malloc[ulong]",new EFSign("c32/extern/Memory","malloc",      "(J)J"));
+		table.put("std.Core.sleep[long]",new EFSign("java/lang/Thread","sleep",      "(J)V"));
+		table.put("std.Core.nanoTime[]",new EFSign("java/lang/System","nanoTime",      "()J"));
+		table.put("std.Core.currentTimeMillis[]",new EFSign("java/lang/System","currentTimeMillis",      "()J"));
 	}
+
 	public static void loadExternCall(FunctionWriter wr, FunctionInfo func, CallExpression expr) {
 		int i = 0;
 		for (Expression arg : expr.getArgs()) {

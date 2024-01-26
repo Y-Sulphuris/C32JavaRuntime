@@ -48,9 +48,9 @@ extern void print(double i);
 namespace Core {
 	extern void gc();
 
-	extern long currentTimeMills();
+	extern ulong currentTimeMillis();
 
-	extern long nanoTime();
+	extern ulong nanoTime();
 
 	extern void sleep(long mills);
 }

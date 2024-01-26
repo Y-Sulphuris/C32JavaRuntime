@@ -84,9 +84,10 @@ public interface Expression {
 			}
 		} else if (exprTree instanceof BinaryExprTree) {
 			BinaryExprTree binExprTree = (BinaryExprTree) exprTree;
+/*
 			if (binExprTree.getOperator().text.equals(".") || binExprTree.getOperator().text.equals("::")) {
 				if (binExprTree.getLhs() instanceof ReferenceExprTree) {
-					//TODO: namespace types
+					//TO-DO: namespace types
 					// different semantic for '::' and '.'
 					// :: - get static member from expression with type 'space'
 					// . - non-static members
@@ -96,10 +97,20 @@ public interface Expression {
 					return ret;
 				}
 			}//это наверное надо будет педелелать, но это не точно (точно)
+			//всё, переделал
+*/
 
-
-			Expression lhs = Expression.build(caller, container, binExprTree.getLhs(), null),
-			rhs = Expression.build(caller,container, binExprTree.getRhs(), null);
+			Expression lhs = Expression.build(caller, container, binExprTree.getLhs(),null);
+			Expression rhs;
+			if (binExprTree.getOperator().text.equals("::")) {
+				if (!(lhs instanceof SpaceRefExpression))
+					throw new CompilerException(lhs.getLocation(),"namespace expected");
+				SpaceInfo space = ((SpaceRefExpression) lhs).getSpace();
+				rhs = Expression.build(caller,space,binExprTree.getRhs(),returnType);
+				return rhs;
+			} else {
+				rhs = Expression.build(caller, container, binExprTree.getRhs(), null);
+			}
 			if (binExprTree.getOperator().text.endsWith("=")) {
 				switch (binExprTree.getOperator().text) {
 					case "==":

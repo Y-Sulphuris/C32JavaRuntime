@@ -376,7 +376,7 @@ public final class FunctionWriter {
 	private void loadCallExpression(CallExpression expr) {
 		FunctionInfo func = expr.getFunction();
 		if (func.is_extern()) {
-			ExternFunctionsTable.loadExternCall(this,func,expr);
+			IntrinsicFunctionsTable.loadExternCall(this,func,expr);
 			return;
 		}
 
@@ -629,6 +629,27 @@ public final class FunctionWriter {
 				mv.visitInsn(I2S);
 				return;
 			} else if (expected == TypeInfo.PrimitiveTypeInfo.BYTE) {
+				mv.visitInsn(I2B);
+				return;
+			}
+		} else if (type == TypeInfo.PrimitiveTypeInfo.LONG) {
+			if (expected == TypeInfo.PrimitiveTypeInfo.ULONG || expected instanceof TypePointerInfo) {
+				return;
+			} else if (expected == TypeInfo.PrimitiveTypeInfo.INT) {
+				mv.visitInsn(L2I);
+				return;
+			} else if (expected == TypeInfo.PrimitiveTypeInfo.DOUBLE) {
+				mv.visitInsn(L2D);
+				return;
+			} else if (expected == TypeInfo.PrimitiveTypeInfo.FLOAT) {
+				mv.visitInsn(L2F);
+				return;
+			} else if (expected == TypeInfo.PrimitiveTypeInfo.SHORT) {
+				mv.visitInsn(L2I);
+				mv.visitInsn(I2S);
+				return;
+			} else if (expected == TypeInfo.PrimitiveTypeInfo.BYTE) {
+				mv.visitInsn(L2I);
 				mv.visitInsn(I2B);
 				return;
 			}

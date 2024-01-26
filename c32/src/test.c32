@@ -18,7 +18,7 @@ void test3(int i2, int* l, int i6) {
 
 void main() {
 	const int len = 64;
-	int* p_i = std::malloc(len);
+	int* p_i = std::malloc(64);
     p_i[0] = 50;
 	int index = 0;
 	//NEXT:
