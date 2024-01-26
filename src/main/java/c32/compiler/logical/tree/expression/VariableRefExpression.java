@@ -9,23 +9,33 @@ import java.util.Collections;
 import java.util.Set;
 
 @Getter
-@RequiredArgsConstructor
-public class VariableRefExpression implements Expression {
-	private final VariableInfo variable;
-	private final Location location;
+public class VariableRefExpression extends SymbolRefExpression {
+	public VariableRefExpression(VariableInfo symbol, Location location) {
+		super(symbol, location);
+	}
+
+	@Override
+	public VariableInfo get() {
+		return (VariableInfo) super.get();
+	}
+
+	public VariableInfo getVariable() {
+		return get();
+	}
 
 	@Override
 	public Set<Weak<VariableInfo>> collectUsingVariables() {
-		return Collections.singleton(variable.weakReference());
+		return Collections.singleton(getVariable().weakReference());
 	}
 
 	@Override
 	public TypeInfo getReturnType() {
-		return variable.getTypeRef().getType();
+		return getVariable().getTypeRef().getType();
 	}
 
 	@Override
 	public boolean isAssignable() {
+		VariableInfo variable = getVariable();
 		if (variable.getTypeRef().getType() instanceof TypeArrayInfo) {
 			return !((TypeArrayInfo) variable.getTypeRef().getType()).getElementType().is_const();
 		}

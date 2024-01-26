@@ -80,7 +80,7 @@ public interface Expression {
 			} catch (VariableNotFoundException e) {
 				if (returnType != null) throw e;
 				SpaceInfo space = container.resolveSpace(container,(ReferenceExprTree)exprTree);
-				return new SpaceRefExpression(refExprTree.getLocation(), space);
+				return new SpaceRefExpression(space, refExprTree.getLocation());
 			}
 		} else if (exprTree instanceof BinaryExprTree) {
 			BinaryExprTree binExprTree = (BinaryExprTree) exprTree;
@@ -95,7 +95,7 @@ public interface Expression {
 					space.addUsage(ret);
 					return ret;
 				}
-			}//это наверное надо будет педелелать, но это не точно
+			}//это наверное надо будет педелелать, но это не точно (точно)
 
 
 			Expression lhs = Expression.build(caller, container, binExprTree.getLhs(), null),
