@@ -1,5 +1,6 @@
 package c32.compiler.logical.tree;
 
+import c32.compiler.Location;
 import c32.compiler.logical.FunctionNotFoundException;
 
 import java.util.List;
@@ -29,4 +30,16 @@ public interface FunctionInfo extends SymbolInfo {
 		builder.append(']');
 		return builder.toString();
 	}
+
+	default boolean equalsDeclarationSignature(FunctionInfo other) {
+		if (this.getArgs().size() != other.getArgs().size()) return false;
+		if (!this.getName().equals(other.getName())) return false;
+		for (int i = 0; i < other.getArgs().size(); i++) {
+			if (!this.getArgs().get(i).getTypeRef().getType().equals(other.getArgs().get(i).getTypeRef().getType()))
+				return false;
+		}
+		return true;
+	}
+
+	Location getLocation();
 }

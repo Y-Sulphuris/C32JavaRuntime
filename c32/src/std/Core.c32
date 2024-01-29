@@ -10,6 +10,10 @@ extern void println(ubyte i);
 extern void println(short i);
 extern void println(ushort i);
 
+extern void println(char8 i);
+extern void println(char i);
+extern void println(char32 i);
+
 extern void println(int i);
 extern void println(uint i);
 
@@ -32,6 +36,10 @@ extern void print(ubyte i);
 
 extern void print(short i);
 extern void print(ushort i);
+
+extern void print(char8 i);
+extern void print(char i);
+extern void print(char32 i);
 
 extern void print(int i);
 extern void print(uint i);

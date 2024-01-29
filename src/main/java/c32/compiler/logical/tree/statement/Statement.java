@@ -2,6 +2,7 @@ package c32.compiler.logical.tree.statement;
 
 import c32.compiler.Location;
 import c32.compiler.except.CompilerException;
+import c32.compiler.logical.TypeNotFoundException;
 import c32.compiler.logical.tree.*;
 import c32.compiler.logical.tree.expression.Expression;
 import c32.compiler.parser.ast.ModifierTree;
@@ -36,7 +37,7 @@ public interface Statement {
 			List<VariableInfo> variables = new ArrayList<>();
 			for (DeclaratorTree declaratorTree : decl) {
 				var varDec = ((VariableDeclaratorTree) declaratorTree);
-				TypeInfo type = container.resolveType(container,decl.getTypeElement());;
+				TypeInfo type = container.resolveType(container,decl.getTypeElement());
 
 				ModifierTree mod_static = decl.eatModifier("static");
 				if (mod_static != null && mod_static.getAttributes() != null)
@@ -80,6 +81,9 @@ public interface Statement {
 				}
 				if (type == null) {
 					throw new CompilerException(decl.getTypeElement().getLocation(), "'auto' is not allowed here");
+				}
+				if (!type.canHaveVariable()) {
+					throw new CompilerException(decl.getLocation(),"cannot declare variable with type " + type.getCanonicalName());
 				}
 
 				if (varDec.getName() != null) {

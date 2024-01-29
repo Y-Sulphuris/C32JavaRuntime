@@ -8,6 +8,7 @@ import c32.compiler.logical.tree.*;
 import c32.compiler.parser.ast.expr.*;
 import c32.compiler.parser.ast.type.TypeElementTree;
 
+import java.math.BigInteger;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -66,7 +67,7 @@ public interface Expression {
 			}
 		} else if (exprTree instanceof ReferenceExprTree) {
 			ReferenceExprTree refExprTree = (ReferenceExprTree) exprTree;
-			if (refExprTree.getIdentifier().type == TokenType.KEYWORD) {
+			if (refExprTree.getIdentifier().type == TokenType.KEYWORD && refExprTree.getIdentifier().text.equals("null")) {
 				return findCompileTimeConstant(refExprTree.getIdentifier().text,refExprTree.getIdentifier().location);
 			}
 			try {
@@ -175,6 +176,11 @@ public interface Expression {
 			}
 
 			return new InitializerListExpression(exprTree.getLocation(), listType,expressions);
+		}
+		else if (exprTree instanceof SizeOfExprTree) {
+			TypeElementTree typeElement = ((SizeOfExprTree) exprTree).getType();
+			TypeInfo type = container.resolveType(caller,typeElement);
+			return new NumericLiteralExpression(BigInteger.valueOf(type.sizeof()),TypeInfo.PrimitiveTypeInfo.ULONG,exprTree.getLocation());
 		}
 
 		throw new UnsupportedOperationException(exprTree.getClass().getName());

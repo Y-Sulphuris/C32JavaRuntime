@@ -1,16 +1,22 @@
 package c32.compiler.logical.tree.expression;
 
 import c32.compiler.Location;
-import c32.compiler.logical.tree.CompileTimeTypeInfo;
-import c32.compiler.logical.tree.SpaceInfo;
-import c32.compiler.logical.tree.SymbolInfo;
-import c32.compiler.logical.tree.TypeInfo;
+import c32.compiler.except.CompilerException;
+import c32.compiler.logical.tree.*;
 import lombok.Getter;
 
 @Getter
 public class SpaceRefExpression extends SymbolRefExpression {
+	private final TypeInfo returnType;
     public SpaceRefExpression(SpaceInfo space, Location location) {
         super(space, location);
+	    if (get() instanceof NamespaceInfo) {
+		    this.returnType = CompileTimeTypeInfo.Namespace;
+	    } else if (get() instanceof TypeInfo) {
+		    this.returnType =  CompileTimeTypeInfo.Typename;
+	    } else {
+			throw new CompilerException(location,"Invalid space reference type");
+	    }
     }
 
 	@Override
@@ -24,6 +30,6 @@ public class SpaceRefExpression extends SymbolRefExpression {
 
 	@Override
     public TypeInfo getReturnType() {
-        return CompileTimeTypeInfo.Namespace;
+		return returnType;
     }
 }

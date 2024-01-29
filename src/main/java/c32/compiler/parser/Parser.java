@@ -813,12 +813,22 @@ public class Parser {
 						return parse_NewExpr();
 					case "delete":
 						return parse_DeleteExpr();
+					case "sizeof":
+						return parse_SizeofExpr();
 				}
 			}
 			case IDENTIFIER:
 				return parse_IdentifierExpr();
 		}
 		throw new UnexpectedTokenException(token,"primary expression expected");
+	}
+
+	private ExprTree parse_SizeofExpr() {
+		Token keyword = assertAndNext("sizeof");
+		Token openRound = assertAndNext(TokenType.OPENROUND);
+		TypeElementTree type = parseTypeElement();
+		Token closeRound = assertToken(TokenType.CLOSEROUND);
+		return new SizeOfExprTree(Location.between(keyword.location,closeRound.location),type);
 	}
 
 	private ExprTree parse_NewExpr() {

@@ -1,6 +1,7 @@
 package c32.compiler.codegen.bytecode;
 
 import c32.compiler.Location;
+import c32.compiler.except.CompilerException;
 import c32.compiler.logical.tree.*;
 import c32.compiler.logical.tree.expression.*;
 import c32.compiler.logical.tree.statement.*;
@@ -90,6 +91,9 @@ public final class FunctionWriter {
 
 	private void writeVariableDeclarationStatement(VariableDeclarationStatement statement) {
 		for (VariableInfo variable : statement.getVariables()) {
+			if (variable.getInitializer() == null) {
+				throw new CompilerException(variable.getLocation(),"initializer expected");
+			}
 			loadExpression(variable.getInitializer(), variable.getTypeRef().getType());
 			storeNewVariable(variable);
 		}
@@ -303,6 +307,8 @@ public final class FunctionWriter {
 			loadExpression(((ExplicitCastExpression) expr).getExpression(),((ExplicitCastExpression) expr).getTargetType());
 		} else if (expr instanceof NullLiteralExpression) {
 			mv.visitLdcInsn(0L);
+		} else if (expr instanceof CharLiteralExpression) {
+			mv.visitIntInsn(SIPUSH,((CharLiteralExpression) expr).getCh());
 		}
 		else {
 			throw new UnsupportedOperationException(expr.getClass().getName());
@@ -454,7 +460,7 @@ public final class FunctionWriter {
 				storeExpression(expr.getExpr());
 				break;
 			default:
-				throw new UnsupportedOperationException();
+				throw new UnsupportedOperationException(op.getOp());
 		}
 	}
 

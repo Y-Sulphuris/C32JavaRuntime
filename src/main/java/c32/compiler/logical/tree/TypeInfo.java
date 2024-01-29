@@ -23,6 +23,10 @@ public interface TypeInfo extends SpaceInfo {
 		return canBeImplicitlyCastTo(type);
 	}
 
+	default boolean canHaveVariable() {
+		return sizeof() != 0;
+	}
+
 	class NumericPrimitiveTypeInfo extends PrimitiveTypeInfo {
 		public NumericPrimitiveTypeInfo(String name, long size) {
 			super(name, size);

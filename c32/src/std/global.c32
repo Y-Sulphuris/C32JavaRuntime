@@ -1,4 +1,4 @@
-//no package
+//no package (global scope)
 
 typename size_t = ulong, ptrdiff_t = long;
 

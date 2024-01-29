@@ -1,5 +1,6 @@
 package c32.compiler.logical.tree;
 
+import c32.compiler.logical.DuplicatedFunctionException;
 import lombok.Getter;
 
 import java.util.*;
@@ -23,9 +24,15 @@ public abstract class AbstractSpaceInfo extends AbstractSymbolInfo implements Sp
 
 	@Override
 	public FunctionInfo addFunction(FunctionInfo function) {
+		Set<FunctionInfo> funcWithThisName = functions.get(function.getName());
+		if (funcWithThisName != null) {
+			for (FunctionInfo functionInfo : funcWithThisName) {
+				if (functionInfo.equalsDeclarationSignature(function))
+					throw new DuplicatedFunctionException(function);
+			}
+		}
 		Set<FunctionInfo> functionSet = functions.computeIfAbsent(function.getName(), k -> new HashSet<>());
-		if (functionSet.contains(function))
-			throw new UnsupportedOperationException();
+
 		functionSet.add(function);
 		return function;
 	}

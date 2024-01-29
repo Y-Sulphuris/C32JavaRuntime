@@ -51,23 +51,40 @@ public final class Runtime {
 
 	public static void println(boolean b) {
 		System.out.println(b);
+	} public static void print(boolean b) {
+		System.out.print(b);
 	}
 	public static void println(byte b) {
 		System.out.println(b);
+	} public static void print(byte b) {
+		System.out.print(b);
 	}
 	public static void println(short s) {
 		System.out.println(s);
+	} public static void print(short s) {
+		System.out.print(s);
 	}
 	public static void println(int i) {
 		System.out.println(i);
+	} public static void print(int i) {
+		System.out.print(i);
 	}
 	public static void println(long l) {
 		System.out.println(l);
+	} public static void print(long l) {
+		System.out.print(l);
+	}
+	public static void println(char ch) {
+		System.out.println(ch);
+	} public static void print(char ch) {
+		System.out.print(ch);
+	}
+	public static void println8(byte ch) {
+		System.out.println((char)Byte.toUnsignedInt(ch));
+	} public static void print8(byte ch) {
+		System.out.print((char)Byte.toUnsignedInt(ch));
 	}
 
-	public static void print(boolean b) {
-		System.out.print(b);
-	}
 
 	public static void uprintln(byte x) {
 		System.out.println(Byte.toUnsignedInt(x));

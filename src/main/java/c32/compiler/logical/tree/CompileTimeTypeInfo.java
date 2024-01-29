@@ -11,7 +11,13 @@ import java.util.Set;
 @Getter
 @RequiredArgsConstructor
 public class CompileTimeTypeInfo implements TypeInfo {
-    @Override
+
+	@Override
+	public boolean canHaveVariable() {
+		return false;
+	}
+
+	@Override
     public Set<Weak<Expression>> getUsages() {
         throw new UnsupportedOperationException();
     }
@@ -19,6 +25,7 @@ public class CompileTimeTypeInfo implements TypeInfo {
     private final String name;
 
     public static final CompileTimeTypeInfo Namespace = new CompileTimeTypeInfo("namespace");
+	public static final CompileTimeTypeInfo Typename = new CompileTimeTypeInfo("typename");
 
     @Override
     public boolean isAccessibleFrom(SpaceInfo space) {

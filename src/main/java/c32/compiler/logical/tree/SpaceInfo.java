@@ -161,6 +161,11 @@ public interface SpaceInfo extends SymbolInfo {
 				return namespace;
 			}
 		}
+		for (Map.Entry<String, TypeInfo> entry : getTypenames().entrySet()) {
+			if (entry.getKey().equals(current)) {
+				return entry.getValue();
+			}
+		}
 		if (getParent() == null)
 			throw new CompilerException(reference.getLocation(), "cannot find anything from '" + caller.getCanonicalName() + "' for '" + reference.getIdentifier().text + "'");
 		return getParent().resolveSpace(caller,reference);

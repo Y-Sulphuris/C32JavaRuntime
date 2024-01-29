@@ -14,9 +14,13 @@ public class CharLiteralExpression implements LiteralExpression {
 
     public CharLiteralExpression(Token literal, TypeInfo returnType) {
 		this.location = literal.location;
-        this.returnType = returnType;
         if (literal.text.length() != 1)
             throw new CompilerException(literal.location, "char expected");
         this.ch = literal.text.charAt(0);
+
+	    if (returnType == null) {
+		    returnType = ch > 0xFF ? TypeInfo.PrimitiveTypeInfo.CHAR : TypeInfo.PrimitiveTypeInfo.CHAR8;
+	    }
+	    this.returnType = returnType;
     }
 }

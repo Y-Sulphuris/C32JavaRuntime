@@ -31,7 +31,7 @@ public class BinaryExpression implements Expression {
 
 	public BinaryExpression(Location location, Expression lhs, String operator, Expression rhs, TypeInfo returnType) {
 		this.lhs = lhs;
-		this.operator = BinaryOperator.findOperator(location, lhs,operator,rhs);
+		this.operator = BinaryOperator.findOperator(location, lhs, operator, rhs);
 		this.rhs = rhs;
 		this.location = location;
 		TypeInfo ret = this.operator.getReturnType();
