@@ -1,6 +1,7 @@
 package c32.compiler.logical;
 
 import c32.compiler.except.CompilerException;
+import c32.compiler.lexer.tokenizer.TokenType;
 import c32.compiler.logical.tree.*;
 import c32.compiler.logical.tree.expression.Expression;
 import c32.compiler.logical.tree.statement.Statement;
@@ -11,6 +12,7 @@ import c32.compiler.parser.ast.declarator.*;
 import c32.compiler.parser.ast.expr.ReferenceExprTree;
 import c32.compiler.parser.ast.statement.BlockStatementTree;
 import c32.compiler.parser.ast.statement.StatementTree;
+import c32.compiler.parser.ast.type.StaticElementReferenceTree;
 import lombok.var;
 
 import java.util.*;
@@ -47,6 +49,7 @@ public class TreeBuilder {
 		performTypenames(namespacesToFill);
 		performFunctionDeclarations(namespacesToFill);
 		performFields(namespacesToFill);
+		performImports(namespacesToFill);
 
 
 		//add function impl
@@ -60,6 +63,12 @@ public class TreeBuilder {
 		//resolve all
 
 		return root;
+	}
+
+	private void performImports(HashMap<SpaceInfo, List<DeclarationTree<?>>> namespacesToFill) {
+		for (Map.Entry<SpaceInfo, List<DeclarationTree<?>>> entry : namespacesToFill.entrySet()) {
+			fillSpaceImports(entry.getKey(),entry.getValue());
+		}
 	}
 
 	private void performFields(HashMap<SpaceInfo, List<DeclarationTree<?>>> namespacesToFill) {
@@ -171,6 +180,28 @@ public class TreeBuilder {
 		declarations.removeAll(forRemoval);
 	}
 
+
+	private void fillSpaceImports(SpaceInfo current, List<DeclarationTree<?>> declarations) {
+		final Set<DeclarationTree<? extends DeclaratorTree>> forRemoval = new HashSet<>();
+
+		final Set<DeclaratorTree> forRemovalDeclarators = new HashSet<>();
+		for (DeclarationTree<?> declaration : declarations) {
+			if (declaration instanceof ImportDeclarationTree) {
+				ImportDeclarationTree decl = (ImportDeclarationTree) declaration;
+				for (ImportDeclaratorTree declarator : decl) {
+					current.addImport(buildImport(current,decl,declarator));
+					forRemovalDeclarators.add(declarator);
+				}
+				decl.getDeclarators().removeAll(forRemovalDeclarators);
+				forRemovalDeclarators.clear();
+			}
+			if (declaration.getDeclarators().isEmpty())
+				forRemoval.add(declaration);
+		}
+		declarations.removeAll(forRemoval);
+		forRemoval.clear();
+	}
+
 	private void fillSpaceFields(SpaceInfo current, List<DeclarationTree<?>> declarations) {
 		final Set<DeclarationTree<? extends DeclaratorTree>> forRemoval = new HashSet<>();
 
@@ -199,11 +230,17 @@ public class TreeBuilder {
 	}
 
 	private ImportInfo buildImport(SpaceInfo current, DeclarationTree<?> decl, ImportDeclaratorTree declarator) {
-		SpaceInfo symbol = current.resolveSpace(current, declarator.getSymbol());
+		StaticElementReferenceTree symbol = declarator.getSymbol();
+		boolean star = false;
+		if (symbol.getReferences().get(symbol.getReferences().size()-1).getIdentifier().type == TokenType.OPERATOR) {
+			star = true;
+			symbol.getReferences().remove(symbol.getReferences().size()-1);
+		}
+		SpaceInfo space = current.resolveSpace(current, symbol);
 		String alias = null;
 		if (declarator.getName() != null)
 			alias = declarator.getName().text;
-		return new ImportInfo(current,symbol,alias,false);
+		return new ImportInfo(current,space,alias,star);
 	}
 
 	private TypeStructInfo buildStruct(SpaceInfo current, NamespaceDeclaration decl, NamespaceDeclarator declarator) {

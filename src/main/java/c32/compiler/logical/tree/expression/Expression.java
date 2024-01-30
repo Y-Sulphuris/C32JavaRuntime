@@ -180,6 +180,9 @@ public interface Expression {
 		else if (exprTree instanceof SizeOfExprTree) {
 			TypeElementTree typeElement = ((SizeOfExprTree) exprTree).getType();
 			TypeInfo type = container.resolveType(caller,typeElement);
+			if (type == null) {
+				throw new CompilerException(typeElement.getLocation(),"'auto' is not allowed here");
+			}
 			return new NumericLiteralExpression(BigInteger.valueOf(type.sizeof()),TypeInfo.PrimitiveTypeInfo.ULONG,exprTree.getLocation());
 		}
 

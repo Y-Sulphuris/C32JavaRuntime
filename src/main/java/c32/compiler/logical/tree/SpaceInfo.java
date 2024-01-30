@@ -56,6 +56,8 @@ public interface SpaceInfo extends SymbolInfo {
 		return type;
 	}
 
+	Set<ImportInfo> getImports();
+	void addImport(ImportInfo importInfo);
 
 	default TypeInfo resolveType(SpaceInfo caller, TypeElementTree type) {
 		if (type instanceof TypeKeywordElementTree)
@@ -166,6 +168,19 @@ public interface SpaceInfo extends SymbolInfo {
 				return entry.getValue();
 			}
 		}
+		for (ImportInfo anImport : getImports()) {
+			if (anImport.isAllIn()) {
+				throw new UnsupportedOperationException(anImport.getFullName());
+			} else {
+				if (anImport.getImported() instanceof SpaceInfo) {
+					if (anImport.getAlias() == null) {
+						if (anImport.getImported().getName().equals(reference.getIdentifier().text)) return (SpaceInfo) anImport.getImported();
+					} else {
+						if (anImport.getAlias().equals(reference.getIdentifier().text)) return (SpaceInfo) anImport.getImported();
+					}
+				}
+			}
+		}
 		if (getParent() == null)
 			throw new CompilerException(reference.getLocation(), "cannot find anything from '" + caller.getCanonicalName() + "' for '" + reference.getIdentifier().text + "'");
 		return getParent().resolveSpace(caller,reference);
@@ -174,6 +189,19 @@ public interface SpaceInfo extends SymbolInfo {
 	default NamespaceInfo resolveNamespace(SpaceInfo caller, ReferenceExprTree reference) {
 		for (NamespaceInfo namespace : getNamespaces()) {
 			if (namespace.getName().equals(reference.getIdentifier().text) && namespace.isAccessibleFrom(caller)) return namespace;
+		}
+		for (ImportInfo anImport : getImports()) {
+			if (anImport.isAllIn()) {
+				throw new UnsupportedOperationException(anImport.getFullName());
+			} else {
+				if (anImport.getImported() instanceof NamespaceInfo) {
+					if (anImport.getAlias() == null) {
+						if (anImport.getImported().getName().equals(reference.getIdentifier().text)) return (NamespaceInfo) anImport.getImported();
+					} else {
+						if (anImport.getAlias().equals(reference.getIdentifier().text)) return (NamespaceInfo) anImport.getImported();
+					}
+				}
+			}
 		}
 		if (getParent() == null)
 			throw new CompilerException(reference.getLocation(), "cannot find namespace: " + reference.getIdentifier().text);
@@ -193,6 +221,22 @@ public interface SpaceInfo extends SymbolInfo {
 	default FunctionInfo resolveFunction(SpaceInfo caller, CallExprTree call, List<Expression> args) {
 		String fname = call.getReference().getIdentifier().text;
 		Collection<FunctionInfo> functions = getFunctions();
+
+		for (ImportInfo anImport : getImports()) {
+			if (anImport.isAllIn()) {
+				throw new UnsupportedOperationException(anImport.getFullName());
+			} else {
+				if (anImport.getImported() instanceof FunctionInfo) {
+					if (anImport.getAlias() == null) {
+						if (anImport.getImported().getName().equals(call.getReference().getIdentifier().text))
+							functions.add((FunctionInfo) anImport.getImported());
+					} else {//TODO: function ALIAS
+						if (anImport.getAlias().equals(call.getReference().getIdentifier().text))
+							functions.add((FunctionInfo) anImport.getImported());
+					}
+				}
+			}
+		}
 
 		EXIT:
 		for (FunctionInfo function : functions) {
@@ -221,6 +265,8 @@ public interface SpaceInfo extends SymbolInfo {
 				return function;
 			} else throw new CompilerAccessException(call.getLocation(), caller, function);
 		}
+
+
 
 		if (getParent() == null) {
 			throw new FunctionNotFoundException(call,args);

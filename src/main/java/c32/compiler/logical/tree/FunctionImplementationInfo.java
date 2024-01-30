@@ -41,6 +41,16 @@ public class FunctionImplementationInfo extends AbstractSymbolInfo implements Fu
 	}
 
 	@Override
+	public Set<ImportInfo> getImports() {
+		return implementation.getImports();
+	}
+
+	@Override
+	public void addImport(ImportInfo importInfo) {
+		implementation.addImport(importInfo);
+	}
+
+	@Override
 	public Collection<NamespaceInfo> getNamespaces() {
 		return implementation.getNamespaces();
 	}

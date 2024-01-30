@@ -16,10 +16,12 @@ void test3(int i2, int* l, int i6) {
 	return;
 }
 
+import std.calloc;
+
 void main() {
 	int len = 64;
-	int* p_i = std::malloc(len);
-	std::memset(p_i,1ub,len * sizeof(int));
+	int* p_i = calloc(len, sizeof(int));
+	std::memset(p_i,255ub,len * sizeof(decltype(*p_i)));
     p_i[0] = 50;
 	int index = 0;
     std::println(p_i[index]);
@@ -27,7 +29,7 @@ void main() {
 		std::print(++index);
 		auto space = '\t';
 		std::print(space);
-        std::println(p_i[index]);
+        std::println((void*)p_i[index]);
         std::Core::sleep(100);
 	}
 	std::free(p_i);

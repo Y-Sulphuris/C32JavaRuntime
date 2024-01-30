@@ -52,6 +52,7 @@ public class IntrinsicFunctionsTable {
 
 
 		table.put("std.malloc[ulong]",new EFSign("c32/extern/Memory","malloc",      "(J)J"));
+		table.put("std.calloc[ulong, ulong]",new EFSign("c32/extern/Memory","calloc",      "(JJ)J"));
 		table.put("std.free[void*]",new EFSign("c32/extern/Memory","free",      "(J)V"));
 		table.put("std.memset[void*, ubyte, ulong]",new EFSign("c32/extern/Memory","memset","(JBJ)J"));
 

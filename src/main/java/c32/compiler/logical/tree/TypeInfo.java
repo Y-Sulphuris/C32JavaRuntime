@@ -15,6 +15,16 @@ public interface TypeInfo extends SpaceInfo {
 
 	Expression getDefaultValue();
 
+	@Override
+	default Set<ImportInfo> getImports() {
+		return Collections.emptySet();
+	}
+
+	@Override
+	default void addImport(ImportInfo importInfo) {
+		throw new UnsupportedOperationException();
+	}
+
 	default boolean canBeImplicitlyCastTo(TypeInfo type) {
 		return this.equals(type);
 	}
