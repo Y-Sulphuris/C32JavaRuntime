@@ -16,6 +16,16 @@ public interface TypeInfo extends SpaceInfo {
 	Expression getDefaultValue();
 
 	@Override
+	default TypenameInfo addTypename(TypenameInfo typename) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	default Collection<TypenameInfo> getTypenames() {
+		return Collections.emptySet();
+	}
+
+	@Override
 	default Set<ImportInfo> getImports() {
 		return Collections.emptySet();
 	}

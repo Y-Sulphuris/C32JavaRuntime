@@ -44,17 +44,16 @@ public interface SpaceInfo extends SymbolInfo {
 
 
 
-	default Map<String,TypeInfo> getTypenames() {
-		return Collections.emptyMap();
+	Collection<TypenameInfo> getTypenames();
+
+	default TypenameInfo getTypename(String name) {
+		for (TypenameInfo typename : getTypenames()) {
+			if (typename.getName().equals(name)) return typename;
+		}
+		return null;
 	}
 
-	default TypeInfo addTypeName(String name, TypeInfo type) {
-		Map<String,TypeInfo> typenames = getTypenames();
-		if (typenames.containsKey(name))
-			throw new UnsupportedOperationException();
-		typenames.put(name,type);
-		return type;
-	}
+	TypenameInfo addTypename(TypenameInfo typename);
 
 	Set<ImportInfo> getImports();
 	void addImport(ImportInfo importInfo);
@@ -93,8 +92,8 @@ public interface SpaceInfo extends SymbolInfo {
 				//trying to find typename
 				if (true) {
 					String ref = ((TypeReferenceElementTree) type).getReference().getReferences().get(0).getIdentifier().text;
-					TypeInfo typeInfo = this.getTypenames().get(ref);
-					if (typeInfo != null) return typeInfo;
+					TypenameInfo typeInfo = this.getTypename(ref);
+					if (typeInfo != null) return typeInfo.getType();
 					else {
 						if (getParent() != null)
 							return getParent().resolveType(caller,type);
@@ -134,15 +133,17 @@ public interface SpaceInfo extends SymbolInfo {
 	}
 
 	default SpaceInfo resolveSpace(SpaceInfo caller, StaticElementReferenceTree reference) {
-		List<ReferenceExprTree> references = reference.getReferences();
+		List<ReferenceExprTree> references = new LinkedList<>(reference.getReferences());
 		if (references.isEmpty()) return this;
 		ReferenceExprTree currentRef = references.remove(0);
-		if (references.size() == 1) {
+		if (references.isEmpty()) {
 			return resolveSpace(caller,currentRef);
 		}
 		String current = currentRef.getIdentifier().text;
 		for (NamespaceInfo namespace : getNamespaces()) {
 			if (namespace.getName().equals(current)) {
+				reference.getReferences().clear();//костыль, но работает
+				reference.getReferences().addAll(references);
 				SpaceInfo space = namespace.resolveSpace(caller,reference);
 				if (!space.isAccessibleFrom(caller))
 					throw new CompilerAccessException(reference.getLocation(),caller,space);
@@ -156,6 +157,9 @@ public interface SpaceInfo extends SymbolInfo {
 			throw new CompilerException(reference.getLocation(), "cannot find anything from '" + caller.getCanonicalName() + "' for '" + reference.getReferences() + "'");
 		return getParent().resolveSpace(caller,reference);
 	}
+
+
+
 	default SpaceInfo resolveSpace(SpaceInfo caller, ReferenceExprTree reference) {
 		String current = reference.getIdentifier().text;
 		for (NamespaceInfo namespace : getNamespaces()) {
@@ -163,21 +167,23 @@ public interface SpaceInfo extends SymbolInfo {
 				return namespace;
 			}
 		}
-		for (Map.Entry<String, TypeInfo> entry : getTypenames().entrySet()) {
-			if (entry.getKey().equals(current)) {
-				return entry.getValue();
+		for (TypenameInfo typename : getTypenames()) {
+			if (typename.getName().equals(current)) {
+				return typename.getType();
 			}
 		}
 		for (ImportInfo anImport : getImports()) {
-			if (anImport.isAllIn()) {
-				throw new UnsupportedOperationException(anImport.getFullName());
+			if (anImport.getAlias() == null) {
+				for (SymbolInfo symbol : anImport.getImported()) {
+					if (symbol instanceof SpaceInfo &&
+							symbol.getName().equals(reference.getIdentifier().text))
+						return (SpaceInfo) symbol;
+				}
 			} else {
-				if (anImport.getImported() instanceof SpaceInfo) {
-					if (anImport.getAlias() == null) {
-						if (anImport.getImported().getName().equals(reference.getIdentifier().text)) return (SpaceInfo) anImport.getImported();
-					} else {
-						if (anImport.getAlias().equals(reference.getIdentifier().text)) return (SpaceInfo) anImport.getImported();
-					}
+				for (SymbolInfo symbol : anImport.getImported()) {
+					if (symbol instanceof SpaceInfo &&
+							anImport.getAlias().equals(reference.getIdentifier().text))
+						return (SpaceInfo) symbol;
 				}
 			}
 		}
@@ -191,15 +197,17 @@ public interface SpaceInfo extends SymbolInfo {
 			if (namespace.getName().equals(reference.getIdentifier().text) && namespace.isAccessibleFrom(caller)) return namespace;
 		}
 		for (ImportInfo anImport : getImports()) {
-			if (anImport.isAllIn()) {
-				throw new UnsupportedOperationException(anImport.getFullName());
+			if (anImport.getAlias() == null) {
+				for (SymbolInfo symbol : anImport.getImported()) {
+					if (symbol instanceof NamespaceInfo &&
+							symbol.getName().equals(reference.getIdentifier().text))
+						return (NamespaceInfo) symbol;
+				}
 			} else {
-				if (anImport.getImported() instanceof NamespaceInfo) {
-					if (anImport.getAlias() == null) {
-						if (anImport.getImported().getName().equals(reference.getIdentifier().text)) return (NamespaceInfo) anImport.getImported();
-					} else {
-						if (anImport.getAlias().equals(reference.getIdentifier().text)) return (NamespaceInfo) anImport.getImported();
-					}
+				for (SymbolInfo symbol : anImport.getImported()) {
+					if (symbol instanceof NamespaceInfo &&
+							anImport.getAlias().equals(reference.getIdentifier().text))
+						return (NamespaceInfo) symbol;
 				}
 			}
 		}
@@ -220,27 +228,30 @@ public interface SpaceInfo extends SymbolInfo {
 
 	default FunctionInfo resolveFunction(SpaceInfo caller, CallExprTree call, List<Expression> args) {
 		String fname = call.getReference().getIdentifier().text;
-		Collection<FunctionInfo> functions = getFunctions();
+		Collection<FunctionInfo> functions = new LinkedList<>();
+		for (FunctionInfo function : getFunctions()) {
+			if (function.getName().equals(fname))
+				functions.add(function);
+		}
 
 		for (ImportInfo anImport : getImports()) {
-			if (anImport.isAllIn()) {
-				throw new UnsupportedOperationException(anImport.getFullName());
+			if (anImport.getAlias() == null) {
+				for (SymbolInfo symbol : anImport.getImported()) {
+					if (symbol instanceof FunctionInfo &&
+							symbol.getName().equals(fname))
+						functions.add((FunctionInfo) symbol);
+				}
 			} else {
-				if (anImport.getImported() instanceof FunctionInfo) {
-					if (anImport.getAlias() == null) {
-						if (anImport.getImported().getName().equals(call.getReference().getIdentifier().text))
-							functions.add((FunctionInfo) anImport.getImported());
-					} else {//TODO: function ALIAS
-						if (anImport.getAlias().equals(call.getReference().getIdentifier().text))
-							functions.add((FunctionInfo) anImport.getImported());
-					}
+				for (SymbolInfo symbol : anImport.getImported()) {
+					if (symbol instanceof FunctionInfo &&
+							anImport.getAlias().equals(fname))
+						functions.add((FunctionInfo) symbol);
 				}
 			}
 		}
 
 		EXIT:
 		for (FunctionInfo function : functions) {
-			if (!function.getName().equals(fname)) continue;
 			if (args.size() != function.getArgs().size()) continue;
 			for (int i = 0; i < args.size(); i++) {
 				if (!args.get(i).getReturnType().equals(function.getArgs().get(i).getTypeRef().getType())) {
@@ -254,7 +265,6 @@ public interface SpaceInfo extends SymbolInfo {
 
 		EXIT_IMPLICIT:
 		for (FunctionInfo function : functions) {
-			if (!function.getName().equals(fname)) continue;
 			if (args.size() != function.getArgs().size()) continue;
 			for (int i = 0; i < args.size(); i++) {
 				if (!args.get(i).getReturnType().canBeImplicitlyCastTo(function.getArgs().get(i).getTypeRef().getType())) {

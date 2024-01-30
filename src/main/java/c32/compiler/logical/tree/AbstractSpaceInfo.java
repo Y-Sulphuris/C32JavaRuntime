@@ -10,8 +10,24 @@ public abstract class AbstractSpaceInfo extends AbstractSymbolInfo implements Sp
 	private final Map<String,Set<FunctionInfo>> functions = new HashMap<>();
 	private final Map<String,NamespaceInfo> namespaces = new HashMap<>();
 	private final Map<String,FieldInfo> fields = new HashMap<>();
-	private final Map<String,TypeInfo> typenames = new HashMap<>();
+	private final Map<String,TypenameInfo> typenames = new HashMap<>();
 	private final Set<ImportInfo> imports = new HashSet<>();
+
+	@Override
+	public Collection<TypenameInfo> getTypenames() {
+		return typenames.values();
+	}
+
+	@Override
+	public TypenameInfo addTypename(TypenameInfo typename) {
+		typenames.put(typename.getName(),typename);
+		return typename;
+	}
+
+	@Override
+	public TypenameInfo getTypename(String name) {
+		return typenames.get(name);
+	}
 
 	@Override
 	public void addImport(ImportInfo importInfo) {

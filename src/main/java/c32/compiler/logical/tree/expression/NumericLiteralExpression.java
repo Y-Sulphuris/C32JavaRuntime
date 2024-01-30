@@ -71,8 +71,17 @@ public class NumericLiteralExpression implements LiteralExpression {
         if (returnType0 != null && !this.returnType.canBeImplicitlyCastTo(returnType0))
             throw new CompilerException(token.location,"cannot apply type '" + returnType.getName() + "' to '" + returnType0.getCanonicalName() + '\'');
 
+		int radix = 10;
+		if (number.startsWith("0x")) {
+			number = number.substring(2);
+			radix = 16;
+		} else if (number.startsWith("b")) {
+			number = number.substring(1);
+			radix = 2;
+		}
+
         try {
-	        this.number = new BigInteger(number);
+	        this.number = new BigInteger(number, radix);
         } catch (NumberFormatException e) {
             throw new CompilerException(token.location,"invalid number format",e);
         }

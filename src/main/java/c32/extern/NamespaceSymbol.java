@@ -1,4 +1,4 @@
 package c32.extern;
 
-public class NamespaceSymbol {
+public class NamespaceSymbol extends SpaceSymbol {
 }

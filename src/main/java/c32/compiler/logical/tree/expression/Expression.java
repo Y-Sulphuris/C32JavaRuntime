@@ -80,8 +80,13 @@ public interface Expression {
 				return var;
 			} catch (VariableNotFoundException e) {
 				if (returnType != null) throw e;
-				SpaceInfo space = container.resolveSpace(container,(ReferenceExprTree)exprTree);
-				return new SpaceRefExpression(space, refExprTree.getLocation());
+				try {
+					SpaceInfo space = container.resolveSpace(container,(ReferenceExprTree)exprTree);
+					return new SpaceRefExpression(space, refExprTree.getLocation());
+				} catch (CompilerException ee) {
+					ee.initCause(e);
+					throw ee;
+				}
 			}
 		} else if (exprTree instanceof BinaryExprTree) {
 			BinaryExprTree binExprTree = (BinaryExprTree) exprTree;

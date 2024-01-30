@@ -4,22 +4,22 @@ import c32.compiler.except.CompilerException;
 import c32.compiler.lexer.tokenizer.TokenType;
 import c32.compiler.logical.tree.*;
 import c32.compiler.logical.tree.expression.Expression;
-import c32.compiler.logical.tree.statement.Statement;
+import c32.compiler.logical.tree.statement.BlockStatement;
 import c32.compiler.parser.ast.CompilationUnitTree;
 import c32.compiler.parser.ast.PackageTree;
 import c32.compiler.parser.ast.declaration.*;
 import c32.compiler.parser.ast.declarator.*;
 import c32.compiler.parser.ast.expr.ReferenceExprTree;
 import c32.compiler.parser.ast.statement.BlockStatementTree;
-import c32.compiler.parser.ast.statement.StatementTree;
 import c32.compiler.parser.ast.type.StaticElementReferenceTree;
 import lombok.var;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class TreeBuilder {
 
-	private final HashMap<FunctionImplementationInfo, BlockStatementTree> implementations = new HashMap<>();
+	private static final Map<FunctionImplementationInfo, BlockStatementTree> implementations = new ConcurrentHashMap<>();
 
 	public NamespaceInfo buildNamespace(Collection<CompilationUnitTree> units) {
 		HashMap<SpaceInfo, List<DeclarationTree<?>>> namespacesToFill = new HashMap<>();
@@ -53,12 +53,15 @@ public class TreeBuilder {
 
 
 		//add function impl
-		implementations.forEach((func, impl) -> {
-			for (StatementTree statement : impl.getStatements()) {
-				func.getImplementation().addStatement(Statement.build(func,func.getImplementation(),statement));
-			}
-			func.getImplementation().resolveAll();
-		});
+		while (!implementations.isEmpty()) {
+			List<FunctionImplementationInfo> implemented = new LinkedList<>();
+			implementations.forEach((func, impl) -> {
+				BlockStatement.build(func.getImplementation(), func, impl);
+				implemented.add(func);
+			});
+			implemented.forEach(implementations::remove);
+		}
+
 
 		//resolve all
 
@@ -148,7 +151,11 @@ public class TreeBuilder {
 				for (TypenameDeclaratorTree typenameDeclaratorTree : ((TypenameDeclarationTree) declaration)) {
 					assert current instanceof AbstractSpaceInfo;
 					assert typenameDeclaratorTree.getName() != null;
-					current.addTypeName(typenameDeclaratorTree.getName().text,current.resolveType(current, typenameDeclaratorTree.getTargetType()));
+					TypenameInfo typename = new TypenameInfo(typenameDeclaratorTree.getName().text,
+							current.resolveType(current, typenameDeclaratorTree.getTargetType()),
+							current,
+							typenameDeclaratorTree.getLocation());
+					current.addTypename(typename);
 				}
 				forRemoval.add(declaration);
 			}
@@ -202,7 +209,7 @@ public class TreeBuilder {
 		forRemoval.clear();
 	}
 
-	private void fillSpaceFields(SpaceInfo current, List<DeclarationTree<?>> declarations) {
+	public static void fillSpaceFields(SpaceInfo current, List<DeclarationTree<?>> declarations) {
 		final Set<DeclarationTree<? extends DeclaratorTree>> forRemoval = new HashSet<>();
 
 		final Set<DeclaratorTree> forRemovalDeclarators = new HashSet<>();
@@ -229,21 +236,45 @@ public class TreeBuilder {
 
 	}
 
-	private ImportInfo buildImport(SpaceInfo current, DeclarationTree<?> decl, ImportDeclaratorTree declarator) {
+	public static ImportInfo buildImport(SpaceInfo current, DeclarationTree<?> decl, ImportDeclaratorTree declarator) {
 		StaticElementReferenceTree symbol = declarator.getSymbol();
 		boolean star = false;
+		List<SymbolInfo> imported = new LinkedList<>();
 		if (symbol.getReferences().get(symbol.getReferences().size()-1).getIdentifier().type == TokenType.OPERATOR) {
 			star = true;
 			symbol.getReferences().remove(symbol.getReferences().size()-1);
+			SpaceInfo parent = current.resolveSpace(current, symbol);
+			imported.addAll(parent.getImports());
+			imported.addAll(parent.getFunctions());
+			imported.addAll(parent.getNamespaces());
+			imported.addAll(parent.getTypenames());
+		} else {
+			String last = symbol.getReferences().remove(symbol.getReferences().size()-1).getIdentifier().text;
+			SpaceInfo parent = current.resolveSpace(current, symbol);
+			for (ImportInfo anImport : parent.getImports()) {
+				if (last.equals(anImport.getName()) && anImport.isAccessibleFrom(current))
+					imported.add(anImport);
+			}
+			for (FunctionInfo function : parent.getFunctions()) {
+				if (last.equals(function.getName()) && function.isAccessibleFrom(current))
+					imported.add(function);
+			}
+			for (NamespaceInfo namespace : parent.getNamespaces()) {
+				if (last.equals(namespace.getName()) && namespace.isAccessibleFrom(current))
+					imported.add(namespace);
+			}
+			for (TypenameInfo typename : parent.getTypenames()) {
+				if (last.equals(typename.getName()) && typename.isAccessibleFrom(current))
+					imported.add(typename);
+			}
 		}
-		SpaceInfo space = current.resolveSpace(current, symbol);
 		String alias = null;
 		if (declarator.getName() != null)
 			alias = declarator.getName().text;
-		return new ImportInfo(current,space,alias,star);
+		return new ImportInfo(current,imported,alias,star,declarator.getLocation());
 	}
 
-	private TypeStructInfo buildStruct(SpaceInfo current, NamespaceDeclaration decl, NamespaceDeclarator declarator) {
+	public static TypeStructInfo buildStruct(SpaceInfo current, NamespaceDeclaration decl, NamespaceDeclarator declarator) {
 		Objects.requireNonNull(declarator.getName());
 		TypeStructInfo struct = new TypeStructInfo(declarator.getName().text,current,
 				new NamespaceInfo(declarator.getName().text,current,true)
@@ -252,14 +283,14 @@ public class TreeBuilder {
 		return struct;
 	}
 
-	private NamespaceInfo buildNamespace_noFill(SpaceInfo current, NamespaceDeclaration decl, NamespaceDeclarator declarator) {
+	public static NamespaceInfo buildNamespace_noFill(SpaceInfo current, NamespaceDeclaration decl, NamespaceDeclarator declarator) {
 		Objects.requireNonNull(declarator.getName());
 		NamespaceInfo space = new NamespaceInfo(declarator.getName().text,current,decl.hasModifier("static"));
 		return space;
 	}
 
 
-	private FieldInfo buildField(SpaceInfo container, ValuedDeclarationTree decl,VariableDeclaratorTree declarator) {
+	public static FieldInfo buildField(SpaceInfo container, ValuedDeclarationTree decl,VariableDeclaratorTree declarator) {
 		Objects.requireNonNull(declarator.getName());
 		boolean _const = decl.getTypeElement().get_const() != null;
 		TypeInfo type = container.resolveType(container,decl.getTypeElement());
@@ -288,11 +319,11 @@ public class TreeBuilder {
 				buildVariableInfo(declarator,typeRef,container,init,_static), container
 		);
 	}
-	private VariableInfo buildVariableInfo(VariableDeclaratorTree declarator, TypeRefInfo type, SpaceInfo container, Expression init, boolean _static) {
+	public static VariableInfo buildVariableInfo(VariableDeclaratorTree declarator, TypeRefInfo type, SpaceInfo container, Expression init, boolean _static) {
 		return new VariableInfo(declarator.getLocation(), declarator.getName().text, type, init, _static, false);
 	}
 
-	private FunctionImplementationInfo buildFunctionImpl(SpaceInfo current, ValuedDeclarationTree decl, FunctionDefinitionTree definition) {
+	public static FunctionImplementationInfo buildFunctionImpl(SpaceInfo current, ValuedDeclarationTree decl, FunctionDefinitionTree definition) {
 		FunctionImplementationInfo info = new FunctionImplementationInfo(
 				new FunctionDeclarationInfo(current, decl, decl.getTypeElement(), definition.getDeclarator(),true)
 		);

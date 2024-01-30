@@ -71,6 +71,16 @@ public class FunctionImplementationInfo extends AbstractSymbolInfo implements Fu
 	}
 
 	@Override
+	public Collection<TypenameInfo> getTypenames() {
+		return implementation.getTypenames();
+	}
+
+	@Override
+	public TypenameInfo addTypename(TypenameInfo typename) {
+		return implementation.addTypename(typename);
+	}
+
+	@Override
 	public boolean isAccessibleFrom(SpaceInfo namespace) {
 		return implementation.isAccessibleFrom(namespace);
 	}

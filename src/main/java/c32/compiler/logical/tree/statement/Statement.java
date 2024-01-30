@@ -32,17 +32,23 @@ public interface Statement {
 		if (statement instanceof BlockStatementTree) {
 			return BlockStatement.build(function,container,(BlockStatementTree)statement);
 		} else if (statement instanceof DeclarationStatementTree) {
+			if (((DeclarationStatementTree) statement).getDeclaration() instanceof ValuedDeclarationTree); else return null;
 			//local variable
 			var decl = (ValuedDeclarationTree)((DeclarationStatementTree) statement).getDeclaration();
 			List<VariableInfo> variables = new ArrayList<>();
 			for (DeclaratorTree declaratorTree : decl) {
+				if (declaratorTree instanceof VariableDeclaratorTree); else break;
 				var varDec = ((VariableDeclaratorTree) declaratorTree);
 				TypeInfo type = container.resolveType(container,decl.getTypeElement());
 
 				ModifierTree mod_static = decl.eatModifier("static");
-				if (mod_static != null && mod_static.getAttributes() != null)
-					throw new CompilerException(mod_static.getLocation(),
-							"unknown attributes: " + mod_static.getAttributes().stream().map(a -> a.text).collect(Collectors.toList()));
+				if (mod_static != null) {
+					if (mod_static.getAttributes() != null) {
+						throw new CompilerException(mod_static.getLocation(),
+								"unknown attributes: " + mod_static.getAttributes().stream().map(a -> a.text).collect(Collectors.toList()));
+					}
+					return null;//static variable has already performed
+				}
 
 				ModifierTree mod_register = decl.eatModifier("register");
 				boolean registerAllowed = true;

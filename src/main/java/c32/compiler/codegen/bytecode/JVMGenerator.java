@@ -1,8 +1,6 @@
 package c32.compiler.codegen.bytecode;
 
 import c32.compiler.logical.tree.*;
-import c32.compiler.logical.tree.expression.*;
-import c32.compiler.logical.tree.statement.*;
 import org.objectweb.asm.*;
 
 import java.io.File;
@@ -95,12 +93,17 @@ public class JVMGenerator implements c32.compiler.codegen.Generator {
 		}
 	}
 
-	private HashMap<SpaceInfo, ClassWriter> writeAll(NamespaceInfo namespace) {
+	private HashMap<SpaceInfo, ClassWriter> writeAll(SpaceInfo space) {
 		HashMap<SpaceInfo, ClassWriter> writers = new HashMap<>();
-		ClassWriter namespaceCv = writeNamespaceItself(namespace);
-		writers.put(namespace, namespaceCv);
-		for (NamespaceInfo namespaceNamespace : namespace.getNamespaces()) {
-			writers.putAll(writeAll(namespaceNamespace));
+
+		writers.put(space, writeSpaceItself(space));
+
+		for (NamespaceInfo namespace : space.getNamespaces()) {
+			writers.putAll(writeAll(namespace));
+		}
+		for (FunctionInfo function : space.getFunctions()) {
+			if (function instanceof FunctionImplementationInfo)
+				writers.putAll(writeAll((FunctionImplementationInfo)function));
 		}
 
 		return writers;
@@ -127,10 +130,11 @@ public class JVMGenerator implements c32.compiler.codegen.Generator {
 		if (function.is_extern()) return;
 		int mod = ACC_PUBLIC | ACC_STATIC;
 		if (function.is_native()) mod |= ACC_NATIVE;
-		MethodVisitor mv = cv.visitMethod(mod, asFunctionName(function),asJavaFunctionDescriptor(function),null,null);
+		MethodVisitor mv = cv.visitMethod(mod, asFunctionName(function), asJavaFunctionDescriptor(function),null,null);
 
 		if (function instanceof FunctionImplementationInfo) {
 			FunctionImplementationInfo func = (FunctionImplementationInfo) function;
+			System.out.println(func.getDeclaration());
 			new FunctionWriter(func, mv).write();
 		}
 
@@ -140,13 +144,19 @@ public class JVMGenerator implements c32.compiler.codegen.Generator {
 
 
 
-	private ClassWriter writeNamespaceItself(NamespaceInfo namespace) {
+	private ClassWriter writeSpaceItself(SpaceInfo namespace) {
 		ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS | (version >= 7 ? ClassWriter.COMPUTE_FRAMES : 0));
+		String super_name = "c32/extern/SpaceSymbol";
+		if (namespace instanceof NamespaceInfo) {
+			super_name = "c32/extern/NamespaceSymbol";
+		} else if (namespace instanceof FunctionInfo) {
+			super_name = "c32/extern/FunctionSymbol";
+		}
 		cw.visit(classVersion(),
 			ACC_PUBLIC | ACC_SUPER | ACC_FINAL,
 			asClassName(namespace),
 			null,
-			"c32/extern/NamespaceSymbol",
+			super_name,
 			null);
 		cw.visitSource(namespace.getName(),namespace.getName());
 

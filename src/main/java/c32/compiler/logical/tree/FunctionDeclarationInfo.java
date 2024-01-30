@@ -133,4 +133,9 @@ public class FunctionDeclarationInfo extends AbstractSymbolInfo implements Funct
 
 	private final boolean _pure;
 	private final boolean _noexcept;
+
+	@Override
+	public String toString() {
+		return this.getFullNameEx();
+	}
 }
