@@ -22,6 +22,8 @@ public class IntrinsicFunctionsTable {
 	private static final HashMap<String, EFSign> table = new HashMap<>();
 
 	static {
+		table.put("std.println[]",new EFSign("c32/extern/Runtime","println",    "()V"));
+
 		table.put("std.println[bool]",new EFSign("c32/extern/Runtime","println",    "(Z)V"));
 		table.put("std.print[bool]",new EFSign("c32/extern/Runtime","print",    "(Z)V"));
 		table.put("std.println[byte]",new EFSign("c32/extern/Runtime","println",    "(B)V"));

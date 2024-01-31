@@ -17,7 +17,7 @@
 rule CXX_COMPILER__native_unscanned_Debug
   depfile = $DEP_FILE
   deps = gcc
-  command = ${LAUNCHER}${CODE_CHECK}D:\__Sys__\Users\lidia\Local\JetBrains\Toolbox\apps\CLion\ch-0\233.13135.93\bin\mingw\bin\g++.exe $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -o $out -c $in
+  command = ${LAUNCHER}${CODE_CHECK}D:\__Sys__\Users\lidia\Local\JetBrains\Toolbox\apps\CLion\ch-0\233.14015.92\bin\mingw\bin\g++.exe $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -o $out -c $in
   description = Building CXX object $out
 
 
@@ -25,7 +25,7 @@ rule CXX_COMPILER__native_unscanned_Debug
 # Rule for linking CXX shared library.
 
 rule CXX_SHARED_LIBRARY_LINKER__native_Debug
-  command = cmd.exe /C "$PRE_LINK && D:\__Sys__\Users\lidia\Local\JetBrains\Toolbox\apps\CLion\ch-0\233.13135.93\bin\mingw\bin\g++.exe $LANGUAGE_COMPILE_FLAGS $ARCH_FLAGS $LINK_FLAGS -shared -o $TARGET_FILE -Wl,--out-implib,$TARGET_IMPLIB -Wl,--major-image-version,0,--minor-image-version,0 $in $LINK_PATH $LINK_LIBRARIES && $POST_BUILD"
+  command = cmd.exe /C "$PRE_LINK && D:\__Sys__\Users\lidia\Local\JetBrains\Toolbox\apps\CLion\ch-0\233.14015.92\bin\mingw\bin\g++.exe $LANGUAGE_COMPILE_FLAGS $ARCH_FLAGS $LINK_FLAGS -shared -o $TARGET_FILE -Wl,--out-implib,$TARGET_IMPLIB -Wl,--major-image-version,0,--minor-image-version,0 $in $LINK_PATH $LINK_LIBRARIES && $POST_BUILD"
   description = Linking CXX shared library $TARGET_FILE
   restat = $RESTAT
 
@@ -42,7 +42,7 @@ rule CUSTOM_COMMAND
 # Rule for re-running cmake.
 
 rule RERUN_CMAKE
-  command = D:\__Sys__\Users\lidia\Local\JetBrains\Toolbox\apps\CLion\ch-0\233.13135.93\bin\cmake\win\x64\bin\cmake.exe --regenerate-during-build -SG:\Project\JavaProject\C32JavaRuntime\native -BG:\Project\JavaProject\C32JavaRuntime\native\cmake-build-debug
+  command = D:\__Sys__\Users\lidia\Local\JetBrains\Toolbox\apps\CLion\ch-0\233.14015.92\bin\cmake\win\x64\bin\cmake.exe --regenerate-during-build -SG:\Project\JavaProject\C32JavaRuntime\native -BG:\Project\JavaProject\C32JavaRuntime\native\cmake-build-debug
   description = Re-running CMake...
   generator = 1
 
@@ -51,7 +51,7 @@ rule RERUN_CMAKE
 # Rule for cleaning all built files.
 
 rule CLEAN
-  command = D:\__Sys__\Users\lidia\Local\JetBrains\Toolbox\apps\CLion\ch-0\233.13135.93\bin\ninja\win\x64\ninja.exe $FILE_ARG -t clean $TARGETS
+  command = D:\__Sys__\Users\lidia\Local\JetBrains\Toolbox\apps\CLion\ch-0\233.14015.92\bin\ninja\win\x64\ninja.exe $FILE_ARG -t clean $TARGETS
   description = Cleaning all built files...
 
 
@@ -59,6 +59,6 @@ rule CLEAN
 # Rule for printing all primary targets available.
 
 rule HELP
-  command = D:\__Sys__\Users\lidia\Local\JetBrains\Toolbox\apps\CLion\ch-0\233.13135.93\bin\ninja\win\x64\ninja.exe -t targets
+  command = D:\__Sys__\Users\lidia\Local\JetBrains\Toolbox\apps\CLion\ch-0\233.14015.92\bin\ninja\win\x64\ninja.exe -t targets
   description = All primary targets available:
 

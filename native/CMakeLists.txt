@@ -14,7 +14,7 @@ add_library(native SHARED
         smmalloc/smmalloc.h
         smmalloc/smmalloc_generic.cpp
         smmalloc/smmalloc_tls.cpp
-        c32_memory_Memory.h
-        c32_memory_SMMalloc.h
-        c32_memory_SMMalloc_CacheWarmupOptions.h
+        c32_extern_Memory.h
+        c32_extern_SMMalloc.h
+        c32_extern_SMMalloc_CacheWarmupOptions.h
         Memory.cpp)

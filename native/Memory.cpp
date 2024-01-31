@@ -22,6 +22,10 @@ JNIEXPORT jlong JNICALL Memory(calloc)(JNIEnv *, jclass, jlong NumOfElements, jl
 	return (jlong)calloc(NumOfElements,SizeOfElements);
 }
 
+JNIEXPORT jlong JNICALL Memory(realloc)(JNIEnv *, jclass, jlong Memory, jlong NewSize) {
+	return (jlong)realloc(bitcast(void *)(Memory), NewSize);
+}
+
 JNIEXPORT void JNICALL Memory(free)(JNIEnv *, jclass, jlong ptr) {
 	free((void*)ptr);
 }

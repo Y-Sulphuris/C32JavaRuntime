@@ -49,6 +49,10 @@ public final class Runtime {
 		System.out.print(Long.toHexString(ptr));
 	}
 
+	public static void println() {
+		System.out.println();
+	}
+
 	public static void println(boolean b) {
 		System.out.println(b);
 	} public static void print(boolean b) {
@@ -121,9 +125,6 @@ public final class Runtime {
 
 
 
-	public static long I2UL(int i) {
-		return Integer.toUnsignedLong(i);
-	}
 	/*private static final long String_value_offset;
 	static {
 		try {

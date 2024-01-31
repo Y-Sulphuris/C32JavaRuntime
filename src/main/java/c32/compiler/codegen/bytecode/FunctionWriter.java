@@ -61,7 +61,8 @@ public final class FunctionWriter {
 			if (arg.getTypeRef().getType().sizeof() > 4) ++localVariableIndex;
 		}
 		writeBlockStatement(func.getImplementation());
-
+		if (func.getReturnType() == TypeInfo.PrimitiveTypeInfo.VOID)
+			mv.visitInsn(RETURN);
 		//args will be ignored
 		mv.visitMaxs(1,1);
 	}
@@ -247,8 +248,12 @@ public final class FunctionWriter {
 		}
 	}
 	private void storeVariable(VariableInfo variable) {
-		VariableHandle handle = getHandle(variable);
-		handle.storeToMe(mv);
+		if (variable instanceof FieldInfo) {
+			mv.visitFieldInsn(PUTSTATIC, asClassName(((FieldInfo) variable).getContainer()), variable.getName() , asDescriptor(variable.getTypeRef().getType()));
+		} else {
+			VariableHandle handle = getHandle(variable);
+			handle.storeToMe(mv);
+		}
 	}
 
 
@@ -695,7 +700,6 @@ public final class FunctionWriter {
 		registerCast(TypeInfo.PrimitiveTypeInfo.BYTE, TypeInfo.PrimitiveTypeInfo.SHORT);
 
 		registerCast(TypeInfo.PrimitiveTypeInfo.SHORT, TypeInfo.PrimitiveTypeInfo.LONG, 	I2L);
-		registerCast(TypeInfo.PrimitiveTypeInfo.SHORT, TypeInfo.PrimitiveTypeInfo.ULONG, 	I2L);
 		registerCast(TypeInfo.PrimitiveTypeInfo.SHORT, TypeInfo.PrimitiveTypeInfo.INT);
 		registerCast(TypeInfo.PrimitiveTypeInfo.SHORT, TypeInfo.PrimitiveTypeInfo.BYTE, 	I2B);
 		registerCast(TypeInfo.PrimitiveTypeInfo.SHORT, TypeInfo.PrimitiveTypeInfo.UBYTE, 	I2B);
@@ -711,7 +715,7 @@ public final class FunctionWriter {
 		registerCast(TypeInfo.PrimitiveTypeInfo.LONG, TypeInfo.PrimitiveTypeInfo.SHORT, 	L2I, I2S);
 		registerCast(TypeInfo.PrimitiveTypeInfo.LONG, TypeInfo.PrimitiveTypeInfo.USHORT, 	L2I, I2S);
 		registerCast(TypeInfo.PrimitiveTypeInfo.LONG, TypeInfo.PrimitiveTypeInfo.BYTE, 		L2I, I2B);
-		registerCast(TypeInfo.PrimitiveTypeInfo.LONG, TypeInfo.PrimitiveTypeInfo.UBYTE, 		L2I, I2B);
+		registerCast(TypeInfo.PrimitiveTypeInfo.LONG, TypeInfo.PrimitiveTypeInfo.UBYTE, 	L2I, I2B);
 
 		//signed - unsigned
 		registerCastBoth(TypeInfo.PrimitiveTypeInfo.ULONG, TypeInfo.PrimitiveTypeInfo.LONG);
