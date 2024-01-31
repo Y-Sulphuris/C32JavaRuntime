@@ -47,7 +47,14 @@ final class ASMUtils {
 
 	@SuppressWarnings("ConstantValue")
 	public static String asClassName(SpaceInfo space) {
-		String name = space.getFullName();
+		String name;
+		if (space instanceof FunctionInfo) {
+			FunctionInfo func = (FunctionInfo) space;
+			name = func.getParent().getFullName();
+			name += "." + asFunctionName(func);
+		} else {
+			name = space.getFullName();
+		}
 		if (name.isEmpty()) return PACKAGE_CLASSNAME.isEmpty() ? "c32/$root" : "c32" + PACKAGE_CLASSNAME;
 		name = "c32/" + name.replace(".","/");
 		if (space instanceof NamespaceInfo) {

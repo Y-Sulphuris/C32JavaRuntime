@@ -690,13 +690,39 @@ public final class FunctionWriter {
 
 	private static final HashMap<TypeInfo, Map<TypeInfo, int[]>> castTable = new HashMap<>();
 	static {
-		registerCast(TypeInfo.PrimitiveTypeInfo.BYTE, TypeInfo.PrimitiveTypeInfo.LONG, I2L);
-		registerCast(TypeInfo.PrimitiveTypeInfo.SHORT, TypeInfo.PrimitiveTypeInfo.LONG, I2L);
-		registerCast(TypeInfo.PrimitiveTypeInfo.INT, TypeInfo.PrimitiveTypeInfo.LONG, I2L);
+		registerCast(TypeInfo.PrimitiveTypeInfo.BYTE, TypeInfo.PrimitiveTypeInfo.LONG, 		I2L);
+		registerCast(TypeInfo.PrimitiveTypeInfo.BYTE, TypeInfo.PrimitiveTypeInfo.INT);
+		registerCast(TypeInfo.PrimitiveTypeInfo.BYTE, TypeInfo.PrimitiveTypeInfo.SHORT);
+
+		registerCast(TypeInfo.PrimitiveTypeInfo.SHORT, TypeInfo.PrimitiveTypeInfo.LONG, 	I2L);
+		registerCast(TypeInfo.PrimitiveTypeInfo.SHORT, TypeInfo.PrimitiveTypeInfo.ULONG, 	I2L);
+		registerCast(TypeInfo.PrimitiveTypeInfo.SHORT, TypeInfo.PrimitiveTypeInfo.INT);
+		registerCast(TypeInfo.PrimitiveTypeInfo.SHORT, TypeInfo.PrimitiveTypeInfo.BYTE, 	I2B);
+		registerCast(TypeInfo.PrimitiveTypeInfo.SHORT, TypeInfo.PrimitiveTypeInfo.UBYTE, 	I2B);
+
+		registerCast(TypeInfo.PrimitiveTypeInfo.INT, TypeInfo.PrimitiveTypeInfo.LONG, 		I2L);
+		registerCast(TypeInfo.PrimitiveTypeInfo.INT, TypeInfo.PrimitiveTypeInfo.SHORT, 		I2S);
+		registerCast(TypeInfo.PrimitiveTypeInfo.INT, TypeInfo.PrimitiveTypeInfo.USHORT, 	I2S);
+		registerCast(TypeInfo.PrimitiveTypeInfo.INT, TypeInfo.PrimitiveTypeInfo.BYTE, 		I2B);
+		registerCast(TypeInfo.PrimitiveTypeInfo.INT, TypeInfo.PrimitiveTypeInfo.UBYTE, 		I2B);
+
+		registerCast(TypeInfo.PrimitiveTypeInfo.LONG, TypeInfo.PrimitiveTypeInfo.INT, 		L2I);
+		registerCast(TypeInfo.PrimitiveTypeInfo.LONG, TypeInfo.PrimitiveTypeInfo.UINT, 		L2I);
+		registerCast(TypeInfo.PrimitiveTypeInfo.LONG, TypeInfo.PrimitiveTypeInfo.SHORT, 	L2I, I2S);
+		registerCast(TypeInfo.PrimitiveTypeInfo.LONG, TypeInfo.PrimitiveTypeInfo.USHORT, 	L2I, I2S);
+		registerCast(TypeInfo.PrimitiveTypeInfo.LONG, TypeInfo.PrimitiveTypeInfo.BYTE, 		L2I, I2B);
+		registerCast(TypeInfo.PrimitiveTypeInfo.LONG, TypeInfo.PrimitiveTypeInfo.UBYTE, 		L2I, I2B);
+
+		//signed - unsigned
+		registerCastBoth(TypeInfo.PrimitiveTypeInfo.ULONG, TypeInfo.PrimitiveTypeInfo.LONG);
+		registerCastBoth(TypeInfo.PrimitiveTypeInfo.UINT, TypeInfo.PrimitiveTypeInfo.INT);
+		registerCastBoth(TypeInfo.PrimitiveTypeInfo.USHORT, TypeInfo.PrimitiveTypeInfo.SHORT);
+		registerCastBoth(TypeInfo.PrimitiveTypeInfo.UBYTE, TypeInfo.PrimitiveTypeInfo.BYTE);
 	}
 
-	private static void registerCast(TypeInfo from, TypeInfo to) {
-		registerCast(from, to, new int[]{});
+	private static void registerCastBoth(TypeInfo from, TypeInfo to) {
+		registerCast(from, to);
+		registerCast(to, from);
 	}
 
 	@SuppressWarnings("Java8MapApi")
@@ -716,9 +742,15 @@ public final class FunctionWriter {
 	}
 
 	private void applyCast(TypeInfo type, TypeInfo expected) {
-		if (type instanceof TypePointerInfo && expected instanceof TypePointerInfo) return;
 		if (type instanceof TypePointerInfo) type = TypeInfo.PrimitiveTypeInfo.ULONG;
 		if (expected instanceof TypePointerInfo) expected = TypeInfo.PrimitiveTypeInfo.ULONG;
+		if (type == TypeInfo.PrimitiveTypeInfo.CHAR32) type = TypeInfo.PrimitiveTypeInfo.UINT;
+		if (expected == TypeInfo.PrimitiveTypeInfo.CHAR32) expected = TypeInfo.PrimitiveTypeInfo.UINT;
+		if (type == TypeInfo.PrimitiveTypeInfo.CHAR) type = TypeInfo.PrimitiveTypeInfo.USHORT;
+		if (expected == TypeInfo.PrimitiveTypeInfo.CHAR) expected = TypeInfo.PrimitiveTypeInfo.USHORT;
+		if (type == TypeInfo.PrimitiveTypeInfo.CHAR8) type = TypeInfo.PrimitiveTypeInfo.UBYTE;
+		if (expected == TypeInfo.PrimitiveTypeInfo.CHAR8) expected = TypeInfo.PrimitiveTypeInfo.UBYTE;
+		if (type.equals(expected)) return;
 
 
 		int[] op = getCastOpcodes(type, expected);

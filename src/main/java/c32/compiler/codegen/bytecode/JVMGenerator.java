@@ -98,7 +98,18 @@ public class JVMGenerator implements c32.compiler.codegen.Generator {
 	private HashMap<SpaceInfo, ClassWriter> writeAll(SpaceInfo space) {
 		HashMap<SpaceInfo, ClassWriter> writers = new HashMap<>();
 
-		writers.put(space, writeSpaceItself(space));
+		ClassWriter cw = null;
+		if (space instanceof FunctionInfo) {
+			boolean write =
+					!space.getNamespaces().isEmpty() ||
+							!space.getFields().isEmpty() ||
+							!space.getImports().isEmpty() ||
+							!space.getTypenames().isEmpty();
+			if (write) cw = writeSpaceItself(space);
+		} else {
+			cw = writeSpaceItself(space);
+		}
+		if (cw != null) writers.put(space, cw);
 
 		for (NamespaceInfo namespace : space.getNamespaces()) {
 			writers.putAll(writeAll(namespace));
@@ -160,30 +171,30 @@ public class JVMGenerator implements c32.compiler.codegen.Generator {
 
 
 
-	private ClassWriter writeSpaceItself(SpaceInfo namespace) {
+	private ClassWriter writeSpaceItself(SpaceInfo space) {
 		ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS | (version >= 7 ? ClassWriter.COMPUTE_FRAMES : 0));
 		String super_name = "c32/extern/SpaceSymbol";
-		if (namespace instanceof NamespaceInfo) {
+		if (space instanceof NamespaceInfo) {
 			super_name = "c32/extern/NamespaceSymbol";
-		} else if (namespace instanceof FunctionInfo) {
+		} else if (space instanceof FunctionInfo) {
 			super_name = "c32/extern/FunctionSymbol";
 		}
 		cw.visit(classVersion(),
 			ACC_PUBLIC | ACC_SUPER | ACC_FINAL,
-			asClassName(namespace),
+			asClassName(space),
 			null,
 			super_name,
 			null);
-		cw.visitSource(namespace.getName(),namespace.getName());
+		cw.visitSource(space.getName(),space.getName());
 
-		for (FieldInfo field : namespace.getFields()) {
+		for (FieldInfo field : space.getFields()) {
 			writeField(cw,field);
 		}
-		for (FunctionInfo function : namespace.getFunctions()) {
+		for (FunctionInfo function : space.getFunctions()) {
 			writeFunction(cw, function);
 		}
 		writeClinit(cw);
-		if (namespace.getParent() == null) {
+		if (space.getParent() == null) {
 			ASMUtils.generateMainFunction(cw);
 		}
 

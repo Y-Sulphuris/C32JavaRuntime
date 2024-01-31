@@ -75,7 +75,7 @@ public class NumericLiteralExpression implements LiteralExpression {
 		if (number.startsWith("0x")) {
 			number = number.substring(2);
 			radix = 16;
-		} else if (number.startsWith("b")) {
+		} else if (number.startsWith("0b")) {
 			number = number.substring(1);
 			radix = 2;
 		}
