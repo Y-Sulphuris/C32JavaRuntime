@@ -13,6 +13,4 @@ public class FieldInfo extends VariableInfo {
 		super(location, name, typeRef, initializer, _static, _register);
 		this.container = container;
 	}
-
-
 }

@@ -12,6 +12,7 @@ import org.objectweb.asm.MethodVisitor;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Map;
 
 import static c32.compiler.codegen.bytecode.ASMUtils.*;
 import static org.objectweb.asm.Opcodes.*;
@@ -319,6 +320,8 @@ public final class FunctionWriter {
 			loadBinaryExpression((BinaryExpression)expr);
 		} else if (expr instanceof UnaryPrefixExpression) {
 			loadUnaryPrefixExpression((UnaryPrefixExpression)expr);
+		} else if (expr instanceof TernaryExpression) {
+			loadTernaryExpression((TernaryExpression)expr);
 		} else if (expr instanceof IndexExpression) {
 			loadIndexExpression((IndexExpression)expr);
 		} else if (expr instanceof BooleanLiteralExpression) {
@@ -336,6 +339,7 @@ public final class FunctionWriter {
 		if (expectedType != null && expr.getReturnType() != expectedType)
 			applyCast(expr.getReturnType(),expectedType);
 	}
+
 
 
 	private void loadIndexExpression(IndexExpression expr) {
@@ -450,6 +454,38 @@ public final class FunctionWriter {
 	}
 
 
+	private void loadTernaryExpression(TernaryExpression expr) {
+		Expression cond = expr.getCond();
+		Runnable ifTrue = () -> {
+			loadExpression(expr.getIfTrue());
+		};
+
+		Runnable ifFalse = () -> {
+			loadExpression(expr.getIfFalse());
+		};
+		Label NEXT_LABEL = new Label();
+		if (cond instanceof BinaryExpression) {
+			BinaryOperator op = ((BinaryExpression) cond).getOperator();
+			switch (op.getOp()) {
+				case "==":
+				case "!=":
+				case ">":
+				case "<":
+				case ">=":
+				case "<=":
+					loadExpression(((BinaryExpression) cond).getLhs(),((BinaryExpression) cond).getOperator().getLeftType());
+					loadExpression(((BinaryExpression) cond).getRhs(),((BinaryExpression) cond).getOperator().getRightType());
+					applyCompare(op.getLeftType(), op, ifTrue, ifFalse, NEXT_LABEL);
+					this.NEXT_LABEL = NEXT_LABEL;
+					return;
+				default:
+			}
+		}
+		loadExpression(cond);
+		applyCompareEquals(cond.getReturnType(),ifTrue,ifFalse);
+		this.NEXT_LABEL = NEXT_LABEL;
+	}
+
 	private void loadUnaryPrefixExpression(UnaryPrefixExpression expr) {
 		UnaryPrefixOperator op = expr.getOperator();
 		loadExpression(expr.getExpr(),op.getTargetType().getType());
@@ -483,6 +519,17 @@ public final class FunctionWriter {
 					mv.visitInsn(DUP);
 				}
 				storeExpression(expr.getExpr());
+				break;
+			case "-":
+				if (op.getReturnType() == TypeInfo.PrimitiveTypeInfo.LONG) {
+					mv.visitInsn(LNEG);
+				} else if (op.getReturnType() == TypeInfo.PrimitiveTypeInfo.DOUBLE) {
+					mv.visitInsn(DNEG);
+				} else if (op.getReturnType() == TypeInfo.PrimitiveTypeInfo.FLOAT) {
+					mv.visitInsn(FNEG);
+				} else {
+					mv.visitInsn(INEG);
+				}
 				break;
 			default:
 				throw new UnsupportedOperationException(op.getOp());
@@ -640,15 +687,106 @@ public final class FunctionWriter {
 
 	//region #apply
 
+
+	private static final HashMap<TypeInfo, Map<TypeInfo, int[]>> castTable = new HashMap<>();
+	static {
+		registerCast(TypeInfo.PrimitiveTypeInfo.BYTE, TypeInfo.PrimitiveTypeInfo.LONG, I2L);
+		registerCast(TypeInfo.PrimitiveTypeInfo.SHORT, TypeInfo.PrimitiveTypeInfo.LONG, I2L);
+		registerCast(TypeInfo.PrimitiveTypeInfo.INT, TypeInfo.PrimitiveTypeInfo.LONG, I2L);
+	}
+
+	private static void registerCast(TypeInfo from, TypeInfo to) {
+		registerCast(from, to, new int[]{});
+	}
+
+	@SuppressWarnings("Java8MapApi")
+	private static void registerCast(TypeInfo from, TypeInfo to, int... opcodes) {
+		Map<TypeInfo, int[]> fromMap = castTable.get(from);
+		if (fromMap == null) {
+			fromMap = new HashMap<>();
+			castTable.put(from, fromMap);
+		}
+		fromMap.put(to, opcodes);
+	}
+
+	private static int[] getCastOpcodes(TypeInfo from, TypeInfo to) {
+		Map<TypeInfo, int[]> fromMap = castTable.get(from);
+		if(fromMap == null) return null;
+		return fromMap.get(to);
+	}
+
 	private void applyCast(TypeInfo type, TypeInfo expected) {
 		if (type instanceof TypePointerInfo && expected instanceof TypePointerInfo) return;
+		if (type instanceof TypePointerInfo) type = TypeInfo.PrimitiveTypeInfo.ULONG;
+		if (expected instanceof TypePointerInfo) expected = TypeInfo.PrimitiveTypeInfo.ULONG;
 
-		if (type == TypeInfo.PrimitiveTypeInfo.INT) {
+
+		int[] op = getCastOpcodes(type, expected);
+		if (op == null) {
+			mv.visitMethodInsn(INVOKESTATIC,"c32/extern/Cast",
+					type.getName() + "2" + expected.getName(),
+					"("+asDescriptor(type)+")" + asDescriptor(expected),
+					false);
+			return;
+		} else {
+			for (int opcode : op) {
+				mv.visitInsn(opcode);
+			}
+			if (true)return;
+		}
+
+		//For removal
+		if (type == TypeInfo.PrimitiveTypeInfo.BYTE) {
+			if (expected == TypeInfo.PrimitiveTypeInfo.DOUBLE) {
+				mv.visitInsn(I2D);
+				return;
+			} else if (expected == TypeInfo.PrimitiveTypeInfo.FLOAT) {
+				mv.visitInsn(I2F);
+				return;
+			} else if (expected == TypeInfo.PrimitiveTypeInfo.INT) {
+				return;
+			} else if (expected == TypeInfo.PrimitiveTypeInfo.SHORT) {
+				return;
+			} else if (expected == TypeInfo.PrimitiveTypeInfo.USHORT) {
+				mv.visitMethodInsn(INVOKESTATIC,"c32/extern/Cast","B2US","(B)S",false);
+				return;
+			} else if (expected == TypeInfo.PrimitiveTypeInfo.BYTE) {
+				return;
+			}
+		} else if (type == TypeInfo.PrimitiveTypeInfo.UBYTE) {
+			if (expected == TypeInfo.PrimitiveTypeInfo.BYTE) {
+				return;
+			}
+		} else if (type == TypeInfo.PrimitiveTypeInfo.UINT) {
+			if (expected == TypeInfo.PrimitiveTypeInfo.LONG) {
+				mv.visitMethodInsn(INVOKESTATIC,"c32/extern/Cast","UI2L","(B)J",false);
+				return;
+			} else if (expected == TypeInfo.PrimitiveTypeInfo.ULONG || expected instanceof TypePointerInfo) {
+				mv.visitMethodInsn(INVOKESTATIC,"c32/extern/Cast","UI2UL","(B)J",false);
+				return;
+			} else if (expected == TypeInfo.PrimitiveTypeInfo.DOUBLE) {
+				mv.visitMethodInsn(INVOKESTATIC,"c32/extern/Cast","UI2D","(B)D",false);
+				return;
+			} else if (expected == TypeInfo.PrimitiveTypeInfo.FLOAT) {
+				mv.visitMethodInsn(INVOKESTATIC,"c32/extern/Cast","UI2F","(B)F",false);
+				return;
+			} else if (expected == TypeInfo.PrimitiveTypeInfo.INT) {
+				return;
+			} else if (expected == TypeInfo.PrimitiveTypeInfo.UINT) {
+				return;
+			} else if (expected == TypeInfo.PrimitiveTypeInfo.SHORT) {
+				return;
+			} else if (expected == TypeInfo.PrimitiveTypeInfo.USHORT) {
+				return;
+			} else if (expected == TypeInfo.PrimitiveTypeInfo.BYTE) {
+				return;
+			}
+		} else if (type == TypeInfo.PrimitiveTypeInfo.INT) {
 			if (expected == TypeInfo.PrimitiveTypeInfo.LONG) {
 				mv.visitInsn(I2L);
 				return;
 			} else if (expected == TypeInfo.PrimitiveTypeInfo.ULONG || expected instanceof TypePointerInfo) {
-				mv.visitMethodInsn(INVOKESTATIC,"c32/extern/Runtime","I2UL","(I)J",false);
+				mv.visitMethodInsn(INVOKESTATIC,"c32/extern/Cast","I2UL","(I)J",false);
 				return;
 			} else if (expected == TypeInfo.PrimitiveTypeInfo.DOUBLE) {
 				mv.visitInsn(I2D);

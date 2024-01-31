@@ -21,6 +21,8 @@ public interface Expression {
 		return null;
 	}
 	default Expression calculate() {
+		Expression constant = asCompileTimeLiteralExpression();
+		if (constant != null) return constant;
 		return this;
 	}
 
@@ -54,6 +56,10 @@ public interface Expression {
 	}
 
 	static Expression build(SpaceInfo caller, SpaceInfo container, ExprTree exprTree, TypeInfo returnType) {
+		return build0(caller, container, exprTree, returnType).calculate();
+	}
+
+	static Expression build0(SpaceInfo caller, SpaceInfo container, ExprTree exprTree, TypeInfo returnType) {
 		if (exprTree instanceof LiteralExprTree) {
 			switch (((LiteralExprTree) exprTree).getType()) {
 				case BOOLEAN_LITERAL:
@@ -189,6 +195,13 @@ public interface Expression {
 				throw new CompilerException(typeElement.getLocation(),"'auto' is not allowed here");
 			}
 			return new NumericLiteralExpression(BigInteger.valueOf(type.sizeof()),TypeInfo.PrimitiveTypeInfo.ULONG,exprTree.getLocation());
+		}
+		else if (exprTree instanceof TernaryExprTree) {
+			TernaryExprTree ternaryExprTree = (TernaryExprTree) exprTree;
+			Expression cond = Expression.build(caller,container,ternaryExprTree.getLhs(), TypeInfo.PrimitiveTypeInfo.BOOL);
+			Expression ifTrue = Expression.build(caller,container,ternaryExprTree.getIfTrue(), returnType);
+			Expression ifFalse = Expression.build(caller,container,ternaryExprTree.getIfFalse(), returnType);
+			return new TernaryExpression(cond, ifTrue, ifFalse);
 		}
 
 		throw new UnsupportedOperationException(exprTree.getClass().getName());

@@ -1,7 +1,6 @@
 package c32.compiler;
 
 import c32.compiler.codegen.Generator;
-import c32.compiler.codegen.java.JavaGenerator;
 import c32.compiler.except.CompilerException;
 import c32.compiler.logical.TreeBuilder;
 import c32.compiler.logical.tree.NamespaceInfo;

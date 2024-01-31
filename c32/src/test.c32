@@ -7,7 +7,7 @@ byte test() {
 }
 
 void test2(byte b) {
-	std::println(b);
+	println(b);
 	return;
 }
 
@@ -21,21 +21,31 @@ import std.println, std.print;
 void main() {
 	import std.Core.*;
 
-	static const int len = 64;
+	int len = 16;
 	int* p_i = new_int_array(len), new_int_array(size_t len) {
         return std::calloc(len, sizeof(int));
     };
-	std::memset(p_i, 255ub, len * sizeof(decltype(*p_i)));
+	std::memset(p_i, 0xFEub, len * sizeof(decltype(*p_i)));
     p_i[0] = 50;
-	int index = 0;
-    println(p_i[index]);
-	while(index < len) {
+	int index = -1;
+	while(index < len-1) {
 		print(++index);
 		auto space = '\t';
 		print(space);
         println((void*)p_i[index]);
         sleep(100);
 	}
+	len = 32;
+	p_i = std::realloc(p_i, len);
+
+	while(index < len-1) {
+    	print(++index);
+    	auto space = '\t';
+    	print(space);
+        println((void*)p_i[index]);
+        sleep(100);
+    }
+
 	std::free(p_i);
 
 	return;

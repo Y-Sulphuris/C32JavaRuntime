@@ -708,7 +708,19 @@ public class Parser {
 			lhs = new IndexExprTree(lhs,parseIndexList());
 		}
 
+		if (token.text.equals("?")) {
+			return parseTernaryOp(lhs);
+		}
+
 		return parseBinOpRhs(0, lhs);
+	}
+
+	private ExprTree parseTernaryOp(ExprTree lhs) {
+		Token question = assertAndNext("?");
+		ExprTree ifTrue = parseExpr();
+		Token el = assertAndNext(":");
+		ExprTree ifFalse = parseExpr();
+		return new TernaryExprTree(lhs, question, ifTrue, el, ifFalse);
 	}
 
 	private IndexListTree parseIndexList() {

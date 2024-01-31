@@ -157,6 +157,8 @@ public interface TypeInfo extends SpaceInfo {
 			DOUBLE.addExplicitCast(BYTE,UBYTE,SHORT,USHORT,INT,UINT,LONG,ULONG,FLOAT,CHAR);
 
 			CHAR.addExplicitCast(BYTE,UBYTE,SHORT,USHORT,INT,UINT,LONG,ULONG);
+			CHAR8.addExplicitCast(BYTE,UBYTE,SHORT,USHORT,INT,UINT,LONG,ULONG);
+			CHAR32.addExplicitCast(BYTE,UBYTE,SHORT,USHORT,INT,UINT,LONG,ULONG);
 		}
 		public static void forEachValued(Consumer<PrimitiveTypeInfo> action) {
 			forEachNumeric(action);

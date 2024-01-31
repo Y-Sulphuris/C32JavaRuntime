@@ -60,5 +60,42 @@ namespace Core {
 
 	extern ulong nanoTime();
 
-	extern void sleep(long mills);
+	extern void sleep(long millis);
+}
+
+int hash_code(bool x) {
+    return x ? 1 : 0;
+}
+int hash_code(byte x) {
+    return x;
+}
+int hash_code(ubyte x) {
+    return x;
+}
+int hash_code(short x) {
+    return x;
+}
+int hash_code(ushort x) {
+    return x;
+}
+int hash_code(int x) {
+    return x;
+}
+int hash_code(uint x) {
+    return (int)x;
+}
+int hash_code(long x) {
+    return (int)x;
+}
+int hash_code(ulong x) {
+    return (int)x;
+}
+int hash_code(char8 x) {
+    return (int)x;
+}
+int hash_code(char x) {
+    return (int)x;
+}
+int hash_code(char32 x) {
+    return (int)x;
 }

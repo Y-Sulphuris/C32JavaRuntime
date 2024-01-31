@@ -27,6 +27,8 @@ public class UnaryPrefixOperator {
 		TypeInfo.PrimitiveTypeInfo.forEachNumeric(TYPE -> {
 			registerUnaryPrefix("++",new TypeRefInfo(false,false, TYPE), TYPE);
 			registerUnaryPrefix("--",new TypeRefInfo(false,false, TYPE), TYPE);
+			if (TYPE instanceof TypeInfo.UnsignedIntegerPrimitiveTypeInfo); else
+				registerUnaryPrefix("-", new TypeRefInfo(true, false, TYPE), TYPE);
 		});
 	}
 

@@ -41,4 +41,14 @@ public class VariableRefExpression extends SymbolRefExpression {
 		}
 		return !variable.getTypeRef().is_const();
 	}
+
+	@Override
+	public Expression asCompileTimeLiteralExpression() {
+		if (getVariable().getTypeRef().is_const() && getVariable().getInitializer() != null) {
+			Expression constant = getVariable().getInitializer().asCompileTimeLiteralExpression();
+			if (constant != null)
+				return constant;
+		}
+		return super.asCompileTimeLiteralExpression();
+	}
 }

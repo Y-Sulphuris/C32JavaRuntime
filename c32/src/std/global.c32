@@ -2,7 +2,3 @@
 
 typename size_t = ulong, ptrdiff_t = long;
 
-
-namespace std {
-
-}
