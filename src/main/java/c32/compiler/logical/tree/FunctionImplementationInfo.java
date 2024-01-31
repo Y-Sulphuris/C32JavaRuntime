@@ -130,8 +130,17 @@ public class FunctionImplementationInfo extends AbstractSymbolInfo implements Fu
 	public VariableRefExpression resolveVariable(SpaceInfo caller, ReferenceExprTree reference) {
 		for (VariableInfo arg : declaration.getArgs()) {
 			if (arg.getName().equals(reference.getIdentifier().text))
-				return new VariableRefExpression(arg,reference.getLocation());
+				return new VariableRefExpression(arg, reference.getLocation());
+		}
+		for (FieldInfo field : getFields()) {
+			if (field.getName().equals(reference.getIdentifier().text) && field.isAccessibleFrom(caller))
+				return new VariableRefExpression(field, reference.getLocation());
 		}
 		return getParent().resolveVariable(caller,reference);
+	}
+
+	@Override
+	public String toString() {
+		return declaration.toString() + " {}";
 	}
 }

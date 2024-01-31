@@ -21,7 +21,7 @@ import std.println, std.print;
 void main() {
 	import std.Core.*;
 
-	const int len = 64;
+	static const int len = 64;
 	int* p_i = new_int_array(len), new_int_array(size_t len) {
         return std::calloc(len, sizeof(int));
     };

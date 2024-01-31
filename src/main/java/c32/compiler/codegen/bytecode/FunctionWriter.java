@@ -10,6 +10,7 @@ import org.jetbrains.annotations.Nullable;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 
+import java.util.Collection;
 import java.util.HashMap;
 
 import static c32.compiler.codegen.bytecode.ASMUtils.*;
@@ -25,6 +26,25 @@ public final class FunctionWriter {
 	private final HashMap<LabelStatement,Label> usedlabels = new HashMap<>();
 	private Label NEXT_LABEL = null;
 	private final int stackFrameSize;
+
+	public FunctionWriter(MethodVisitor mv) {
+		this.func = null;
+		this.mv = mv;
+		this.stackFrameSize = -1;
+	}
+	public void writeClinit(Collection<FieldInfo> fieldsToInit) {
+		if (func != null)
+			throw new IllegalStateException();
+		for(FieldInfo field : fieldsToInit) {
+			Label l = new Label();
+			mv.visitLabel(l);
+			mv.visitLineNumber(field.getLocation().getStartLine(),l);
+			loadExpression(field.getInitializer());
+			mv.visitFieldInsn(PUTSTATIC, asClassName(field.getContainer()), field.getName(), asDescriptor(field.getTypeRef().getType()));
+		}
+		mv.visitInsn(RETURN);
+		mv.visitMaxs(1,1);
+	}
 
 	public FunctionWriter(FunctionImplementationInfo func, MethodVisitor mv) {
 		this.func = func;
@@ -328,12 +348,17 @@ public final class FunctionWriter {
 	}
 
 	private void loadVariableExpression(VariableRefExpression expr) {
-		VariableHandle handle = ASMUtils.getHandle(expr.getVariable());
-		if (handle == null) {
-			System.err.println(expr.getLocation().getStartLine());
-			throw new NullPointerException("ASMUtils.getHandle(" + expr.getVariable().getCanonicalName() + ")");
+		if (expr.getVariable() instanceof FieldInfo) {
+			FieldInfo field = (FieldInfo) expr.getVariable();
+			mv.visitFieldInsn(GETSTATIC, asClassName(field.getContainer()), field.getName(), asDescriptor(field.getTypeRef().getType()));
+		} else {
+			VariableHandle handle = ASMUtils.getHandle(expr.getVariable());
+			if (handle == null) {
+				System.err.println(expr.getLocation().getStartLine());
+				throw new NullPointerException("ASMUtils.getHandle(" + expr.getVariable().getCanonicalName() + ")");
+			}
+			handle.loadMe(mv);
 		}
-		handle.loadMe(mv);
 	}
 
 	private void loadNumericLiteralExpression(NumericLiteralExpression expr) {

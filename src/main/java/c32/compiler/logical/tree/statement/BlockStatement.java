@@ -102,6 +102,7 @@ public class BlockStatement extends AbstractSpaceInfo implements Statement, Spac
 				}
 			}
 		}
+
 		return getParent().resolveVariable(caller, reference);
 	}
 

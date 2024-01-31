@@ -44,7 +44,7 @@ public class TypeStructInfo extends AbstractSpaceInfo implements TypeInfo {
 
 	@Override
 	public FieldInfo addField(FieldInfo field) {
-		if (field.getVariable().is_static()) {
+		if (field.is_static()) {
 			staticSpace.addField(field);
 			return field;
 		}

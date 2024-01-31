@@ -7,7 +7,9 @@ import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Map;
 
 import static c32.compiler.codegen.bytecode.ASMUtils.*;
@@ -109,11 +111,23 @@ public class JVMGenerator implements c32.compiler.codegen.Generator {
 		return writers;
 	}
 
+	private final Collection<FieldInfo> fieldsToInit = new LinkedList<>();
+
+	private void writeClinit(ClassWriter cw) {
+		if (fieldsToInit.isEmpty()) return;
+		MethodVisitor mv = cw.visitMethod(ACC_PUBLIC | ACC_STATIC, "<clinit>", "()V", null, null);
+
+		new FunctionWriter(mv).writeClinit(fieldsToInit);
+		fieldsToInit.clear();
+		mv.visitEnd();
+	}
+
 	private void writeField(ClassWriter cv, FieldInfo field) {
 		int mod = ACC_PUBLIC | ACC_STATIC;
-		if (field.getVariable().getTypeRef().is_const()) mod |= ACC_FINAL;
+		if (field.getTypeRef().is_const()) mod |= ACC_FINAL;
 		FieldVisitor fv = cv.visitField(mod,field.getName(),asDescriptor(field.getTypeRef().getType()),null,asFieldInitializerValue(field));
 		fv.visitEnd();
+		fieldsToInit.add(field);
 	}
 
 	private Object asFieldInitializerValue(FieldInfo fieldInfo) {
@@ -134,7 +148,9 @@ public class JVMGenerator implements c32.compiler.codegen.Generator {
 
 		if (function instanceof FunctionImplementationInfo) {
 			FunctionImplementationInfo func = (FunctionImplementationInfo) function;
-			System.out.println(func.getDeclaration());
+			if (func.getImplementation().getStatements().isEmpty()) {
+				System.out.println("empty: " + func);
+			}
 			new FunctionWriter(func, mv).write();
 		}
 
@@ -166,6 +182,7 @@ public class JVMGenerator implements c32.compiler.codegen.Generator {
 		for (FunctionInfo function : namespace.getFunctions()) {
 			writeFunction(cw, function);
 		}
+		writeClinit(cw);
 		if (namespace.getParent() == null) {
 			ASMUtils.generateMainFunction(cw);
 		}

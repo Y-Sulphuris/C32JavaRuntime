@@ -315,13 +315,11 @@ public class TreeBuilder {
 				_const, decl.getTypeElement().get_restrict() != null, type
 		);
 		boolean _static = decl.hasModifier("static");
-		return new FieldVariableInfo(
-				buildVariableInfo(declarator,typeRef,container,init,_static), container
-		);
+		return new FieldInfo(declarator.getLocation(), declarator.getName().text, typeRef, init, _static, false, container);
 	}
-	public static VariableInfo buildVariableInfo(VariableDeclaratorTree declarator, TypeRefInfo type, SpaceInfo container, Expression init, boolean _static) {
+	/*public static VariableInfo buildVariableInfo(VariableDeclaratorTree declarator, TypeRefInfo type, SpaceInfo container, Expression init, boolean _static) {
 		return new VariableInfo(declarator.getLocation(), declarator.getName().text, type, init, _static, false);
-	}
+	}*/
 
 	public static FunctionImplementationInfo buildFunctionImpl(SpaceInfo current, ValuedDeclarationTree decl, FunctionDefinitionTree definition) {
 		FunctionImplementationInfo info = new FunctionImplementationInfo(
