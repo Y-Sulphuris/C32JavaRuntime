@@ -19,6 +19,7 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
 import java.util.*;
+import java.util.function.Consumer;
 
 @RequiredArgsConstructor
 @Getter
@@ -123,5 +124,21 @@ public class BlockStatement extends AbstractSpaceInfo implements Statement, Spac
 		if (var == null && getParent() instanceof BlockStatement)
 			return ((BlockStatement) getParent()).getLocalVariable(name);
 		return var;
+	}
+
+	public Collection<VariableInfo> collectLocalVariables() {
+		List<VariableInfo> variables = new LinkedList<>();
+		forEachLocalVariableDeclaration(variables::add);
+		return variables;
+	}
+
+	public void forEachLocalVariableDeclaration(Consumer<VariableInfo> consumer) {
+		for (Statement statement : statements) {
+			if (statement instanceof VariableDeclarationStatement) for (VariableInfo variable : ((VariableDeclarationStatement) statement).getVariables())
+					consumer.accept(variable);
+			else if (statement instanceof BlockStatement) {
+				((BlockStatement) statement).forEachLocalVariableDeclaration(consumer);
+			}
+		}
 	}
 }

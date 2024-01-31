@@ -1,15 +1,12 @@
 package c32.compiler.codegen.bytecode;
 
-import c32.compiler.Location;
 import c32.compiler.logical.tree.*;
 import c32.compiler.logical.tree.expression.BinaryOperator;
 import c32.compiler.logical.tree.statement.BlockStatement;
 import c32.compiler.logical.tree.statement.LabelStatement;
 import c32.compiler.logical.tree.statement.NopStatement;
 import c32.compiler.logical.tree.statement.Statement;
-import org.jetbrains.annotations.Nullable;
 import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 
 import java.util.HashMap;
@@ -30,9 +27,10 @@ final class ASMUtils {
 	public static String asDescriptor(TypeInfo type) {
 		if (type instanceof TypeInfo.PrimitiveTypeInfo) {
 			if (type == BOOL) return "Z";
-			if (type == BYTE || type == UBYTE) return "B";
-			if (type == SHORT || type == USHORT) return "S";
-			if (type == INT || type == UINT) return "I";
+			if (type == BYTE || type == UBYTE || type == CHAR8) return "B";
+			if (type == SHORT || type == USHORT || type == HALF) return "S";
+			if (type == CHAR) return "C";
+			if (type == INT || type == UINT || type == CHAR32) return "I";
 			if (type == LONG || type == ULONG) return "J";
 			if (type == FLOAT) return "F";
 			if (type == DOUBLE) return "D";
@@ -116,7 +114,10 @@ final class ASMUtils {
 
 
 	public static void addRegisterVariableHandle(VariableInfo var, int index) {
-		varHandles.put(var,new IndexedVariableHandle(var,index));
+		varHandles.put(var, new IndexedVariableHandle(var,index));
+	}
+	public static void addLocalVariableHandle(VariableInfo var, long offset) {
+		varHandles.put(var, new ShadowStackVariableHandle(var, offset));
 	}
 
 	public static Class<?> asJavaPrimitive(TypeInfo type) {
@@ -229,7 +230,11 @@ final class ASMUtils {
 		mv.visitEnd();
 	}
 
-	public static int calcStackFrameSize(FunctionInfo function) {
-		return 0;
+	public static long calcStackFrameSize(FunctionImplementationInfo function) {
+		long size = 0;
+		for (VariableInfo variable : function.getImplementation().collectLocalVariables()) {
+			if (!variable.isRegister()) size += variable.getTypeRef().getType().sizeof();
+		}
+		return size;
 	}
 }

@@ -1,6 +1,7 @@
 package c32.compiler.logical.tree.expression;
 
 import c32.compiler.Location;
+import c32.compiler.except.CompilerException;
 import c32.compiler.logical.IllegalOperatorException;
 import c32.compiler.logical.tree.TypeInfo;
 import c32.compiler.logical.tree.TypePointerInfo;
@@ -24,7 +25,13 @@ public class UnaryPrefixExpression implements Expression {
 	public UnaryPrefixExpression(Location location, boolean _const, Expression expr, String operator) {
 		this.location = location;
 		this.expr = expr;
+		if (operator.equals("&")) {
+			if (!(expr instanceof VariableRefExpression) || ((VariableRefExpression) expr).getVariable().is_register())
+				throw new CompilerException(location, "cannot take address from expression");
+			((VariableRefExpression) expr).getVariable().setNotRegister();
+		}
 		this.operator = UnaryPrefixOperator.findOperator(location, new TypeRefInfo(_const,false,expr.getReturnType()), operator);
+
 	}
 
 	@Override

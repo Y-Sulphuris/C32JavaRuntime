@@ -6,7 +6,6 @@ import c32.compiler.logical.tree.*;
 import c32.compiler.logical.tree.expression.*;
 import c32.compiler.logical.tree.statement.*;
 import lombok.Getter;
-import org.jetbrains.annotations.Nullable;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 
@@ -23,15 +22,16 @@ public final class FunctionWriter {
 	private final MethodVisitor mv;
 
 	private int localVariableIndex = 0;
+	private long localVariableOffset = 0;
 	private final HashMap<LabelStatement, Label> labels = new HashMap<>();
 	private final HashMap<LabelStatement,Label> usedlabels = new HashMap<>();
 	private Label NEXT_LABEL = null;
-	private final int stackFrameSize;
+	private final long stackFrameSize;
 
 	public FunctionWriter(MethodVisitor mv) {
 		this.func = null;
 		this.mv = mv;
-		this.stackFrameSize = -1;
+		this.stackFrameSize = 0;
 	}
 	public void writeClinit(Collection<FieldInfo> fieldsToInit) {
 		if (func != null)
@@ -57,7 +57,8 @@ public final class FunctionWriter {
 		localVariableIndex++;//skip (ptr size = 8)
 		for (VariableInfo arg : func.getArgs()) {
 			//0 - stack pointer (always)
-			if (!arg.is_register()) addRegisterVariableHandle(arg, ++localVariableIndex);
+			if (arg.isRegister()) addRegisterVariableHandle(arg, ++localVariableIndex);
+			else throw new UnsupportedOperationException(arg.getCanonicalName());//addLocalVariableHandle(arg, localVariableOffset += arg.getTypeRef().getType().sizeof());
 			if (arg.getTypeRef().getType().sizeof() > 4) ++localVariableIndex;
 		}
 		writeBlockStatement(func.getImplementation());
@@ -240,19 +241,54 @@ public final class FunctionWriter {
 
 
 	private void storeNewVariable(VariableInfo variable) {
-		if (ASMUtils.canBePresentAsJavaPrimitive(variable.getTypeRef().getType())) {
+		if (variable.isRegister() && ASMUtils.canBePresentAsJavaPrimitive(variable.getTypeRef().getType())) {
 			Class<?> cls = ASMUtils.asJavaPrimitive(variable.getTypeRef().getType());
 			store_register(cls,variable);
 		} else {
-			throw new UnsupportedOperationException(variable.getTypeRef().getType().toString());
+			store_local(variable);
+			//throw new UnsupportedOperationException(variable.getTypeRef().getType().getCanonicalName() + " " + variable.getCanonicalName());
 		}
 	}
+
+
+
+	private void store_register(Class<?> type, VariableInfo var) {
+		int index = ++localVariableIndex;
+		if (type == long.class || type == double.class)
+			++localVariableIndex;
+
+		int opcode;
+		if (type == float.class) {
+			opcode = FSTORE;
+		} else if (type == long.class) {
+			opcode = LSTORE;
+		} else if (type == double.class) {
+			opcode = DSTORE;
+		} else {
+			if (type == int.class || type == byte.class || type == short.class || type == char.class || type == boolean.class) {
+				opcode = ISTORE;
+			} else {
+				throw new IllegalArgumentException(type.getName());
+			}
+		}
+		//store X
+		mv.visitVarInsn(opcode,index);
+		addRegisterVariableHandle(var,index);
+	}
+
+	private void store_local(VariableInfo variable) {
+		long offset = localVariableOffset;
+		localVariableOffset += variable.getTypeRef().getType().sizeof();
+		storeToLocalAddress(variable.getTypeRef().getType(), offset);
+		addLocalVariableHandle(variable, offset);
+	}
+
 	private void storeVariable(VariableInfo variable) {
 		if (variable instanceof FieldInfo) {
 			mv.visitFieldInsn(PUTSTATIC, asClassName(((FieldInfo) variable).getContainer()), variable.getName() , asDescriptor(variable.getTypeRef().getType()));
 		} else {
 			VariableHandle handle = getHandle(variable);
-			handle.storeToMe(mv);
+			handle.storeToMe(mv, this);
 		}
 	}
 
@@ -279,30 +315,35 @@ public final class FunctionWriter {
 		mv.visitMethodInsn(INVOKESTATIC,"c32/extern/Memory", methodName, descriptor, false);
 	}
 
-	private void store_register(Class<?> type, @Nullable VariableInfo var) {
-		int index = ++localVariableIndex;
-		if (type == long.class || type == double.class)
-			++localVariableIndex;
-
-		int opcode;
-		if (type == float.class) {
-			opcode = FSTORE;
-		} else if (type == long.class) {
-			opcode = LSTORE;
-		} else if (type == double.class) {
-			opcode = DSTORE;
-		} else {
-			if (type == int.class || type == byte.class || type == short.class || type == char.class || type == boolean.class) {
-				opcode = ISTORE;
-			} else {
-				throw new IllegalArgumentException(type.getName());
-			}
+	private void loadStackPointerWithOffset(long offset) {
+		loadStackBasePointer();
+		if (offset != 0) {
+			mv.visitLdcInsn(offset);
+			mv.visitInsn(LADD);
 		}
-		//store X
-		mv.visitVarInsn(opcode,index);
-		if (var != null)
-			addRegisterVariableHandle(var,index);
 	}
+
+	void storeToLocalAddress(TypeInfo type, long offset) {
+		//stack: {value}
+		loadStackPointerWithOffset(offset); //stack: {value, address}
+		if (type.sizeof() > 4) {//если на стеке лежит long/double
+			//swap long and int
+			mv.visitInsn(DUP2_X2);
+			mv.visitInsn(POP2); //stack: {address, value}
+			//mv.visitInsn(SWAP);
+		} else {
+			//swap long and int
+			mv.visitInsn(DUP2_X1);
+			mv.visitInsn(POP2); //stack: {address, value}
+		}
+		Class<?> primitive = asJavaPrimitive(type);
+		char[] name = primitive.getCanonicalName().toCharArray();
+		name[0] = Character.toUpperCase(name[0]);
+		String methodName = "put" + String.valueOf(name);
+		String descriptor = "(J" + ASMUtils.asDescriptor(type) + ")V";
+		mv.visitMethodInsn(INVOKESTATIC,"c32/extern/Memory", methodName, descriptor, false);
+	}
+
 
 	//endregion
 
@@ -366,7 +407,7 @@ public final class FunctionWriter {
 				System.err.println(expr.getLocation().getStartLine());
 				throw new NullPointerException("ASMUtils.getHandle(" + expr.getVariable().getCanonicalName() + ")");
 			}
-			handle.loadMe(mv);
+			handle.loadMe(mv, this);
 		}
 	}
 
@@ -404,8 +445,11 @@ public final class FunctionWriter {
 		}
 	}
 
-	private void loadStackPointer() {
+	private void loadStackBasePointer() {
 		mv.visitVarInsn(LLOAD,0);
+	}
+	private void loadStackPointer() {
+		loadStackBasePointer();
 		if (stackFrameSize != 0) {
 			mv.visitLdcInsn(stackFrameSize);
 			mv.visitInsn(LADD);
@@ -451,6 +495,10 @@ public final class FunctionWriter {
 		}
 	}
 
+	void loadFromLocalAddress(TypeInfo type, long offset) {
+		loadStackPointerWithOffset(offset);
+		applyDereferensing(type);
+	}
 
 	private void loadFromAddress(Expression pointer, Expression offset) {
 		loadPointerExpression(pointer, offset);
@@ -462,11 +510,11 @@ public final class FunctionWriter {
 	private void loadTernaryExpression(TernaryExpression expr) {
 		Expression cond = expr.getCond();
 		Runnable ifTrue = () -> {
-			loadExpression(expr.getIfTrue());
+			loadExpression(expr.getIfFalse());
 		};
 
 		Runnable ifFalse = () -> {
-			loadExpression(expr.getIfFalse());
+			loadExpression(expr.getIfTrue());
 		};
 		Label NEXT_LABEL = new Label();
 		if (cond instanceof BinaryExpression) {
@@ -493,7 +541,8 @@ public final class FunctionWriter {
 
 	private void loadUnaryPrefixExpression(UnaryPrefixExpression expr) {
 		UnaryPrefixOperator op = expr.getOperator();
-		loadExpression(expr.getExpr(),op.getTargetType().getType());
+		if (!op.getOp().equals("&"))
+			loadExpression(expr.getExpr(),op.getTargetType().getType());
 
 		switch (op.getOp()) {
 			case "*":
@@ -536,6 +585,11 @@ public final class FunctionWriter {
 					mv.visitInsn(INEG);
 				}
 				break;
+			case "&":
+				if (expr.getExpr() instanceof VariableRefExpression) {
+					loadStackPointerWithOffset(((ShadowStackVariableHandle)ASMUtils.getHandle(((VariableRefExpression) expr.getExpr()).getVariable())).getOffset());
+					break;
+				} else throw new UnsupportedOperationException();
 			default:
 				throw new UnsupportedOperationException(op.getOp());
 		}

@@ -13,9 +13,9 @@ import static org.objectweb.asm.Opcodes.ISTORE;
 public abstract class VariableHandle {
 	private final VariableInfo targetVariable;
 
-	public abstract void loadMe(MethodVisitor mv);
+	public abstract void loadMe(MethodVisitor mv, FunctionWriter fw);
 
-	public abstract void storeToMe(MethodVisitor mv);
+	public abstract void storeToMe(MethodVisitor mv, FunctionWriter fw);
 }
 @Getter
 class IndexedVariableHandle extends VariableHandle {
@@ -45,12 +45,12 @@ class IndexedVariableHandle extends VariableHandle {
 	}
 
 	@Override
-	public void loadMe(MethodVisitor mv) {
+	public void loadMe(MethodVisitor mv, FunctionWriter fw) {
 		mv.visitVarInsn(ASMUtils.getLoadInstruction(this.getTargetVariable().getTypeRef().getType()), index);
 	}
 
 	@Override
-	public void storeToMe(MethodVisitor mv) {
+	public void storeToMe(MethodVisitor mv, FunctionWriter fw) {
 		mv.visitVarInsn(storeOpcode,index);
 	}
 }

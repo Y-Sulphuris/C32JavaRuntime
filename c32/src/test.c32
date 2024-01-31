@@ -14,14 +14,21 @@ void test3(int i2, int* l, int i6) {
 	int b3 = i2;
 }
 
-void main0() {
-	restrict (int*) i = std::malloc(64);
+void changeI(int* i, int newValue) {
+	*i = newValue;
+}
+
+void main() {
+	int i = 50;
+	println(i);
+	changeI(&i, 60);
+	println(i);
 }
 
 import std.println, std.print;
 
 int len = 16;
-void main() {
+void main0() {
 	import std.Core.*;
 
 

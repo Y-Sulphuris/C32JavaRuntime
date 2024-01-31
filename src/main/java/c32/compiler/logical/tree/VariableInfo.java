@@ -49,11 +49,15 @@ public class VariableInfo extends AbstractSymbolInfo {
 	-				false - unknown, but can be register (has no register modifier)
 	register[false]	null - force no register (register modifier are not allowed, or register[false] is used)
 	 */
-	private final Boolean _register;
+	private Boolean _register;
 
 	public boolean is_register() {
 		if (_register == null) return false;
 		return _register;
+	}
+
+	public void setNotRegister() {
+		_register = null;
 	}
 
 	public boolean isRegister() {
@@ -61,7 +65,7 @@ public class VariableInfo extends AbstractSymbolInfo {
 		if (_register) return true;
 		if (typeRef.getType() instanceof TypeArrayInfo && !((TypeArrayInfo) typeRef.getType()).isStaticArray())
 			return false;
-		for (Weak<Expression> usage : getUsages()) {
+		if (getTypeRef().getType() instanceof TypeArrayInfo) for (Weak<Expression> usage : getUsages()) {
 			Expression expr = usage.get();
 			if (expr instanceof IndexExpression) {
 				if (((IndexExpression) expr).getArgs().get(0).asCompileTimeLiteralExpression() == null) {

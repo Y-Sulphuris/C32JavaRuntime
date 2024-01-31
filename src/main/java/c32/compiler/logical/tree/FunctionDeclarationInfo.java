@@ -53,7 +53,7 @@ public class FunctionDeclarationInfo extends AbstractSymbolInfo implements Funct
 									param.getTypeElement().get_const() != null,
 									param.getTypeElement().get_restrict() != null,
 									parent.resolveType(parent,param.getTypeElement())),
-							null,false,null
+							null,false,false
 					)
 			);
 		}
