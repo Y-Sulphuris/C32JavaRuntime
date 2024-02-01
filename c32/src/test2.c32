@@ -1,4 +1,95 @@
 package test;
 
+import std.*;
 
+
+//linked to c32.extern.Runtime.randInt(I)I
+extern int randInt(int radius);
+
+
+int findMin(const int* array, const int len) {
+    int min = 0xFFFFFF;
+    int index = -1;
+    int i = 0;
+    while (i < len) {
+        if (array[i] < min) {
+            int temp = array[i];
+            //эта переменная нужна, чтобы обойти баг компилятора, который не воспринимает квадратные скобки в правой части бинарных выражений
+            min = temp;
+            index = i;
+        }
+        ++i;
+    }
+    return index;
+}
+int findMax(const int* array, const int len) {
+    int max = -0xFFFFFF;
+    int index = -1;
+    int i = 0;
+    while (i < len) {
+        if (array[i] > max) {
+            int temp = array[i];
+            max = temp;
+            index = i;
+        }
+        ++i;
+    }
+    return index;
+}
+
+void main() {
+    int n = 0;
+    while (n < 1000000) {
+        print(n);
+        print(':');
+        print('\t');
+        print(time(n));
+        print('m');
+        println('s');
+        n = n + 1000;
+    }
+}
+
+ulong time(int len) {
+    const ulong startTime = Core::currentTimeMillis();
+    int* array = malloc(len * sizeof(int));
+    {   // for пока нет :(
+        int i = 0;
+        while (i < len) {
+            array[i] = randInt(100);
+            ++i;
+        }
+    }
+    int min = findMin(array, len);
+    int max = findMax(array, len);
+    //print(min);
+    //print('\t');
+    //println(array[min]);
+    //print(max);
+    //print('\t');
+    //println(array[max]);
+    //урааа работает
+
+    int result = 1;
+    if(max > min) {
+        int i = min;
+        while(i < max) {
+            int temp = array[i];
+            result = result * temp;
+            ++i;
+        }
+    } else {
+        int i = max;
+        while(i < min) {
+            int temp = array[i];
+            result = result * temp;
+            ++i;
+        }
+    }
+    const ulong endTime = Core::currentTimeMillis();
+
+
+    free(array);
+    return endTime - startTime;
+}
 

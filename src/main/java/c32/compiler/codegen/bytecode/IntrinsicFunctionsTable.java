@@ -62,6 +62,9 @@ public class IntrinsicFunctionsTable {
 		table.put("std.Core.sleep[long]",new EFSign("java/lang/Thread","sleep",      "(J)V"));
 		table.put("std.Core.nanoTime[]",new EFSign("java/lang/System","nanoTime",      "()J"));
 		table.put("std.Core.currentTimeMillis[]",new EFSign("java/lang/System","currentTimeMillis",      "()J"));
+
+		//temp
+		table.put("test.randInt[int]",new EFSign("c32/extern/Runtime","randInt",      "(I)I"));
 	}
 
 	public static void loadExternCall(FunctionWriter wr, FunctionInfo func, CallExpression expr) {

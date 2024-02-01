@@ -3,6 +3,8 @@ package c32.extern;
 import com.IOUtils;
 import com.natives.NativesInit;
 
+import java.util.Random;
+
 public final class Runtime {
 	private Runtime() throws InstantiationException {
 		throw new InstantiationException();
@@ -144,4 +146,11 @@ public final class Runtime {
 	public static void printf(char[] ch, Object... args) {
 
 	}*/
+
+
+	//temp
+	private static final Random rand = new Random();
+	public static int randInt(int radius) {
+		return rand.nextInt(radius) - radius/2;
+	}
 }

@@ -18,9 +18,10 @@ void changeI(int* i, int newValue) {
 	*i = newValue;
 }
 
-void main() {
+void main1() {
 	int[4] b = {55b,66b,77b,88b};
-	println(&b[0]);
+	//println(&b[0]);
+
 	/*int i = 50;
 	println(i);
 	changeI(&i, 60);
