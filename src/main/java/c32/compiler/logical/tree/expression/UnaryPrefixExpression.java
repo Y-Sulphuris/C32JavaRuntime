@@ -27,7 +27,7 @@ public class UnaryPrefixExpression implements Expression {
 		this.expr = expr;
 		if (operator.equals("&")) {
 			if (!(expr instanceof VariableRefExpression) || ((VariableRefExpression) expr).getVariable().is_register())
-				throw new CompilerException(location, "cannot take address from expression");
+				throw new CompilerException(location, "cannot take address from given expression");
 			((VariableRefExpression) expr).getVariable().setNotRegister();
 		}
 		this.operator = UnaryPrefixOperator.findOperator(location, new TypeRefInfo(_const,false,expr.getReturnType()), operator);

@@ -11,6 +11,7 @@ import org.objectweb.asm.MethodVisitor;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static c32.compiler.codegen.bytecode.ASMUtils.*;
@@ -24,7 +25,7 @@ public final class FunctionWriter {
 	private int localVariableIndex = 0;
 	private long localVariableOffset = 0;
 	private final HashMap<LabelStatement, Label> labels = new HashMap<>();
-	private final HashMap<LabelStatement,Label> usedlabels = new HashMap<>();
+	private final HashMap<LabelStatement, Label> usedlabels = new HashMap<>();
 	private Label NEXT_LABEL = null;
 	private final long stackFrameSize;
 
@@ -315,6 +316,11 @@ public final class FunctionWriter {
 		mv.visitMethodInsn(INVOKESTATIC,"c32/extern/Memory", methodName, descriptor, false);
 	}
 
+	private void loadStackPointerWithOffset(Expression offset) {
+		loadStackBasePointer();
+		loadExpression(offset);
+		mv.visitInsn(LADD);
+	}
 	private void loadStackPointerWithOffset(long offset) {
 		loadStackBasePointer();
 		if (offset != 0) {
@@ -324,24 +330,34 @@ public final class FunctionWriter {
 	}
 
 	void storeToLocalAddress(TypeInfo type, long offset) {
-		//stack: {value}
-		loadStackPointerWithOffset(offset); //stack: {value, address}
-		if (type.sizeof() > 4) {//если на стеке лежит long/double
-			//swap long and int
-			mv.visitInsn(DUP2_X2);
-			mv.visitInsn(POP2); //stack: {address, value}
-			//mv.visitInsn(SWAP);
+		if (type instanceof TypeInfo.PrimitiveTypeInfo) {
+			//stack: {value}
+			loadStackPointerWithOffset(offset); //stack: {value, address}
+			if (type.sizeof() > 4) {//если на стеке лежит long/double
+				//swap long and int
+				mv.visitInsn(DUP2_X2);
+				mv.visitInsn(POP2); //stack: {address, value}
+				//mv.visitInsn(SWAP);
+			} else {
+				//swap long and int
+				mv.visitInsn(DUP2_X1);
+				mv.visitInsn(POP2); //stack: {address, value}
+			}
+			Class<?> primitive = asJavaPrimitive(type);
+			char[] name = primitive.getCanonicalName().toCharArray();
+			name[0] = Character.toUpperCase(name[0]);
+			String methodName = "put" + String.valueOf(name);
+			String descriptor = "(J" + ASMUtils.asDescriptor(type) + ")V";
+			mv.visitMethodInsn(INVOKESTATIC,"c32/extern/Memory", methodName, descriptor, false);
+		} else if (type instanceof TypeArrayInfo) {
+			TypeArrayInfo array = (TypeArrayInfo) type;
+			if (!array.isStaticArray()) throw new UnsupportedOperationException();
+			for (int i = array.getStaticLength()-1; i >= 0; i--) {
+				storeToLocalAddress(array.getElementType().getType(), offset + array.getElementType().getType().sizeof() * i);
+			}
 		} else {
-			//swap long and int
-			mv.visitInsn(DUP2_X1);
-			mv.visitInsn(POP2); //stack: {address, value}
+			throw new UnsupportedOperationException();
 		}
-		Class<?> primitive = asJavaPrimitive(type);
-		char[] name = primitive.getCanonicalName().toCharArray();
-		name[0] = Character.toUpperCase(name[0]);
-		String methodName = "put" + String.valueOf(name);
-		String descriptor = "(J" + ASMUtils.asDescriptor(type) + ")V";
-		mv.visitMethodInsn(INVOKESTATIC,"c32/extern/Memory", methodName, descriptor, false);
 	}
 
 
@@ -378,6 +394,8 @@ public final class FunctionWriter {
 			mv.visitLdcInsn(0L);
 		} else if (expr instanceof CharLiteralExpression) {
 			mv.visitIntInsn(SIPUSH,((CharLiteralExpression) expr).getCh());
+		} else if (expr instanceof InitializerListExpression) {
+			loadInitializerListExpression((InitializerListExpression)expr, expectedType);
 		}
 		else {
 			throw new UnsupportedOperationException(expr.getClass().getName());
@@ -386,15 +404,34 @@ public final class FunctionWriter {
 			applyCast(expr.getReturnType(),expectedType);
 	}
 
+	private void loadInitializerListExpression(InitializerListExpression expr, TypeInfo expectedType) {
+		List<Expression> args = expr.getArgs();
+		TypeInfo expected = null;
+		if (expectedType instanceof TypeArrayInfo) {
+			expected = ((TypeArrayInfo) expectedType).getElementType().getType();
+		}
+		expr.checkImplicitCastTo_mutable(expectedType);
+		for (int i = 0; i < args.size(); i++) {
+			loadExpression(args.get(i), expected);
+		}
+	}
 
 
 	private void loadIndexExpression(IndexExpression expr) {
 		Expression array = expr.getArray();
 		if (array.getReturnType() instanceof TypePointerInfo) {
 			loadFromAddress(array, expr.getArgs().get(0));
+		} else if (array.getReturnType() instanceof TypeArrayInfo) {
+			loadFromArray(array, expr.getArgs().get(0));
 		} else {
 			throw new UnsupportedOperationException();
 		}
+	}
+
+	private void loadFromArray(Expression array, Expression index) {
+		loadExpressionAddress(array);
+		loadPointerOffset(null,((TypeArrayInfo) array.getReturnType()).getElementType().getType(), index);
+		applyDereferensing(((TypeArrayInfo)array.getReturnType()).getElementType().getType());
 	}
 
 	private void loadVariableExpression(VariableRefExpression expr) {
@@ -470,7 +507,9 @@ public final class FunctionWriter {
 
 		int i = 0;
 		for (Expression arg : expr.getArgs()) {
-			loadExpression(arg, expr.getFunction().getArgs().get(i++).getTypeRef().getType());
+			VariableInfo param = func.getArgs().get(i++);
+			if (param.isRegister()) loadExpression(arg, param.getTypeRef().getType());
+			else throw new UnsupportedOperationException(param.getCanonicalName());
 		}
 		mv.visitMethodInsn(INVOKESTATIC,
 				ASMUtils.asClassName(func.getParent()),
@@ -485,15 +524,21 @@ public final class FunctionWriter {
 		if (!(pointer.getReturnType() instanceof TypePointerInfo)) throw new IllegalArgumentException();
 		loadExpression(pointer); //push pointer
 		if (offset != null) {
-			loadExpression(offset); //push offset
-			if (offset.getReturnType() != pointer.getReturnType()) {
-				applyCast(offset.getReturnType(),pointer.getReturnType());
-			}
-			mv.visitLdcInsn(((TypePointerInfo) pointer.getReturnType()).getTargetType().getType().sizeof()); //push size
-			mv.visitInsn(LMUL); //mul absoffset offset * size
-			mv.visitInsn(LADD); //add pointer + absoffset
+			loadPointerOffset(pointer.getReturnType(),((TypePointerInfo) pointer.getReturnType()).getTargetType().getType(), offset);
 		}
 	}
+	private void loadPointerOffset(TypeInfo type, TypeInfo targetType, Expression offset) {
+		loadExpression(offset); //push offset
+		if (type == null) {
+			applyCast(offset.getReturnType(), TypeInfo.PrimitiveTypeInfo.LONG);
+		} else if (offset.getReturnType() != type) {
+			applyCast(offset.getReturnType(),type);
+		}
+		mv.visitLdcInsn(targetType.sizeof()); //push size
+		mv.visitInsn(LMUL); //mul absoffset offset * size
+		mv.visitInsn(LADD); //add pointer + absoffset
+	}
+
 
 	void loadFromLocalAddress(TypeInfo type, long offset) {
 		loadStackPointerWithOffset(offset);
@@ -586,13 +631,20 @@ public final class FunctionWriter {
 				}
 				break;
 			case "&":
-				if (expr.getExpr() instanceof VariableRefExpression) {
-					loadStackPointerWithOffset(((ShadowStackVariableHandle)ASMUtils.getHandle(((VariableRefExpression) expr.getExpr()).getVariable())).getOffset());
-					break;
-				} else throw new UnsupportedOperationException();
+				loadExpressionAddress(expr.getExpr());
+				break;
 			default:
 				throw new UnsupportedOperationException(op.getOp());
 		}
+	}
+
+	private void loadExpressionAddress(Expression expr) {
+		if (expr instanceof VariableRefExpression) {
+			loadVariableAddress((VariableRefExpression)expr);
+		} else throw new UnsupportedOperationException();
+	}
+	private void loadVariableAddress(VariableRefExpression varRef) {
+		loadStackPointerWithOffset(((ShadowStackVariableHandle)ASMUtils.getHandle(varRef.getVariable())).getOffset());
 	}
 
 	private void loadBinaryExpression(BinaryExpression expr) {

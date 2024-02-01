@@ -19,10 +19,12 @@ void changeI(int* i, int newValue) {
 }
 
 void main() {
-	int i = 50;
+	int[4] b = {55b,66b,77b,88b};
+	println(&b[0]);
+	/*int i = 50;
 	println(i);
 	changeI(&i, 60);
-	println(i);
+	println(i);*/
 }
 
 import std.println, std.print;
