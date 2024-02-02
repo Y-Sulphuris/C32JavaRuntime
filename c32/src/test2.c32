@@ -37,7 +37,7 @@ int findMax(const int* array, const int len) {
     return index;
 }
 
-void main() {
+void main1() {
     int n = 0;
     while (n < 1000000) {
         print(n);
@@ -74,15 +74,13 @@ ulong time(int len) {
     if(max > min) {
         int i = min;
         while(i < max) {
-            int temp = array[i];
-            result = result * temp;
+            result = result * array[i];
             ++i;
         }
     } else {
         int i = max;
         while(i < min) {
-            int temp = array[i];
-            result = result * temp;
+            result = result * array[i];
             ++i;
         }
     }

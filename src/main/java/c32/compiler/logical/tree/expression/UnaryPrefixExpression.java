@@ -48,5 +48,16 @@ public class UnaryPrefixExpression implements Expression {
 	public boolean isAssignable() {
 		return operator.getOp().equals("*");
 	}
+
+	@Override
+	public Expression asCompileTimeLiteralExpression() {
+		if (operator.getOp().equals("-")) {
+			Expression t = expr.asCompileTimeLiteralExpression();
+			if (t instanceof NumericLiteralExpression) {
+				return new NumericLiteralExpression(((NumericLiteralExpression) t).getNumber().negate(),t.getReturnType(),t.getLocation());
+			}
+		}
+		return Expression.super.asCompileTimeLiteralExpression();
+	}
 }
 

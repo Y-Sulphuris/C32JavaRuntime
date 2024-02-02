@@ -704,10 +704,6 @@ public class Parser {
 		token = nextToken();
 
 
-		while (token.type == TokenType.OPENSQUARE) {
-			lhs = new IndexExprTree(lhs,parseIndexList());
-		}
-
 		if (token.text.equals("?")) {
 			return parseTernaryOp(lhs);
 		}
@@ -789,6 +785,13 @@ public class Parser {
 		}
 
 		ExprTree expr = parse_Primary0();
+
+
+		while (seeNextToken().type == TokenType.OPENSQUARE) {
+			token = nextToken();
+			expr = new IndexExprTree(expr,parseIndexList());
+			curTok--;
+		}
 
 		if (seeNextToken().type == TokenType.OPERATOR) {
 			if (Compiler.getPostfixOperatorPriority(seeNextToken().text) > prefixPriority) {

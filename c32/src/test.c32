@@ -18,9 +18,9 @@ void changeI(int* i, int newValue) {
 	*i = newValue;
 }
 
-void main1() {
+void main() {
 	int[4] b = {55b,66b,77b,88b};
-	//println(&b[0]);
+	println(b[-1]);
 
 	/*int i = 50;
 	println(i);
@@ -33,7 +33,6 @@ import std.println, std.print;
 int len = 16;
 void main0() {
 	import std.Core.*;
-
 
 	int* p_i = new_int_array(len), new_int_array(size_t len) {
         return std::malloc(len * sizeof(int));
