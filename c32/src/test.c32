@@ -19,8 +19,11 @@ void changeI(int* i, int newValue) {
 }
 
 void main() {
-	int[4] b = {55b,66b,77b,88b};
-	println(b[-1]);
+	//int[4] b = {55b,66b,77b,88b};
+	byte b1 = (byte)255ub;
+	println(b1);
+	byte b2 = 10b;
+	println(b1/b2);
 
 	/*int i = 50;
 	println(i);

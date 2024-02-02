@@ -2,6 +2,7 @@ package test;
 
 import std.*;
 
+#pragma ignore;
 
 //linked to c32.extern.Runtime.randInt(I)I
 extern int randInt(int radius);

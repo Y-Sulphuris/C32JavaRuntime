@@ -85,5 +85,36 @@ public class NumericLiteralExpression implements LiteralExpression {
         } catch (NumberFormatException e) {
             throw new CompilerException(token.location,"invalid number format",e);
         }
+
+		rangeCheck();
     }
+	private void rangeCheck() {
+		long max = 0, min = 0;
+		if (getReturnType() == TypeInfo.PrimitiveTypeInfo.BYTE) {
+			max = Byte.MAX_VALUE;
+			min = Byte.MIN_VALUE;
+		} else if (getReturnType() == TypeInfo.PrimitiveTypeInfo.UBYTE) {
+			max = 0xFF;
+		} else if (getReturnType() == TypeInfo.PrimitiveTypeInfo.SHORT) {
+			max = Short.MAX_VALUE;
+			min = Short.MIN_VALUE;
+		} else if (getReturnType() == TypeInfo.PrimitiveTypeInfo.USHORT) {
+			max = 0xFFFF;
+		} else if (getReturnType() == TypeInfo.PrimitiveTypeInfo.INT) {
+			max = Integer.MIN_VALUE;
+			min = Integer.MIN_VALUE;
+		} else if (getReturnType() == TypeInfo.PrimitiveTypeInfo.UINT) {
+			max = 0xFFFFFFFFL;
+		} else if (getReturnType() == TypeInfo.PrimitiveTypeInfo.LONG) {
+			max = Long.MAX_VALUE;
+			min = Long.MIN_VALUE;
+		} else if (getReturnType() == TypeInfo.PrimitiveTypeInfo.ULONG) {
+			if (number.compareTo(new BigInteger("0xFFFFFFFFFFFFFFFF")) > 0)
+				throw new CompilerException(location, "ulong overflow");
+		}
+		if (max != min) {
+			if(number.longValue() > max || number.longValue() < min)
+				throw new CompilerException(location,getReturnType().getCanonicalName() + " overflow");
+		}
+	}
 }

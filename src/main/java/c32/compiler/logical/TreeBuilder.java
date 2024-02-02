@@ -27,6 +27,7 @@ public class TreeBuilder {
 		NamespaceInfo root = new NamespaceInfo("",null,true);
 
 		for (CompilationUnitTree unit : units) {
+			if (unit == null) continue;
 			NamespaceInfo current = root;
 			if (unit.getPackageTree() != null) {
 				PackageTree pk = unit.getPackageTree();

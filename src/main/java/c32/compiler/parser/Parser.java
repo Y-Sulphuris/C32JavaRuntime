@@ -48,7 +48,11 @@ public class Parser {
 	private List<DeclarationTree<?>> declarations;
 	public CompilationUnitTree parse(Stack<Token> tokens, String filename) {
 		this.tokens = tokens;
-		token = nextToken();
+		try {
+			token = nextToken();
+		} catch (CompilerException e) {
+			return null;
+		}
 		this.declarations = new ArrayList<>();
 		while (token.type != TokenType.EOF) {
 			DeclarationTree<?> decl = parseDeclaration();

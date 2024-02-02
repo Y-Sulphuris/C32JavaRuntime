@@ -163,7 +163,7 @@ public class Compiler {
 
 		CompilationUnitTree AST = getAST(source, file);
 
-		if (config.writeAST()) {
+		if (AST != null && config.writeAST()) {
 			ObjectMapper mapper = new ObjectMapper();
 			File astFile = new File(file.getAbsoluteFile() + "_AST.json");
 			PrintStream printStream = new PrintStream(astFile);
