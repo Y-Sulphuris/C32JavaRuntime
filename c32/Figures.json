@@ -1,6 +1,7 @@
 {
   "source-path" : "src",
   "target" : ["jvm"],
-  "startup" : "test.main"
+  "startup" : "test.main",
+  "debug" : true
 }
 

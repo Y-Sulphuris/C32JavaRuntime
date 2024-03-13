@@ -118,8 +118,15 @@ public final class FunctionWriter {
 			if (variable.getInitializer() == null) {
 				throw new CompilerException(variable.getLocation(),"initializer expected");
 			}
-			loadExpression(variable.getInitializer(), variable.getTypeRef().getType());
-			storeNewVariable(variable);
+			if (canBePresentAsJavaPrimitive(variable.getInitializer().getReturnType())) {
+				loadExpression(variable.getInitializer(), variable.getTypeRef().getType());
+				storeNewVariable(variable);
+			} else if (variable.getInitializer().getReturnType() instanceof TypeArrayInfo) {
+				long offset = alloca(variable);
+				throw new UnsupportedOperationException("todo");
+			} else {
+				throw new UnsupportedOperationException(variable.getInitializer().getReturnType().getCanonicalName());
+			}
 		}
 	}
 
@@ -277,11 +284,16 @@ public final class FunctionWriter {
 		addRegisterVariableHandle(var,index);
 	}
 
-	private void store_local(VariableInfo variable) {
+	private long alloca(VariableInfo variable) {
 		long offset = localVariableOffset;
 		localVariableOffset += variable.getTypeRef().getType().sizeof();
-		storeToLocalAddress(variable.getTypeRef().getType(), offset);
 		addLocalVariableHandle(variable, offset);
+		return offset;
+	}
+
+	private void store_local(VariableInfo variable) {
+		long offset = alloca(variable);
+		storeToLocalAddress(variable.getTypeRef().getType(), offset);
 	}
 
 	private void storeVariable(VariableInfo variable) {
@@ -330,7 +342,7 @@ public final class FunctionWriter {
 	}
 
 	void storeToLocalAddress(TypeInfo type, long offset) {
-		if (type instanceof TypeInfo.PrimitiveTypeInfo) {
+		if (type instanceof TypeInfo.PrimitiveTypeInfo || type instanceof TypePointerInfo) {
 			//stack: {value}
 			loadStackPointerWithOffset(offset); //stack: {value, address}
 			if (type.sizeof() > 4) {//если на стеке лежит long/double
@@ -804,9 +816,11 @@ public final class FunctionWriter {
 		registerCast(TypeInfo.PrimitiveTypeInfo.BYTE, TypeInfo.PrimitiveTypeInfo.LONG, 		I2L);
 		registerCast(TypeInfo.PrimitiveTypeInfo.BYTE, TypeInfo.PrimitiveTypeInfo.INT);
 		registerCast(TypeInfo.PrimitiveTypeInfo.BYTE, TypeInfo.PrimitiveTypeInfo.SHORT);
+		registerCast(TypeInfo.PrimitiveTypeInfo.UBYTE, TypeInfo.PrimitiveTypeInfo.BYTE,     I2B);
 
 		registerCast(TypeInfo.PrimitiveTypeInfo.SHORT, TypeInfo.PrimitiveTypeInfo.LONG, 	I2L);
 		registerCast(TypeInfo.PrimitiveTypeInfo.SHORT, TypeInfo.PrimitiveTypeInfo.INT);
+		registerCast(TypeInfo.PrimitiveTypeInfo.USHORT, TypeInfo.PrimitiveTypeInfo.SHORT,   I2S);
 		registerCast(TypeInfo.PrimitiveTypeInfo.SHORT, TypeInfo.PrimitiveTypeInfo.BYTE, 	I2B);
 		registerCast(TypeInfo.PrimitiveTypeInfo.SHORT, TypeInfo.PrimitiveTypeInfo.UBYTE, 	I2B);
 
@@ -826,8 +840,6 @@ public final class FunctionWriter {
 		//signed - unsigned
 		registerCastBoth(TypeInfo.PrimitiveTypeInfo.ULONG, TypeInfo.PrimitiveTypeInfo.LONG);
 		registerCastBoth(TypeInfo.PrimitiveTypeInfo.UINT, TypeInfo.PrimitiveTypeInfo.INT);
-		registerCastBoth(TypeInfo.PrimitiveTypeInfo.USHORT, TypeInfo.PrimitiveTypeInfo.SHORT);
-		registerCastBoth(TypeInfo.PrimitiveTypeInfo.UBYTE, TypeInfo.PrimitiveTypeInfo.BYTE);
 	}
 
 	private static void registerCastBoth(TypeInfo from, TypeInfo to) {
@@ -983,11 +995,21 @@ public final class FunctionWriter {
 
 	private void applyDereferensing(TypeInfo returnType) {
 		Class<?> primitive = asJavaPrimitive(returnType);
-		char[] name = primitive.getCanonicalName().toCharArray();
-		name[0] = Character.toUpperCase(name[0]);
-		String methodName = "get" + String.valueOf(name);
-		String descriptor = "(J)" + ASMUtils.asDescriptor(returnType);
-		mv.visitMethodInsn(INVOKESTATIC,"c32/extern/Memory", methodName, descriptor, false);
+		if (primitive != null) {
+			char[] name = primitive.getCanonicalName().toCharArray();
+			name[0] = Character.toUpperCase(name[0]);
+			String methodName = "get" + String.valueOf(name);
+			String descriptor = "(J)" + ASMUtils.asDescriptor(returnType);
+			mv.visitMethodInsn(INVOKESTATIC,"c32/extern/Memory", methodName, descriptor, false);
+		} else if (returnType instanceof TypeArrayInfo) {
+			TypeArrayInfo arrayType = (TypeArrayInfo) returnType;
+			if (!arrayType.isStaticArray()) throw new UnsupportedOperationException();
+			for (int i = 0; i < arrayType.getStaticLength(); i++) {
+				throw new UnsupportedOperationException("aaaaaa");
+			}
+			throw new UnsupportedOperationException("aaaaaaaaaaaaaaaa");
+		} else
+			throw new UnsupportedOperationException(returnType.getCanonicalName());
 	}
 
 	//endregion

@@ -785,7 +785,11 @@ public class Parser {
 		if (token.type == TokenType.OPERATOR) {
 			prefixOperator = token;
 			prefixPriority = Compiler.getPrefixOperatorPriority(prefixOperator.text);
-			token = nextToken();
+			if (prefixPriority == -1) {
+				prefixPriority = 0;
+			} else {
+				token = nextToken();
+			}
 		}
 
 		ExprTree expr = parse_Primary0();

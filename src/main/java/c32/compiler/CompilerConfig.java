@@ -19,12 +19,15 @@ public final class CompilerConfig {
 	private final String mainFunctionName;
 	private final File src;
 	private final Set<Generator> targets;
+	private final boolean debug;
 	public static CompilerConfig parse(File configFile) throws IOException {
 		ObjectMapper mapper = new ObjectMapper();
 		JsonParser parser = mapper.createParser(configFile);
 		TreeNode node = parser.readValueAsTree();
 		File src = new File(node.get("source-path").toString().replace("\"",""));
 		String mainFunctionName = node.get("startup").toString().replace("\"","");
+		TreeNode debugNode = node.get("debug");
+		boolean needsPrintStackTrace = debugNode != null && debugNode.toString().equals("true");
 		int targetsCount = (node.get("target")).size();
 		Set<Generator> targets = new HashSet<>(targetsCount);
 		for (int i = 0; i < targetsCount; i++) {
@@ -46,7 +49,7 @@ public final class CompilerConfig {
 			}
 		}
 		parser.close();
-		return new CompilerConfig(mainFunctionName,src,targets);
+		return new CompilerConfig(mainFunctionName,src,targets,needsPrintStackTrace);
 	}
 
 	public boolean writeAST() {

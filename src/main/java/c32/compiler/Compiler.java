@@ -267,7 +267,12 @@ public class Compiler {
 				System.err.println("Invalid configuration format");
 				throw ee;
 			}
-			compile(allC32Files(config.getSrc()),config.getTargets());
+			try {
+				compile(allC32Files(config.getSrc()),config.getTargets());
+			} catch (CompilerException e) {
+				if (config.isDebug()) e.printStackTrace(System.err);
+				System.exit(1);
+			}
 			long end = System.currentTimeMillis();
 			System.out.println("Finished (total: " + (end - start) + "ms)\n");
 		}
