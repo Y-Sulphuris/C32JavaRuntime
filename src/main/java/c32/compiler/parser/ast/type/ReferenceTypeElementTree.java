@@ -9,8 +9,8 @@ public class ReferenceTypeElementTree extends TypeElementTree {
 	private final TypeElementTree elementType;
 	private final Token ampersand;
 
-	public ReferenceTypeElementTree(Token _const, Token _restrict, TypeElementTree elementType, Token ampersand) {
-		super(_const, _restrict);
+	public ReferenceTypeElementTree(Token _mut, Token _const, Token _restrict, TypeElementTree elementType, Token ampersand) {
+		super(_mut, _const, _restrict);
 		this.elementType = elementType;
 		this.ampersand = ampersand;
 	}

@@ -10,8 +10,8 @@ import lombok.Getter;
 public class TypeKeywordElementTree extends TypeElementTree {
 	private final Token keyword;
 
-	public TypeKeywordElementTree(Token _const, Token _restrict, Token keyword) {
-		super(_const,_restrict);
+	public TypeKeywordElementTree(Token _mut, Token _const, Token _restrict, Token keyword) {
+		super(_mut, _const,_restrict);
 		this.keyword = keyword;
 	}
 

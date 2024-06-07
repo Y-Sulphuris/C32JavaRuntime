@@ -32,6 +32,9 @@ public class FunctionDeclarationInfo extends AbstractSymbolInfo implements Funct
 		if (returnType == null) {
 			throw new CompilerException(retType.getLocation(),"'auto' is not allowed here");
 		}
+		if (retType.get_mut() != null)
+			throw new CompilerException(retType.get_mut().location, "modifier 'mut' has no affect there");
+
 		if (retType.get_const() != null)
 			throw new CompilerException(retType.get_const().location, "modifier 'const' has no affect there");
 
@@ -49,7 +52,7 @@ public class FunctionDeclarationInfo extends AbstractSymbolInfo implements Funct
 			args.add(
 					new VariableInfo(param.getLocation(),
 							argName,
-							new TypeRefInfo(
+							new TypeRefInfo(param.getTypeElement().get_mut() != null,
 									param.getTypeElement().get_const() != null,
 									param.getTypeElement().get_restrict() != null,
 									parent.resolveType(parent,param.getTypeElement())),

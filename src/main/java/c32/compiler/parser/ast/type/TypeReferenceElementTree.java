@@ -11,8 +11,8 @@ public class TypeReferenceElementTree extends TypeElementTree {
 	private final StaticElementReferenceTree reference;
 	private final Location location;
 
-	public TypeReferenceElementTree(Token _const, Token _restrict, StaticElementReferenceTree reference, Location location) {
-		super(_const, _restrict);
+	public TypeReferenceElementTree(Token _mut, Token _const, Token _restrict, StaticElementReferenceTree reference, Location location) {
+		super(_mut, _const, _restrict);
 		this.reference = reference;
 		this.location = location;
 	}

@@ -12,8 +12,8 @@ public class ArrayTypeElementTree extends TypeElementTree {
 	private final Token openSquare;
 	private final Token closeSquare;
 
-	public ArrayTypeElementTree(Token _const, Token _restrict, TypeElementTree elementType, Token openSquare, Token closeSquare) {
-		super(_const, _restrict);
+	public ArrayTypeElementTree(Token _mut, Token _const, Token _restrict, TypeElementTree elementType, Token openSquare, Token closeSquare) {
+		super(_mut, _const, _restrict);
 		this.elementType = elementType;
 		this.openSquare = openSquare;
 		this.closeSquare = closeSquare;

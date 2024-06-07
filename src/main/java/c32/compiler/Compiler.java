@@ -32,6 +32,7 @@ public class Compiler {
 			CONSTEXPR = "constexpr",
 			OVER = "over",
 			NOEXCEPT = "noexcept",
+			MUT = "mut",
 
 			PUBLIC = "public",
 			PROTECTED = "protected",
@@ -46,10 +47,10 @@ public class Compiler {
 				STATIC,
 				EXTERN,NATIVE,ABSTRACT,VIRTUAL,CONSTEXPR,OVER,
 				MUTABLE, "register"
-				);
+		);
 
 		postModifiers.addAll(modifiers);
-		Collections.addAll(postModifiers,PURE,CONST,NOEXCEPT);
+		Collections.addAll(postModifiers,PURE,CONST,NOEXCEPT,MUT);
 	}
 	public static final Set<String> keywords = new HashSet<>();
 	static {
@@ -95,6 +96,7 @@ public class Compiler {
 		"interface\n" +
 		"internal\n" +
 		"long\n" +
+		"mut\n" +
 		"mutable\n" +
 		"namespace\n" +
 		"native\n" +
@@ -333,7 +335,7 @@ public class Compiler {
 	}
 
 	private static String getErrorDescription(CompilerException e, String filename, String source) {
-		StringBuilder msg = new StringBuilder(e.getClass().getSimpleName()).append(": ").append(e.getRawMessage()).append(" (at ")
+		StringBuilder msg = new StringBuilder(e.getClass().getSimpleName()).append(": ").append(e.getRawMessage()).append(" (")
 				.append(filename);
 		if (e.getLocation() != null) {
 			msg.append(':').append(e.getLocation().getStartLine());

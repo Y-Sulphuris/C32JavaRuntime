@@ -153,7 +153,11 @@ public interface Expression {
 			if (expression instanceof VariableRefExpression) {
 				_const = ((VariableRefExpression) expression).getVariable().getTypeRef().is_const();
 			}
-			return new UnaryPrefixExpression(exprTree.getLocation(), _const, expression,((UnaryPrefixExprTree) exprTree).getOperator().text);
+			boolean _mut = false;
+			if (expression instanceof VariableRefExpression) {
+				_mut = ((VariableRefExpression) expression).getVariable().getTypeRef().is_mut();
+			}
+			return new UnaryPrefixExpression(exprTree.getLocation(), _mut, _const, expression,((UnaryPrefixExprTree) exprTree).getOperator().text);
 		}
 		else if (exprTree instanceof CastExprTree)
 		{

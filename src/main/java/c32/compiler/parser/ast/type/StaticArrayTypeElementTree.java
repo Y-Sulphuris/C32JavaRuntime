@@ -10,8 +10,8 @@ import lombok.Getter;
 public class StaticArrayTypeElementTree extends ArrayTypeElementTree {
 	private final ExprTree size;
 
-	public StaticArrayTypeElementTree(Token _const, Token _restrict, TypeElementTree elementType, Token openSquare, ExprTree size, Token closeSquare) {
-		super(_const, _restrict, elementType, openSquare, closeSquare);
+	public StaticArrayTypeElementTree(Token _mut, Token _const, Token _restrict, TypeElementTree elementType, Token openSquare, ExprTree size, Token closeSquare) {
+		super(_mut, _const, _restrict, elementType, openSquare, closeSquare);
 		this.size = size;
 	}
 

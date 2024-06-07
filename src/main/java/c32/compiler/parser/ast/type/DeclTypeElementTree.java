@@ -14,8 +14,8 @@ public class DeclTypeElementTree extends TypeElementTree {
 	private final Token openRound;
 	private final ExprTree expression;
 	private final Token closeRound;
-	public DeclTypeElementTree(@Nullable Token _const, @Nullable Token _restrict, Token keyword, Token openRound, ExprTree expression, Token closeRound) {
-		super(_const, _restrict);
+	public DeclTypeElementTree(@Nullable Token _mut, @Nullable Token _const, @Nullable Token _restrict, Token keyword, Token openRound, ExprTree expression, Token closeRound) {
+		super(_mut, _const, _restrict);
 		this.keyword = keyword;
 		this.openRound = openRound;
 		this.expression = expression;

@@ -16,6 +16,7 @@ import org.jetbrains.annotations.Nullable;
 @Getter
 @Setter
 public abstract class TypeElementTree implements Tree {
+	@Nullable private Token _mut;
 	@Nullable private Token _const;
 	@Nullable private Token _restrict;
 
@@ -23,8 +24,9 @@ public abstract class TypeElementTree implements Tree {
 	@Override
 	public JsonNode toJson(ObjectMapper mapper) {
 		ObjectNode root = mapper.createObjectNode();
-		if (_const != null) root.put("const",_const.text);
-		if (_restrict != null) root.put("const",_restrict.text);
+		if (_mut != null) root.put("mut", _mut.text);
+		if (_const != null) root.put("const", _const.text);
+		if (_restrict != null) root.put("restrict", _restrict.text);
 		return applyJson(mapper,root);
 	}
 

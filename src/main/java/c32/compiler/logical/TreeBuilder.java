@@ -293,7 +293,7 @@ public class TreeBuilder {
 
 	public static FieldInfo buildField(SpaceInfo container, ValuedDeclarationTree decl,VariableDeclaratorTree declarator) {
 		Objects.requireNonNull(declarator.getName());
-		boolean _const = decl.getTypeElement().get_const() != null;
+		boolean _mut = decl.getTypeElement().get_mut() != null;
 		TypeInfo type = container.resolveType(container,decl.getTypeElement());
 
 
@@ -304,8 +304,8 @@ public class TreeBuilder {
 				type = init.getReturnType();
 			}
 		} else {
-			if (_const)
-				throw new CompilerException(declarator.getLocation(), "const variables must have an initializer");
+			if (!_mut)
+				throw new CompilerException(declarator.getLocation(), "non-mut variables must have an initializer");
 		}
 
 		if (type == null) {
@@ -313,7 +313,7 @@ public class TreeBuilder {
 		}
 
 		TypeRefInfo typeRef = new TypeRefInfo(
-				_const, decl.getTypeElement().get_restrict() != null, type
+				_mut, decl.getTypeElement().get_const() != null,decl.getTypeElement().get_restrict() != null, type
 		);
 		boolean _static = decl.hasModifier("static");
 		return new FieldInfo(declarator.getLocation(), declarator.getName().text, typeRef, init, _static, false, container);

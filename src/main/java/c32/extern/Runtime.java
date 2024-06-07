@@ -3,6 +3,7 @@ package c32.extern;
 import com.IOUtils;
 import com.natives.NativesInit;
 
+import java.io.File;
 import java.util.Random;
 
 public final class Runtime {

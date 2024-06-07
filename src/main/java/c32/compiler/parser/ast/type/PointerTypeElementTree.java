@@ -11,8 +11,8 @@ public class PointerTypeElementTree extends TypeElementTree {
 	private final TypeElementTree elementType;
 	private final Token star;
 
-	public PointerTypeElementTree(Token _const, Token _restrict, TypeElementTree elementType, Token star) {
-		super(_const,_restrict);
+	public PointerTypeElementTree(Token _mut, Token _const, Token _restrict, TypeElementTree elementType, Token star) {
+		super(_mut,_const,_restrict);
 		this.elementType = elementType;
 		this.star = star;
 	}

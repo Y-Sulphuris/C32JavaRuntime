@@ -69,14 +69,19 @@ public interface SpaceInfo extends SymbolInfo {
 			return TypeArrayInfo.arrayOf(
 					((StaticArrayTypeElementTree) type).getSize().getLocation(),
 					Expression.build(caller,caller,((StaticArrayTypeElementTree) type).getSize(), TypeInfo.PrimitiveTypeInfo.LONG),
-					new TypeRefInfo(((ArrayTypeElementTree) type).getElementType().get_const() != null, false,
+					new TypeRefInfo(((ArrayTypeElementTree) type).getElementType().get_mut() != null,
+							((ArrayTypeElementTree) type).getElementType().get_const() != null,
+							false,
 					this.resolveType(caller,((ArrayTypeElementTree) type).getElementType())));
 
 		}
 		else if (type instanceof ArrayTypeElementTree)
 		{
 			if (type.get_restrict() != null) throw new CompilerException(type.getLocation(),"arrays cannot be restrict");
-			return TypeArrayInfo.arrayOf(-1, new TypeRefInfo(((ArrayTypeElementTree) type).getElementType().get_const() != null, false,
+			return TypeArrayInfo.arrayOf(-1, new TypeRefInfo(
+					((ArrayTypeElementTree) type).getElementType().get_mut() != null,
+					((ArrayTypeElementTree) type).getElementType().get_const() != null,
+					false,
 							this.resolveType(caller,((ArrayTypeElementTree) type).getElementType())));
 
 		}
@@ -84,6 +89,7 @@ public interface SpaceInfo extends SymbolInfo {
 		{
 			return TypePointerInfo.pointerOf(
 					new TypeRefInfo(
+							((PointerTypeElementTree) type).getElementType().get_mut() != null,
 							((PointerTypeElementTree) type).getElementType().get_const() != null,
 							((PointerTypeElementTree) type).getElementType().get_restrict() != null,
 							this.resolveType(caller,((PointerTypeElementTree) type).getElementType())));

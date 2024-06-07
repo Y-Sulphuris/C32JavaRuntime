@@ -84,7 +84,7 @@ public class TypePointerInfo extends AbstractSymbolInfo implements TypeInfo {
 
 	@Override
 	public String getCanonicalName() {
-		return (targetType.is_const() ? "const " : "") + (targetType.is_restrict() ? "restrict " : "") + targetType.getType().getCanonicalName() + "*";
+		return (targetType.is_mut() ? "mut " : "") + (targetType.is_restrict() ? "restrict " : "") + targetType.getType().getCanonicalName() + "*";
 	}
 
 	@Override
@@ -94,7 +94,7 @@ public class TypePointerInfo extends AbstractSymbolInfo implements TypeInfo {
 			TypeRefInfo thisRef = this.getTargetType();
 
 			if (thisRef.getType() == PrimitiveTypeInfo.VOID || typeRef.getType() == PrimitiveTypeInfo.VOID || typeRef.getType().equals(thisRef.getType())) {
-				return !thisRef.is_const() || typeRef.is_const();
+				return thisRef.is_mut() || !typeRef.is_mut(); // в чём прикол этой строки
 			}
 			return typeRef.equals(this.targetType);
 		}

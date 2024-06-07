@@ -8,6 +8,7 @@ import java.lang.invoke.MethodType;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 
+// todo: возможность определять, находится ли объект в metaspace (metaspace относится к native памяти и не собирается сборщиком мусора, в нём все статические переменные и метаданные)
 public class Memory {
 	private Memory() throws InstantiationException {
 		throw new InstantiationException();

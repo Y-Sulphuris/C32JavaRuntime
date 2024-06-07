@@ -16,7 +16,7 @@ public class StringLiteralExpression implements LiteralExpression {
 	public StringLiteralExpression(Token literal, TypeInfo returnType) {
 		this.location = literal.location;
 
-		TypeInfo arrType = TypeArrayInfo.arrayOf(-1,new TypeRefInfo(true,false,TypeInfo.PrimitiveTypeInfo.CHAR));
+		TypeInfo arrType = TypeArrayInfo.arrayOf(-1,new TypeRefInfo(false, false,false,TypeInfo.PrimitiveTypeInfo.CHAR));
 		if (returnType != null && !returnType.canBeImplicitlyCastTo(arrType))
 			throw new CompilerException(literal.location,"cannot implicit cast 'const char[]' to '" + returnType.getCanonicalName() + "'");
 		this.returnType = returnType != null ? returnType : arrType;

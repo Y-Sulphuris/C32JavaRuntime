@@ -14,6 +14,6 @@ public class NullLiteralExpression implements LiteralExpression {
 
 	@Override
 	public TypeInfo getReturnType() {
-		return TypePointerInfo.pointerOf(new TypeRefInfo(true,false, TypeInfo.PrimitiveTypeInfo.VOID));
+		return TypePointerInfo.pointerOf(new TypeRefInfo(false,false,false, TypeInfo.PrimitiveTypeInfo.VOID));
 	}
 }

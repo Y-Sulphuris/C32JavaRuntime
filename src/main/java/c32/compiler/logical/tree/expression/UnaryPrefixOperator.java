@@ -23,12 +23,12 @@ public class UnaryPrefixOperator {
 
 	private static final Map<TypeInfo, Set<UnaryPrefixOperator>> registeredOperators = new HashMap<>();
 	static {
-		registerUnaryPrefix("!",new TypeRefInfo(true,false, TypeInfo.PrimitiveTypeInfo.BOOL),TypeInfo.PrimitiveTypeInfo.BOOL);
+		registerUnaryPrefix("!",new TypeRefInfo(false, false,false, TypeInfo.PrimitiveTypeInfo.BOOL),TypeInfo.PrimitiveTypeInfo.BOOL);
 		TypeInfo.PrimitiveTypeInfo.forEachNumeric(TYPE -> {
-			registerUnaryPrefix("++",new TypeRefInfo(false,false, TYPE), TYPE);
-			registerUnaryPrefix("--",new TypeRefInfo(false,false, TYPE), TYPE);
+			registerUnaryPrefix("++",new TypeRefInfo(true,false,false, TYPE), TYPE);
+			registerUnaryPrefix("--",new TypeRefInfo(true,false,false, TYPE), TYPE);
 			if (TYPE instanceof TypeInfo.UnsignedIntegerPrimitiveTypeInfo); else
-				registerUnaryPrefix("-", new TypeRefInfo(true, false, TYPE), TYPE);
+				registerUnaryPrefix("-", new TypeRefInfo(false,false, false, TYPE), TYPE);
 		});
 	}
 

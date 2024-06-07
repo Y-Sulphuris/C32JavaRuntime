@@ -1,4 +1,5 @@
-ToolSet: 11.0 w64 (local)@D:\__Sys__\Users\lidia\Local\JetBrains\Toolbox\apps\CLion\ch-0\233.14015.92\bin\mingw
+ToolSet: 11.0 w64 (local)@D:\__Sys__\Users\lidia\Local\JetBrains\Toolbox\apps\CLion\ch-0\241.17011.124\bin\mingw
+Ninja: 1.12.0@D:\__Sys__\Users\lidia\Local\JetBrains\Toolbox\apps\CLion\ch-0\241.17011.124\bin\ninja\win\x64\ninja.exe
 Options: 
 
-Options:-DCMAKE_MAKE_PROGRAM=D:/__Sys__/Users/lidia/Local/JetBrains/Toolbox/apps/CLion/ch-0/233.14015.92/bin/ninja/win/x64/ninja.exe
+Options:-DCMAKE_MAKE_PROGRAM=D:/__Sys__/Users/lidia/Local/JetBrains/Toolbox/apps/CLion/ch-0/241.17011.124/bin/ninja/win/x64/ninja.exe

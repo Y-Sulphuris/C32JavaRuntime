@@ -98,7 +98,7 @@ public interface Statement {
 						throw new CompilerException(varDec.getLocation(),"variable '" + name + "' has already defined");
 					}
 					variables.add(new VariableInfo(decl.getLocation(), varDec.getName().text,
-							new TypeRefInfo(
+							new TypeRefInfo(decl.getTypeElement().get_mut() != null,
 									decl.getTypeElement().get_const() != null,
 									decl.getTypeElement().get_restrict() != null,
 									type

@@ -37,14 +37,14 @@ public class VariableRefExpression extends SymbolRefExpression {
 	public boolean isAssignable() {
 		VariableInfo variable = getVariable();
 		if (variable.getTypeRef().getType() instanceof TypeArrayInfo) {
-			return !((TypeArrayInfo) variable.getTypeRef().getType()).getElementType().is_const();
+			return ((TypeArrayInfo) variable.getTypeRef().getType()).getElementType().is_mut();
 		}
-		return !variable.getTypeRef().is_const();
+		return variable.getTypeRef().is_mut();
 	}
 
 	@Override
 	public Expression asCompileTimeLiteralExpression() {
-		if (getVariable().getTypeRef().is_const() && getVariable().getInitializer() != null) {
+		if (!getVariable().getTypeRef().is_mut() && getVariable().getInitializer() != null) {
 			Expression constant = getVariable().getInitializer().asCompileTimeLiteralExpression();
 			if (constant != null)
 				return constant;

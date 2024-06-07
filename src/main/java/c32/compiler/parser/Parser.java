@@ -605,17 +605,23 @@ public class Parser {
 
 
 	private TypeElementTree parseTypeElement() {
+		Token _mut = null;
 		Token _const = null;
 		Token _restrict = null;
 		Location startLocation = token.location;
 		while(true) {
 			switch (token.text) {
-				case "const":
+				case Compiler.MUT:
+					if (_mut != null) throw new UnexpectedTokenException(token,"duplicated 'mut' modifier");
+					_mut = token;
+					token = nextToken();
+					continue;
+				case Compiler.CONST:
 					if (_const != null) throw new UnexpectedTokenException(token,"duplicated 'const' modifier");
 					_const = token;
 					token = nextToken();
 					continue;
-				case "restrict":
+				case Compiler.RESTRICT:
 					if (_restrict != null) throw new UnexpectedTokenException(token,"duplicated 'restrict' modifier");
 					_restrict = token;
 					token = nextToken();
@@ -627,18 +633,19 @@ public class Parser {
 		if (token.type == TokenType.OPENROUND) {
 			token = nextToken();
 			type = parseTypeElement();
+			if (_mut != null) type.set_mut(_mut);
 			if (_const != null) type.set_const(_const);
 			if (_restrict != null) type.set_restrict(_restrict);
 			assertToken(TokenType.CLOSEROUND);
 			token = nextToken();
 		} else if (isKeywordType(token)) {
-			type = new TypeKeywordElementTree(_const, _restrict, token);
+			type = new TypeKeywordElementTree(_mut, _const, _restrict, token);
 			token = nextToken();
 		} else if (token.text.equals("decltype")) {
-			type = parseDeclType(_const, _restrict);
+			type = parseDeclType(_mut, _const, _restrict);
 		} else if (token.type == TokenType.IDENTIFIER) {
 			StaticElementReferenceTree reference = parseStaticElementReference();
-			type = new TypeReferenceElementTree(_const, _restrict, reference, Location.between(startLocation,reference.getLocation()));
+			type = new TypeReferenceElementTree(_mut, _const, _restrict, reference, Location.between(startLocation,reference.getLocation()));
 		} /*else if (token.text.equals("struct")) {
 			type = new TypeStructElementTree(_const, parseStruct());
 		} */else if (token.type == TokenType.EOF) {
@@ -658,27 +665,27 @@ public class Parser {
 				}
 				Token closeSquare = token;
 				type = size == null ?
-						new ArrayTypeElementTree(null,null,type,spec,closeSquare) :
-						new StaticArrayTypeElementTree(null,null,type,spec,size,closeSquare);
+						new ArrayTypeElementTree(null, null,null,type,spec,closeSquare) :
+						new StaticArrayTypeElementTree(null, null,null,type,spec,size,closeSquare);
 
 				token = nextToken();
 			} else if(token.text.equals("*")) {
 				token = nextToken();
-				type = new PointerTypeElementTree(null,null,type,spec);
+				type = new PointerTypeElementTree(null,null,null,type,spec);
 			} else {
 				token = nextToken();
-				type = new ReferenceTypeElementTree(null,null,type,spec);
+				type = new ReferenceTypeElementTree(null,null,null,type,spec);
 			}
 		}
 		return type;
 	}
 
-	private TypeElementTree parseDeclType(Token _const, Token _restrict) {
+	private TypeElementTree parseDeclType(Token _mut, Token _const, Token _restrict) {
 		Token keyword = assertAndNext("decltype");
 		Token openRound = assertAndNext(TokenType.OPENROUND);
 		ExprTree expression = parseExpr();
 		Token closeRound = assertAndNext(TokenType.CLOSEROUND);
-		return new DeclTypeElementTree(_const,_restrict,keyword,openRound,expression,closeRound);
+		return new DeclTypeElementTree(_mut,_const,_restrict,keyword,openRound,expression,closeRound);
 	}
 
 	private StaticElementReferenceTree parseStaticElementReference() {
@@ -1011,7 +1018,7 @@ public class Parser {
 				List<Token> attributes = new ArrayList<>();
 				while (true) {
 					if (token.type != TokenType.IDENTIFIER && token.type != TokenType.KEYWORD && token.type != TokenType.STRING)
-						throw new UnexpectedTokenException(token,"attribute expected");
+						throw new UnexpectedTokenException(token, "attribute expected");
 					attributes.add(token);
 					token = nextToken();
 					if (token.type == TokenType.CLOSESQUARE) {

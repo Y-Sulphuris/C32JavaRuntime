@@ -22,7 +22,7 @@ public class UnaryPrefixExpression implements Expression {
     private final UnaryPrefixOperator operator;
 	private final Location location;
 
-	public UnaryPrefixExpression(Location location, boolean _const, Expression expr, String operator) {
+	public UnaryPrefixExpression(Location location, boolean _mut, boolean _const, Expression expr, String operator) {
 		this.location = location;
 		this.expr = expr;
 		if (operator.equals("&")) {
@@ -30,7 +30,7 @@ public class UnaryPrefixExpression implements Expression {
 				throw new CompilerException(location, "cannot take address from given expression");
 			((VariableRefExpression) expr).getVariable().setNotRegister();
 		}
-		this.operator = UnaryPrefixOperator.findOperator(location, new TypeRefInfo(_const,false,expr.getReturnType()), operator);
+		this.operator = UnaryPrefixOperator.findOperator(location, new TypeRefInfo(_mut, _const,false,expr.getReturnType()), operator);
 
 	}
 

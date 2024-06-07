@@ -135,7 +135,7 @@ public class JVMGenerator implements c32.compiler.codegen.Generator {
 
 	private void writeField(ClassWriter cv, FieldInfo field) {
 		int mod = ACC_PUBLIC | ACC_STATIC;
-		if (field.getTypeRef().is_const()) mod |= ACC_FINAL;
+		if (!field.getTypeRef().is_mut()) mod |= ACC_FINAL;
 		FieldVisitor fv = cv.visitField(mod,field.getName(),asDescriptor(field.getTypeRef().getType()),null,asFieldInitializerValue(field));
 		fv.visitEnd();
 		fieldsToInit.add(field);

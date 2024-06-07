@@ -1,0 +1,73 @@
+package test;
+
+const auto nullptr = (void*)0;
+
+#pragma ignore
+
+byte test() {
+	return 5b;
+}
+
+void test2(byte b) {
+	println(b);
+}
+
+void test3(int i2, int* l, int i6) {
+	int b3 = i2;
+}
+
+void changeI(int* i, int newValue) {
+	*i = newValue;
+}
+
+void main() {
+	int[4]* b = std::malloc(4 * sizeof(int));
+	println(b);
+	println(&b);
+	int[4] bp = *b;
+	(bp[3]) = 0xFF;
+	println((bp[3]));
+
+	/*int i = 50;
+	println(i);
+	changeI(&i, 60);
+	println(i);*/
+}
+
+import std.println, std.print;
+
+int len = 16;
+void main0() {
+	import std.Core.*;
+
+	int* p_i = new_int_array(len), new_int_array(size_t len) {
+        return std::malloc(len * sizeof(int));
+    };
+	std::memset(p_i, 0xFEub, len * sizeof(decltype(*p_i)));
+    p_i[0] = 50;
+	int index = -1;
+	while(index < len - 1) {
+		print(++index);
+		auto whiteSpace = '\t';
+		print(whiteSpace);
+        println((void*)p_i[index]);
+        sleep(100);
+	}
+	len = 32;
+	p_i = std::realloc(p_i, len * sizeof(int));
+
+	println();
+	index = -1;
+	while(index < len - 1) {
+    	print(++index);
+    	auto space = '\t';
+    	print(space);
+        println((void*)p_i[index]);
+        sleep(100);
+    }
+
+	std::free(p_i);
+
+	return;
+}
+
