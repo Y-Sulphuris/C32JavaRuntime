@@ -12,7 +12,7 @@ import java.io.PrintStream;
 public class CSGenerator implements Generator {
 
 	@Override
-	public void generate(NamespaceInfo space) {
+	public void generate(NamespaceInfo space, File outputDirectory) {
 		File dir = new File("out/cs");
 		dir.mkdir();
 		writeNamespace(space);

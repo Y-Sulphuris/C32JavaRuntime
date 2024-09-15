@@ -1,6 +1,6 @@
 package c32.compiler.codegen.java;
 
-import c32.compiler.Compiler;
+import c32.compiler.CompilerConfig;
 import c32.compiler.codegen.Generator;
 import c32.compiler.codegen.LinkerException;
 import c32.compiler.except.CompilerException;
@@ -12,13 +12,17 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.math.BigInteger;
-import java.util.Collections;
 import java.util.List;
 
 public class JavaGenerator implements Generator {
+	private final CompilerConfig config;
+
+	public JavaGenerator(CompilerConfig config) {
+		this.config = config;
+	}
 
 	@Override
-	public void generate(NamespaceInfo space) {
+	public void generate(NamespaceInfo space, File outputDirectory) {
 		File dir = new File("out/java");
 		dir.mkdir();
 		writeNamespace(space);
@@ -50,10 +54,10 @@ public class JavaGenerator implements Generator {
 				writeField(field,true,out);
 			}
 			if (packageName.isEmpty()) {
-				String main = Compiler.config.getMainFunctionName();
+				String main = config.getMainFunctionName();
 				SpaceInfo mainSpace = space;
 				while (main.contains(".")) {
-					mainSpace = mainSpace.getNamespace(main.substring(0,main.indexOf(".")));
+					mainSpace = mainSpace.getNamespace(main.substring(0, main.indexOf(".")));
 					main = main.substring(main.indexOf(".")+1);
 				}
 				FunctionInfo mainFunc = null;

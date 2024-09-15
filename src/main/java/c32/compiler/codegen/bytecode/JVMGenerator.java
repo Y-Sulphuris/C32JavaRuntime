@@ -1,5 +1,6 @@
 package c32.compiler.codegen.bytecode;
 
+import c32.compiler.CompilerConfig;
 import c32.compiler.logical.tree.*;
 import org.objectweb.asm.*;
 
@@ -16,6 +17,11 @@ import static c32.compiler.codegen.bytecode.ASMUtils.*;
 import static org.objectweb.asm.Opcodes.*;
 
 public class JVMGenerator implements c32.compiler.codegen.Generator {
+	private final CompilerConfig config;
+
+	public JVMGenerator(CompilerConfig config) {
+		this.config = config;
+	}
 
 	private static final int[] classVersion = new int[22+1]; static {
 		classVersion[ 0] = 45;
@@ -43,6 +49,7 @@ public class JVMGenerator implements c32.compiler.codegen.Generator {
 		classVersion[22] = 66;
 	}
 
+
 	public static int javaVersion(int i) {
 		return classVersion[i];
 	}
@@ -54,7 +61,7 @@ public class JVMGenerator implements c32.compiler.codegen.Generator {
 
 
 	@Override
-	public void generate(NamespaceInfo space) {
+	public void generate(NamespaceInfo space, File outputDirectory) {
 		try {
 			//JarOutputStream jar = new JarOutputStream(Files.newOutputStream(new File("test.jar").toPath()));
 

@@ -20,6 +20,7 @@ public final class CompilerConfig {
 	private final File src;
 	private final Set<Generator> targets;
 	private final boolean debug;
+
 	public static CompilerConfig parse(File configFile) throws IOException {
 		ObjectMapper mapper = new ObjectMapper();
 		JsonParser parser = mapper.createParser(configFile);
@@ -30,14 +31,15 @@ public final class CompilerConfig {
 		boolean needsPrintStackTrace = debugNode != null && debugNode.toString().equals("true");
 		int targetsCount = (node.get("target")).size();
 		Set<Generator> targets = new HashSet<>(targetsCount);
+		CompilerConfig config = new CompilerConfig(mainFunctionName,src,targets,needsPrintStackTrace);
 		for (int i = 0; i < targetsCount; i++) {
 			String str = node.get("target").get(i).toString();
 			switch (str.replace("\"","").toLowerCase()) {
 				case "java":
-					targets.add(new JavaGenerator());
+					targets.add(new JavaGenerator(config));
 					break;
 				case "jvm":
-					targets.add(new JVMGenerator());
+					targets.add(new JVMGenerator(config));
 					break;
 				case "cs":
 				case "c#":
@@ -49,7 +51,7 @@ public final class CompilerConfig {
 			}
 		}
 		parser.close();
-		return new CompilerConfig(mainFunctionName,src,targets,needsPrintStackTrace);
+		return config;
 	}
 
 	public boolean writeAST() {

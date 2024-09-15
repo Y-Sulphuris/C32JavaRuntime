@@ -1,7 +1,9 @@
 package c32.compiler;
 
 import c32.compiler.codegen.Generator;
+import c32.compiler.codegen.bytecode.JVMGenerator;
 import c32.compiler.except.CompilerException;
+import c32.compiler.lexer.tokenizer.TokenType;
 import c32.compiler.logical.TreeBuilder;
 import c32.compiler.logical.tree.NamespaceInfo;
 import c32.compiler.parser.Parser;
@@ -10,6 +12,7 @@ import c32.compiler.lexer.tokenizer.ConfigurableTokenizer;
 import c32.compiler.lexer.tokenizer.Token;
 import c32.compiler.lexer.tokenizer.Tokenizer;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.Getter;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -33,6 +36,7 @@ public class Compiler {
 			OVER = "over",
 			NOEXCEPT = "noexcept",
 			MUT = "mut",
+			UNCHECKED = "unchecked",
 
 			PUBLIC = "public",
 			PROTECTED = "protected",
@@ -50,7 +54,7 @@ public class Compiler {
 		);
 
 		postModifiers.addAll(modifiers);
-		Collections.addAll(postModifiers,PURE,CONST,NOEXCEPT,MUT);
+		Collections.addAll(postModifiers,PURE,NOEXCEPT,MUT,UNCHECKED);
 	}
 	public static final Set<String> keywords = new HashSet<>();
 	static {
@@ -138,7 +142,8 @@ public class Compiler {
 		"ushort\n" +
 		"virtual\n" +
 		"void\n" +
-		"while").split("\n"));
+		"while\n" +
+		"unchecked").split("\n"));
 	}
 
 	public static final String[] validOperators = ("=;" +
@@ -156,7 +161,7 @@ public class Compiler {
 
 
 
-	private static CompilationUnitTree getAST(File file) throws IOException {
+	private CompilationUnitTree getAST(File file) throws IOException {
 		StringBuilder sourceb = new StringBuilder();
 		for(String str : Files.readAllLines(file.toPath())) {
 			sourceb.append(str).append('\n');
@@ -176,9 +181,15 @@ public class Compiler {
 		return AST;
 	}
 
-	private static CompilationUnitTree getAST(String source, File file) {
+	private CompilationUnitTree getAST(String source, File file) {
 		Stack<Token> tokens = ((ConfigurableTokenizer)tokenizer).tokenize(source, file);
-		Preprocessor.preprocess(tokens);
+		tokens = Preprocessor.preprocess(tokens);
+
+		System.out.println(file.getName() + ":");
+		for (Token token : tokens) {
+			System.out.print(token.text + ' ');
+			if (token.type == TokenType.CLOSE || token.type == TokenType.ENDLINE || token.type == TokenType.OPEN) System.out.println();
+		}
 
 		CompilationUnitTree AST;
 		LABEL:
@@ -194,7 +205,7 @@ public class Compiler {
 		return new TreeBuilder().buildNamespace(units);
 	}
 
-	private static void compile(Collection<File> files, Collection<Generator> generators) {
+	private void compile(Collection<File> files, Collection<Generator> generators, File outputDirectory) {
 		Collection<CompilationUnitTree> units;
 		{
 			long start = System.currentTimeMillis();
@@ -212,7 +223,12 @@ public class Compiler {
 			System.out.println("Parsing (stage 1): " + (end - start) + "ms");
 		}
 
-		deleteDirectory(new File("out"));
+		if (outputDirectory.exists()) {
+			if (outputDirectory.isDirectory())
+				deleteDirectory(outputDirectory);
+			else
+				throw new RuntimeException("Invalid output directory: " + outputDirectory);
+		}
 		try {
 			long start = System.currentTimeMillis();
 
@@ -222,7 +238,7 @@ public class Compiler {
 			System.out.println("Parsing (stage 2): " + (end - start) + "ms");
 			for (Generator generator : generators) {
 				long gstart = System.currentTimeMillis();
-				generator.generate(space);
+				generator.generate(space, outputDirectory);
 				long gend = System.currentTimeMillis();
 				System.out.println("Generating for target '" + generator.getClass().getSimpleName().replace("Generator","") + "': "
 						+ (gend - gstart) + "ms");
@@ -244,8 +260,17 @@ public class Compiler {
 		}
 	}
 
+	private final CompilerConfig config;
 
-	public static CompilerConfig config = null;
+	public String getMainFunctionName() {
+		return config.getMainFunctionName();
+	}
+
+	private Compiler(CompilerConfig config) {
+		this.config = config;
+	}
+
+
 	public static void main(String... args) throws IOException {
 		System.out.println("Compiling...");
 		long start = System.currentTimeMillis();
@@ -260,17 +285,19 @@ public class Compiler {
 
 			return;
 		} catch (RuntimeException e)*/ {
+			CompilerConfig config;
 			try {
 				File configFile = new File("Figures.json");
-				Compiler.config = CompilerConfig.parse(configFile);
+				config = CompilerConfig.parse(configFile);
 				long end = System.currentTimeMillis();
 				System.out.println("Config parsed: " + (end - start) + "ms\n");
 			} catch (Exception ee) {
 				System.err.println("Invalid configuration format");
 				throw ee;
 			}
+			Compiler compiler = new Compiler(config);
 			try {
-				compile(allC32Files(config.getSrc()),config.getTargets());
+				compiler.compile(allC32Files(config.getSrc()),config.getTargets(), new File("out"));
 			} catch (CompilerException e) {
 				if (config.isDebug()) e.printStackTrace(System.err);
 				System.exit(1);
@@ -323,7 +350,7 @@ public class Compiler {
 		directoryToBeDeleted.delete();
 	}
 
-	private static CompilerException handleCompilerException(CompilerException e, String source, File file) {
+	private CompilerException handleCompilerException(CompilerException e, String source, File file) {
 		String filename = file.getAbsolutePath().replace(config.getSrc().getAbsolutePath(),"");
 		filename = filename.substring(1).replaceAll("\\|/",".");
 		System.err.println(getErrorDescription(e,filename,source));
