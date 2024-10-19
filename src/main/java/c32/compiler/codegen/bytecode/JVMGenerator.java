@@ -23,17 +23,19 @@ public class JVMGenerator implements c32.compiler.codegen.Generator {
 		this.config = config;
 	}
 
-	private static final int[] classVersion = new int[22+1]; static {
-		classVersion[ 0] = 45;
-		classVersion[ 1] = 45;
-		classVersion[ 2] = 46;
-		classVersion[ 3] = 47;
-		classVersion[ 4] = 48;
-		classVersion[ 5] = 49;
-		classVersion[ 6] = 50;
-		classVersion[ 7] = 51;
-		classVersion[ 8] = 52;
-		classVersion[ 9] = 53;
+	private static final int[] classVersion = new int[22 + 1];
+
+	static {
+		classVersion[0] = 45;
+		classVersion[1] = 45;
+		classVersion[2] = 46;
+		classVersion[3] = 47;
+		classVersion[4] = 48;
+		classVersion[5] = 49;
+		classVersion[6] = 50;
+		classVersion[7] = 51;
+		classVersion[8] = 52;
+		classVersion[9] = 53;
 		classVersion[10] = 54;
 		classVersion[11] = 55;
 		classVersion[12] = 56;
@@ -55,6 +57,7 @@ public class JVMGenerator implements c32.compiler.codegen.Generator {
 	}
 
 	private final int version = 8;
+
 	private int classVersion() {
 		return javaVersion(version);
 	}
@@ -83,10 +86,10 @@ public class JVMGenerator implements c32.compiler.codegen.Generator {
 			Map<SpaceInfo, ClassWriter> writers = writeAll(space);
 			for (Map.Entry<SpaceInfo, ClassWriter> entry : writers.entrySet()) {
 				String clName = asClassName(entry.getKey());
-				File dir = new File("out/jvm/" + (clName.contains("/") ? clName.substring(0,clName.lastIndexOf('/')) : ""));
+				File dir = new File("out/jvm/" + (clName.contains("/") ? clName.substring(0, clName.lastIndexOf('/')) : ""));
 				dir.mkdirs();
 
-				File clFile = new File("out/jvm/"+clName + ".class");
+				File clFile = new File("out/jvm/" + clName + ".class");
 				//System.out.println("writing " + clFile.getPath() + "...");
 				clFile.createNewFile();
 
@@ -123,7 +126,7 @@ public class JVMGenerator implements c32.compiler.codegen.Generator {
 		}
 		for (FunctionInfo function : space.getFunctions()) {
 			if (function instanceof FunctionImplementationInfo)
-				writers.putAll(writeAll((FunctionImplementationInfo)function));
+				writers.putAll(writeAll((FunctionImplementationInfo) function));
 		}
 
 		return writers;
@@ -143,7 +146,7 @@ public class JVMGenerator implements c32.compiler.codegen.Generator {
 	private void writeField(ClassWriter cv, FieldInfo field) {
 		int mod = ACC_PUBLIC | ACC_STATIC;
 		if (!field.getTypeRef().is_mut()) mod |= ACC_FINAL;
-		FieldVisitor fv = cv.visitField(mod,field.getName(),asDescriptor(field.getTypeRef().getType()),null,asFieldInitializerValue(field));
+		FieldVisitor fv = cv.visitField(mod, field.getName(), asDescriptor(field.getTypeRef().getType()), null, asFieldInitializerValue(field));
 		fv.visitEnd();
 		fieldsToInit.add(field);
 	}
@@ -158,11 +161,11 @@ public class JVMGenerator implements c32.compiler.codegen.Generator {
 	}
 
 
-	private void writeFunction(ClassWriter cv, FunctionInfo function) {
+	private void writeFunction(ClassWriter cw, FunctionInfo function) {
 		if (function.is_extern()) return;
 		int mod = ACC_PUBLIC | ACC_STATIC;
 		if (function.is_native()) mod |= ACC_NATIVE;
-		MethodVisitor mv = cv.visitMethod(mod, asFunctionName(function), asJavaFunctionDescriptor(function),null,null);
+		MethodVisitor mv = cw.visitMethod(mod, asFunctionName(function), asJavaFunctionDescriptor(function), null, null);
 
 		if (function instanceof FunctionImplementationInfo) {
 			FunctionImplementationInfo func = (FunctionImplementationInfo) function;
@@ -176,8 +179,6 @@ public class JVMGenerator implements c32.compiler.codegen.Generator {
 	}
 
 
-
-
 	private ClassWriter writeSpaceItself(SpaceInfo space) {
 		ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS | (version >= 7 ? ClassWriter.COMPUTE_FRAMES : 0));
 		String super_name = "c32/extern/SpaceSymbol";
@@ -187,15 +188,15 @@ public class JVMGenerator implements c32.compiler.codegen.Generator {
 			super_name = "c32/extern/FunctionSymbol";
 		}
 		cw.visit(classVersion(),
-			ACC_PUBLIC | ACC_SUPER | ACC_FINAL,
-			asClassName(space),
-			null,
-			super_name,
-			null);
-		cw.visitSource(space.getName(),space.getName());
+				ACC_PUBLIC | ACC_SUPER | ACC_FINAL,
+				asClassName(space),
+				null,
+				super_name,
+				null);
+		cw.visitSource(space.getName(), space.getName());
 
 		for (FieldInfo field : space.getFields()) {
-			writeField(cw,field);
+			writeField(cw, field);
 		}
 		for (FunctionInfo function : space.getFunctions()) {
 			writeFunction(cw, function);

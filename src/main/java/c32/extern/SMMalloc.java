@@ -1,5 +1,6 @@
 package c32.extern;
 
+// ух нихрена себе
 public abstract class SMMalloc {
 	private SMMalloc() {}
 
@@ -90,8 +91,25 @@ public abstract class SMMalloc {
 	 */
 	public static native int _sm_mbucket(long space, long ptr);
 
+	/**
+	 * @param space smmalloc allocator instance
+	 * @return the number of buckets in allocator
+	 */
 	public static native long _sm_buckets_count(long space);
+	
+	/**
+	 * Get the number of elements in the given smmalloc bucket
+	 * @param space smmalloc allocator instance
+	 * @param bucketIndex smmalloc bucket index
+	 * @return the number of elements in given bucket
+	 */
 	public static native int _sm_buckets_element_count(long space, long bucketIndex);
+	/**
+	 * Check if given pointer is allocated by smmalloc allocator
+	 * @param space smmalloc allocator instance
+	 * @param ptr pointer to check
+	 * @return true if given ptr is allocated by smmalloc allocator, false otherwise
+	 */
 	public static native boolean _sm_is_my_alloc(long space, long ptr);
 
 }

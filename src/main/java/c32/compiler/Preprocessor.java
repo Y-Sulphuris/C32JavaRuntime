@@ -7,7 +7,8 @@ import lombok.Data;
 
 import java.util.*;
 
-public class Preprocessor {/*
+public class Preprocessor {
+	/*
 	private static final java.lang.ThreadLocal<Integer> $REGISTER$ = new java.lang.ThreadLocal<>();
 	public static Integer $REGISTER$GET$() {
 		if ($REGISTER$.get() == null) $REGISTER$.set(new Integer(5));
@@ -34,6 +35,7 @@ public class Preprocessor {/*
 		ITERATOR:
 		for (iterator = tokens.iterator(); hasNextToken(); ) {
 			Token token = nextToken();
+			if (token.type == TokenType.COMMENT) continue;
 			if (token.type == TokenType.DIRECTIVE) {
 				switch (token.text) {
 					case "pragma":
@@ -44,12 +46,12 @@ public class Preprocessor {/*
 								return new Stack<>();
 						}
 					} break;
-					case "macro":
+					/*case "macro":
 					{
 						Macro macro = parseMacro();
-						System.out.println(macro);
+						//System.out.println(macro);
 						macros.put(macro.getName().text, macro);
-					} break;
+					} break;*/
 				}
 			} else if (token.type == TokenType.IDENTIFIER && macros.containsKey(token.text)) {
 				token = nextToken();
@@ -99,8 +101,9 @@ public class Preprocessor {/*
 	public static Stack<Token> preprocess(Collection<Token> tokens) {
 		return new Preprocessor(tokens).preprocess();
 	}
-
 }
+
+
 @Data
 class Macro {
 	private final Token name;

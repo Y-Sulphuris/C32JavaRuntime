@@ -14,6 +14,7 @@ import java.io.PrintStream;
 import java.math.BigInteger;
 import java.util.List;
 
+@Deprecated
 public class JavaGenerator implements Generator {
 	private final CompilerConfig config;
 

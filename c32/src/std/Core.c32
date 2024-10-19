@@ -1,6 +1,6 @@
 package std;
 
-extern void println(const char[] ch);
+extern void println(char[] ch);
 
 extern void println(bool b);
 
@@ -27,7 +27,7 @@ extern void println(double i);
 
 extern void println();
 
-extern void print(const char[] ch);
+extern void print(char[] ch);
 
 extern void print(bool b);
 
@@ -54,6 +54,7 @@ extern void print(double i);
 
 
 namespace Core {
+	// deprecated
 	extern void gc();
 
 	extern ulong currentTimeMillis();

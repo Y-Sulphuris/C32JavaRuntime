@@ -2,16 +2,16 @@ package test;
 
 import std.println, std.print;
 
-#macro test #iipii#
-#unfolds
-test#iipii#
-#end_macro
+//#macro test #iipii#
+//#unfolds
+//test#iipii#
+//#end_macro
 
 void main() {
 	mut int a = 5;
 
-	int test a = 7;
-
+	println("Variable a:");
 	println(a);
+	println(&a);
 }
 

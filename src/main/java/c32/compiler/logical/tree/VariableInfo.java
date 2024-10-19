@@ -15,7 +15,7 @@ public class VariableInfo extends AbstractSymbolInfo {
 	@Getter
 	private final TypeRefInfo typeRef;
 	@Getter
-	@Nullable private final Expression initializer;
+	private final @Nullable Expression initializer;
 	@Getter
 	private final Location location;
 

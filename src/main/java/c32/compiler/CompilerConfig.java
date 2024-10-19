@@ -55,6 +55,6 @@ public final class CompilerConfig {
 	}
 
 	public boolean writeAST() {
-		return false;
+		return debug;
 	}
 }

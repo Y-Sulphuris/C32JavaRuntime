@@ -4,7 +4,7 @@ import std.*;
 
 #pragma ignore;
 
-//linked to c32.extern.Runtime.randInt(I)I
+//linked to c32.extern.Runtime.randInt(I)I :D
 extern int randInt(int radius);
 
 
@@ -15,7 +15,7 @@ int findMin(const int* array, const int len) {
     while (i < len) {
         if (array[i] < min) {
             int temp = array[i];
-            //эта переменная нужна, чтобы обойти баг компилятора, который не воспринимает квадратные скобки в правой части бинарных выражений (edit: я это уже пофиксил)
+            //эта переменная нужна, чтобы обойти баг компилятора, который не воспринимает квадратные скобки в правой части бинарных выражений (edit: я уже пофиксил)
             min = temp;
             index = i;
         }

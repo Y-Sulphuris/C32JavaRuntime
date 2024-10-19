@@ -3,7 +3,6 @@ package c32.extern;
 import com.IOUtils;
 import com.natives.NativesInit;
 
-import java.io.File;
 import java.util.Random;
 
 public final class Runtime {
@@ -55,7 +54,12 @@ public final class Runtime {
 	public static void println() {
 		System.out.println();
 	}
-
+	
+	public static void println(char[] chars) {
+		System.out.println(chars);
+	} public static void print(char[] chars) {
+		System.out.print(chars);
+	}
 	public static void println(boolean b) {
 		System.out.println(b);
 	} public static void print(boolean b) {

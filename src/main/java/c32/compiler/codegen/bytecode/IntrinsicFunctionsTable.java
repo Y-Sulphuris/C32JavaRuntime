@@ -52,6 +52,8 @@ public class IntrinsicFunctionsTable {
 		table.put("std.println[char32]",new EFSign("c32/extern/Runtime","println32",  "(I)V"));
 		table.put("std.print[char32]",new EFSign("c32/extern/Runtime","print32",      "(I)V"));
 
+		table.put("std.println[char[]]",new EFSign("c32/extern/Runtime","println",  "([C)V"));
+
 
 		table.put("std.malloc[ulong]",new EFSign("c32/extern/Memory","malloc",      "(J)J"));
 		table.put("std.calloc[ulong, ulong]",new EFSign("c32/extern/Memory","calloc",      "(JJ)J"));

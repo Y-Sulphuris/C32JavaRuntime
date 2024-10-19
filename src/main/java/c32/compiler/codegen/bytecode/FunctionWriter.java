@@ -34,18 +34,19 @@ public final class FunctionWriter {
 		this.mv = mv;
 		this.stackFrameSize = 0;
 	}
+
 	public void writeClinit(Collection<FieldInfo> fieldsToInit) {
 		if (func != null)
 			throw new IllegalStateException();
-		for(FieldInfo field : fieldsToInit) {
+		for (FieldInfo field : fieldsToInit) {
 			Label l = new Label();
 			mv.visitLabel(l);
-			mv.visitLineNumber(field.getLocation().getStartLine(),l);
+			mv.visitLineNumber(field.getLocation().getStartLine(), l);
 			loadExpression(field.getInitializer());
 			mv.visitFieldInsn(PUTSTATIC, asClassName(field.getContainer()), field.getName(), asDescriptor(field.getTypeRef().getType()));
 		}
 		mv.visitInsn(RETURN);
-		mv.visitMaxs(1,1);
+		mv.visitMaxs(1, 1);
 	}
 
 	public FunctionWriter(FunctionImplementationInfo func, MethodVisitor mv) {
@@ -59,14 +60,15 @@ public final class FunctionWriter {
 		for (VariableInfo arg : func.getArgs()) {
 			//0 - stack pointer (always)
 			if (arg.isRegister()) addRegisterVariableHandle(arg, ++localVariableIndex);
-			else throw new UnsupportedOperationException(arg.getCanonicalName());//addLocalVariableHandle(arg, localVariableOffset += arg.getTypeRef().getType().sizeof());
+			else
+				throw new UnsupportedOperationException(arg.getCanonicalName());//addLocalVariableHandle(arg, localVariableOffset += arg.getTypeRef().getType().sizeof());
 			if (arg.getTypeRef().getType().sizeof() > 4) ++localVariableIndex;
 		}
 		writeBlockStatement(func.getImplementation());
 		if (func.getReturnType() == TypeInfo.PrimitiveTypeInfo.VOID)
 			mv.visitInsn(RETURN);
 		//args will be ignored
-		mv.visitMaxs(1,1);
+		mv.visitMaxs(1, 1);
 	}
 
 	private void writeStatement(Statement statement) {
@@ -80,7 +82,7 @@ public final class FunctionWriter {
 			}
 		}
 		if (statement instanceof BlockStatement) {
-			writeBlockStatement((BlockStatement)statement);
+			writeBlockStatement((BlockStatement) statement);
 		} else if (statement instanceof VariableDeclarationStatement) {
 			writeVariableDeclarationStatement((VariableDeclarationStatement) statement);
 		} else if (statement instanceof ExpressionStatement) {
@@ -90,19 +92,18 @@ public final class FunctionWriter {
 				mv.visitInsn(retType.sizeof() > 4 ? POP2 : POP);
 			}
 		} else if (statement instanceof ReturnStatement) {
-			writeReturn((ReturnStatement)statement);
+			writeReturn((ReturnStatement) statement);
 		} else if (statement instanceof LabelStatement) {
-			writeLabel((LabelStatement)statement, label);
+			writeLabel((LabelStatement) statement, label);
 		} else if (statement instanceof GotoStatement) {
-			writeGoto((GotoStatement)statement);
+			writeGoto((GotoStatement) statement);
 		} else if (statement instanceof IfStatement) {
-			writeIfStatement((IfStatement)statement);
+			writeIfStatement((IfStatement) statement);
 		} else if (statement instanceof WhileStatement) {
-			writeWhileStatement((WhileStatement)statement, label);
+			writeWhileStatement((WhileStatement) statement, label);
 		} else if (statement instanceof NopStatement) {
 			if (((NopStatement) statement).isExplicit()) mv.visitInsn(NOP);
-		}
-		else {
+		} else {
 			throw new UnsupportedOperationException(statement.getClass().getName());
 		}
 	}
@@ -116,7 +117,7 @@ public final class FunctionWriter {
 	private void writeVariableDeclarationStatement(VariableDeclarationStatement statement) {
 		for (VariableInfo variable : statement.getVariables()) {
 			if (variable.getInitializer() == null) {
-				throw new CompilerException(variable.getLocation(),"initializer expected");
+				throw new CompilerException(variable.getLocation(), "initializer expected");
 			}
 			if (canBePresentAsJavaPrimitive(variable.getInitializer().getReturnType())) {
 				loadExpression(variable.getInitializer(), variable.getTypeRef().getType());
@@ -135,30 +136,30 @@ public final class FunctionWriter {
 		if (l == null) {
 			l = old;
 		} else {
-			writeLabel(l,statement.getLocation());
+			writeLabel(l, statement.getLocation());
 		}
-		labels.put(statement,l);
+		labels.put(statement, l);
 	}
 
 	private void writeGoto(GotoStatement statement) {
 		Label l = labels.get(statement.getLabel());
 		if (l == null) {
 			l = new Label();
-			usedlabels.put(statement.getLabel(),l);
+			usedlabels.put(statement.getLabel(), l);
 		}
-		mv.visitJumpInsn(GOTO,l);
+		mv.visitJumpInsn(GOTO, l);
 	}
 
 	private void writeWhileStatement(WhileStatement statement, Label START_LABEL) {
 		Label END_LABEL = new Label();
 
 		loadExpression(statement.getCondition());
-		mv.visitJumpInsn(IFEQ,END_LABEL);
+		mv.visitJumpInsn(IFEQ, END_LABEL);
 
 		writeStatement(statement.getStatement());
-		mv.visitJumpInsn(GOTO,START_LABEL);
+		mv.visitJumpInsn(GOTO, START_LABEL);
 
-		writeLabel(END_LABEL,statement.getStatement().getLocation());
+		writeLabel(END_LABEL, statement.getStatement().getLocation());
 	}
 
 	private void writeIfStatement(IfStatement statement) {
@@ -183,8 +184,8 @@ public final class FunctionWriter {
 				case "<":
 				case ">=":
 				case "<=":
-					loadExpression(((BinaryExpression) cond).getLhs(),((BinaryExpression) cond).getOperator().getLeftType());
-					loadExpression(((BinaryExpression) cond).getRhs(),((BinaryExpression) cond).getOperator().getRightType());
+					loadExpression(((BinaryExpression) cond).getLhs(), ((BinaryExpression) cond).getOperator().getLeftType());
+					loadExpression(((BinaryExpression) cond).getRhs(), ((BinaryExpression) cond).getOperator().getRightType());
 					applyCompare(op.getLeftType(), op, ifTrue, ifFalse, NEXT_LABEL);
 					this.NEXT_LABEL = NEXT_LABEL;
 					return;
@@ -192,7 +193,7 @@ public final class FunctionWriter {
 			}
 		}
 		loadExpression(cond);
-		applyCompareEquals(cond.getReturnType(),ifTrue,ifFalse);
+		applyCompareEquals(cond.getReturnType(), ifTrue, ifFalse);
 		this.NEXT_LABEL = NEXT_LABEL;
 	}
 
@@ -222,9 +223,7 @@ public final class FunctionWriter {
 	}
 
 
-
 	//region #store
-
 
 
 	private void storeExpression(Expression expression) {
@@ -232,7 +231,7 @@ public final class FunctionWriter {
 			storeVariable(((VariableRefExpression) expression).getVariable());
 		} else if (expression instanceof UnaryPrefixExpression) {
 			Expression pointer = ((UnaryPrefixExpression) expression).getExpr();
-			storeToAddress(pointer,null);
+			storeToAddress(pointer, null);
 		} else if (expression instanceof IndexExpression) {
 			Expression pointer = ((IndexExpression) expression).getArray();
 			if (pointer.getReturnType() instanceof TypePointerInfo) {
@@ -241,8 +240,7 @@ public final class FunctionWriter {
 			} else {
 				throw new UnsupportedOperationException();
 			}
-		}
-		else {
+		} else {
 			throw new UnsupportedOperationException(expression.getClass().getName());
 		}
 	}
@@ -251,13 +249,12 @@ public final class FunctionWriter {
 	private void storeNewVariable(VariableInfo variable) {
 		if (variable.isRegister() && ASMUtils.canBePresentAsJavaPrimitive(variable.getTypeRef().getType())) {
 			Class<?> cls = ASMUtils.asJavaPrimitive(variable.getTypeRef().getType());
-			store_register(cls,variable);
+			store_register(cls, variable);
 		} else {
 			store_local(variable);
 			//throw new UnsupportedOperationException(variable.getTypeRef().getType().getCanonicalName() + " " + variable.getCanonicalName());
 		}
 	}
-
 
 
 	private void store_register(Class<?> type, VariableInfo var) {
@@ -280,8 +277,8 @@ public final class FunctionWriter {
 			}
 		}
 		//store X
-		mv.visitVarInsn(opcode,index);
-		addRegisterVariableHandle(var,index);
+		mv.visitVarInsn(opcode, index);
+		addRegisterVariableHandle(var, index);
 	}
 
 	private long alloca(VariableInfo variable) {
@@ -298,7 +295,7 @@ public final class FunctionWriter {
 
 	private void storeVariable(VariableInfo variable) {
 		if (variable instanceof FieldInfo) {
-			mv.visitFieldInsn(PUTSTATIC, asClassName(((FieldInfo) variable).getContainer()), variable.getName() , asDescriptor(variable.getTypeRef().getType()));
+			mv.visitFieldInsn(PUTSTATIC, asClassName(((FieldInfo) variable).getContainer()), variable.getName(), asDescriptor(variable.getTypeRef().getType()));
 		} else {
 			VariableHandle handle = getHandle(variable);
 			handle.storeToMe(mv, this);
@@ -309,7 +306,7 @@ public final class FunctionWriter {
 	private void storeToAddress(Expression pointer, Expression offset) {
 		//stack: {value}
 		loadPointerExpression(pointer, offset); //stack: {value, address}
-		if (((TypePointerInfo)pointer.getReturnType()).getTargetType().getType().sizeof() > 4) {//если на стеке лежит long/double
+		if (((TypePointerInfo) pointer.getReturnType()).getTargetType().getType().sizeof() > 4) {//если на стеке лежит long/double
 			//swap long and int
 			mv.visitInsn(DUP2_X2);
 			mv.visitInsn(POP2); //stack: {address, value}
@@ -325,7 +322,7 @@ public final class FunctionWriter {
 		name[0] = Character.toUpperCase(name[0]);
 		String methodName = "put" + String.valueOf(name);
 		String descriptor = "(J" + ASMUtils.asDescriptor(p_type) + ")V";
-		mv.visitMethodInsn(INVOKESTATIC,"c32/extern/Memory", methodName, descriptor, false);
+		mv.visitMethodInsn(INVOKESTATIC, "c32/extern/Memory", methodName, descriptor, false);
 	}
 
 	private void loadStackPointerWithOffset(Expression offset) {
@@ -333,6 +330,7 @@ public final class FunctionWriter {
 		loadExpression(offset);
 		mv.visitInsn(LADD);
 	}
+
 	private void loadStackPointerWithOffset(long offset) {
 		loadStackBasePointer();
 		if (offset != 0) {
@@ -360,11 +358,11 @@ public final class FunctionWriter {
 			name[0] = Character.toUpperCase(name[0]);
 			String methodName = "put" + String.valueOf(name);
 			String descriptor = "(J" + ASMUtils.asDescriptor(type) + ")V";
-			mv.visitMethodInsn(INVOKESTATIC,"c32/extern/Memory", methodName, descriptor, false);
+			mv.visitMethodInsn(INVOKESTATIC, "c32/extern/Memory", methodName, descriptor, false);
 		} else if (type instanceof TypeArrayInfo) {
 			TypeArrayInfo array = (TypeArrayInfo) type;
 			if (!array.isStaticArray()) throw new UnsupportedOperationException();
-			for (int i = array.getStaticLength()-1; i >= 0; i--) {
+			for (int i = array.getStaticLength() - 1; i >= 0; i--) {
 				storeToLocalAddress(array.getElementType().getType(), offset + array.getElementType().getType().sizeof() * i);
 			}
 		} else {
@@ -378,42 +376,44 @@ public final class FunctionWriter {
 	//region #load
 
 	void loadExpression(Expression expr) {
-		loadExpression(expr,null);
+		loadExpression(expr, null);
 	}
 
 	void loadExpression(Expression expr, TypeInfo expectedType) {
 		if (expr instanceof CallExpression) {
-			loadCallExpression((CallExpression)expr);
+			loadCallExpression((CallExpression) expr);
 		} else if (expr instanceof NumericLiteralExpression) {
-			loadNumericLiteralExpression((NumericLiteralExpression)expr);
+			loadNumericLiteralExpression((NumericLiteralExpression) expr);
 		} else if (expr instanceof VariableRefExpression) {
-			loadVariableExpression((VariableRefExpression)expr);
+			loadVariableExpression((VariableRefExpression) expr);
 		} else if (expr instanceof AssignExpression) {
-			loadAssignExpression((AssignExpression)expr);
+			loadAssignExpression((AssignExpression) expr);
 		} else if (expr instanceof BinaryExpression) {
-			loadBinaryExpression((BinaryExpression)expr);
+			loadBinaryExpression((BinaryExpression) expr);
 		} else if (expr instanceof UnaryPrefixExpression) {
-			loadUnaryPrefixExpression((UnaryPrefixExpression)expr);
+			loadUnaryPrefixExpression((UnaryPrefixExpression) expr);
 		} else if (expr instanceof TernaryExpression) {
-			loadTernaryExpression((TernaryExpression)expr);
+			loadTernaryExpression((TernaryExpression) expr);
 		} else if (expr instanceof IndexExpression) {
-			loadIndexExpression((IndexExpression)expr);
+			loadIndexExpression((IndexExpression) expr);
 		} else if (expr instanceof BooleanLiteralExpression) {
 			mv.visitInsn(((BooleanLiteralExpression) expr).isValue() ? ICONST_1 : ICONST_0);
 		} else if (expr instanceof ExplicitCastExpression) {
-			loadExpression(((ExplicitCastExpression) expr).getExpression(),((ExplicitCastExpression) expr).getTargetType());
+			loadExpression(((ExplicitCastExpression) expr).getExpression(), ((ExplicitCastExpression) expr).getTargetType());
 		} else if (expr instanceof NullLiteralExpression) {
 			mv.visitLdcInsn(0L);
 		} else if (expr instanceof CharLiteralExpression) {
-			mv.visitIntInsn(SIPUSH,((CharLiteralExpression) expr).getCh());
+			mv.visitIntInsn(SIPUSH, ((CharLiteralExpression) expr).getCh());
 		} else if (expr instanceof InitializerListExpression) {
-			loadInitializerListExpression((InitializerListExpression)expr, expectedType);
-		}
-		else {
+			loadInitializerListExpression((InitializerListExpression) expr, expectedType);
+		} else if (expr instanceof StringLiteralExpression) {
+			mv.visitLdcInsn(((StringLiteralExpression) expr).getString());
+			mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "toCharArray", "()[C", false);
+		} else {
 			throw new UnsupportedOperationException(expr.getClass().getName());
 		}
 		if (expectedType != null && expr.getReturnType() != expectedType)
-			applyCast(expr.getReturnType(),expectedType);
+			applyCast(expr.getReturnType(), expectedType);
 	}
 
 	private void loadInitializerListExpression(InitializerListExpression expr, TypeInfo expectedType) {
@@ -442,8 +442,8 @@ public final class FunctionWriter {
 
 	private void loadFromArray(Expression array, Expression index) {
 		loadExpressionAddress(array);
-		loadPointerOffset(null,((TypeArrayInfo) array.getReturnType()).getElementType().getType(), index);
-		applyDereferensing(((TypeArrayInfo)array.getReturnType()).getElementType().getType());
+		loadPointerOffset(null, ((TypeArrayInfo) array.getReturnType()).getElementType().getType(), index);
+		applyDereferensing(((TypeArrayInfo) array.getReturnType()).getElementType().getType());
 	}
 
 	private void loadVariableExpression(VariableRefExpression expr) {
@@ -486,17 +486,18 @@ public final class FunctionWriter {
 		if (value >= -1 && value <= 5) {
 			mv.visitInsn(ICONST_0 + value);
 		} else if (value >= Byte.MIN_VALUE && value <= Byte.MAX_VALUE) {
-			mv.visitIntInsn(BIPUSH,value);
+			mv.visitIntInsn(BIPUSH, value);
 		} else if (value >= Short.MIN_VALUE && value <= Short.MAX_VALUE) {
-			mv.visitIntInsn(SIPUSH,value);
+			mv.visitIntInsn(SIPUSH, value);
 		} else {
 			mv.visitLdcInsn(value);
 		}
 	}
 
 	private void loadStackBasePointer() {
-		mv.visitVarInsn(LLOAD,0);
+		mv.visitVarInsn(LLOAD, 0);
 	}
+
 	private void loadStackPointer() {
 		loadStackBasePointer();
 		if (stackFrameSize != 0) {
@@ -509,7 +510,7 @@ public final class FunctionWriter {
 	private void loadCallExpression(CallExpression expr) {
 		FunctionInfo func = expr.getFunction();
 		if (func.is_extern()) {
-			IntrinsicFunctionsTable.loadExternCall(this,func,expr);
+			IntrinsicFunctionsTable.loadExternCall(this, func, expr);
 			return;
 		}
 
@@ -531,20 +532,20 @@ public final class FunctionWriter {
 	}
 
 
-
 	private void loadPointerExpression(Expression pointer, Expression offset) {
 		if (!(pointer.getReturnType() instanceof TypePointerInfo)) throw new IllegalArgumentException();
 		loadExpression(pointer); //push pointer
 		if (offset != null) {
-			loadPointerOffset(pointer.getReturnType(),((TypePointerInfo) pointer.getReturnType()).getTargetType().getType(), offset);
+			loadPointerOffset(pointer.getReturnType(), ((TypePointerInfo) pointer.getReturnType()).getTargetType().getType(), offset);
 		}
 	}
+
 	private void loadPointerOffset(TypeInfo type, TypeInfo targetType, Expression offset) {
 		loadExpression(offset); //push offset
 		if (type == null) {
 			applyCast(offset.getReturnType(), TypeInfo.PrimitiveTypeInfo.LONG);
 		} else if (offset.getReturnType() != type) {
-			applyCast(offset.getReturnType(),type);
+			applyCast(offset.getReturnType(), type);
 		}
 		mv.visitLdcInsn(targetType.sizeof()); //push size
 		mv.visitInsn(LMUL); //mul absoffset offset * size
@@ -583,8 +584,8 @@ public final class FunctionWriter {
 				case "<":
 				case ">=":
 				case "<=":
-					loadExpression(((BinaryExpression) cond).getLhs(),((BinaryExpression) cond).getOperator().getLeftType());
-					loadExpression(((BinaryExpression) cond).getRhs(),((BinaryExpression) cond).getOperator().getRightType());
+					loadExpression(((BinaryExpression) cond).getLhs(), ((BinaryExpression) cond).getOperator().getLeftType());
+					loadExpression(((BinaryExpression) cond).getRhs(), ((BinaryExpression) cond).getOperator().getRightType());
 					applyCompare(op.getLeftType(), op, ifTrue, ifFalse, NEXT_LABEL);
 					this.NEXT_LABEL = NEXT_LABEL;
 					return;
@@ -592,14 +593,14 @@ public final class FunctionWriter {
 			}
 		}
 		loadExpression(cond);
-		applyCompareEquals(cond.getReturnType(),ifTrue,ifFalse);
+		applyCompareEquals(cond.getReturnType(), ifTrue, ifFalse);
 		this.NEXT_LABEL = NEXT_LABEL;
 	}
 
 	private void loadUnaryPrefixExpression(UnaryPrefixExpression expr) {
 		UnaryPrefixOperator op = expr.getOperator();
 		if (!op.getOp().equals("&"))
-			loadExpression(expr.getExpr(),op.getTargetType().getType());
+			loadExpression(expr.getExpr(), op.getTargetType().getType());
 
 		switch (op.getOp()) {
 			case "*":
@@ -652,23 +653,23 @@ public final class FunctionWriter {
 
 	private void loadExpressionAddress(Expression expr) {
 		if (expr instanceof VariableRefExpression) {
-			loadVariableAddress((VariableRefExpression)expr);
+			loadVariableAddress((VariableRefExpression) expr);
 		} else throw new UnsupportedOperationException();
 	}
+
 	private void loadVariableAddress(VariableRefExpression varRef) {
-		loadStackPointerWithOffset(((ShadowStackVariableHandle)ASMUtils.getHandle(varRef.getVariable())).getOffset());
+		loadStackPointerWithOffset(((ShadowStackVariableHandle) ASMUtils.getHandle(varRef.getVariable())).getOffset());
 	}
 
 	private void loadBinaryExpression(BinaryExpression expr) {
 		BinaryOperator op = expr.getOperator();
-		loadExpression(expr.getLhs(),op.getLeftType());
-		loadExpression(expr.getRhs(),op.getRightType());
+		loadExpression(expr.getLhs(), op.getLeftType());
+		loadExpression(expr.getRhs(), op.getRightType());
 
 		if (expr.getLhs().getReturnType() instanceof TypePointerInfo) {
 			switch (op.getOp()) {
 				case "+":
-				case "-":
-				{
+				case "-": {
 					long size = ((TypePointerInfo) expr.getLhs().getReturnType()).getTargetType().getType().sizeof();
 					mv.visitLdcInsn(size);  //push size
 					mv.visitInsn(LMUL);     //mul rhs * size
@@ -678,7 +679,7 @@ public final class FunctionWriter {
 			}
 		}
 
-		if (applyCompare(op.getLeftType(),op,() -> loadBoolValue(true),() -> loadBoolValue(false))) {
+		if (applyCompare(op.getLeftType(), op, () -> loadBoolValue(true), () -> loadBoolValue(false))) {
 			return;
 		}
 
@@ -687,29 +688,30 @@ public final class FunctionWriter {
 
 	private boolean applyCompare(TypeInfo type, BinaryOperator op, Runnable ifTrue, Runnable ifFalse) {
 		Label NEXT = new Label();
-		boolean result = applyCompare(type,op,ifTrue,ifFalse,NEXT);
+		boolean result = applyCompare(type, op, ifTrue, ifFalse, NEXT);
 		mv.visitLabel(NEXT);
 		return result;
 	}
+
 	private boolean applyCompare(TypeInfo type, BinaryOperator op, Runnable ifTrue, Runnable ifFalse, Label NEXT) {
 		switch (op.getOp()) {
 			case "==":
-				applyCompareEquals(type,ifTrue,ifFalse);
+				applyCompareEquals(type, ifTrue, ifFalse);
 				return true;
 			case "!=":
-				applyCompareNotEquals(type,ifTrue,ifFalse);
+				applyCompareNotEquals(type, ifTrue, ifFalse);
 				return true;
 			case ">":
-				applyCompareGreater(type,ifTrue,ifFalse);
+				applyCompareGreater(type, ifTrue, ifFalse);
 				return true;
 			case ">=":
-				applyCompareGreaterOrEquals(type,ifTrue,ifFalse);
+				applyCompareGreaterOrEquals(type, ifTrue, ifFalse);
 				return true;
 			case "<":
-				applyCompareSmaller(type,ifTrue,ifFalse);
+				applyCompareSmaller(type, ifTrue, ifFalse);
 				return true;
 			case "<=":
-				applyCompareSmallerOrEquals(type,ifTrue,ifFalse);
+				applyCompareSmallerOrEquals(type, ifTrue, ifFalse);
 				return true;
 			default:
 				return false;
@@ -759,37 +761,43 @@ public final class FunctionWriter {
 		} else {
 			mv.visitInsn(getCmpType(type));
 		}
-		applyCompare(cmp,ifTrue,ifFalse);
+		applyCompare(cmp, ifTrue, ifFalse);
 	}
+
 	private void applyCompareSmaller(TypeInfo type, Runnable ifTrue, Runnable ifFalse) {
-		applyCmpAs(type,IFGE,ifTrue,ifFalse);
+		applyCmpAs(type, IFGE, ifTrue, ifFalse);
 	}
+
 	private void applyCompareSmallerOrEquals(TypeInfo type, Runnable ifTrue, Runnable ifFalse) {
-		applyCmpAs(type,IFGT,ifTrue,ifFalse);
+		applyCmpAs(type, IFGT, ifTrue, ifFalse);
 	}
+
 	private void applyCompareGreater(TypeInfo type, Runnable ifTrue, Runnable ifFalse) {
-		applyCmpAs(type,IFLE,ifTrue,ifFalse);
+		applyCmpAs(type, IFLE, ifTrue, ifFalse);
 	}
+
 	private void applyCompareGreaterOrEquals(TypeInfo type, Runnable ifTrue, Runnable ifFalse) {
-		applyCmpAs(type,IFLT,ifTrue,ifFalse);
+		applyCmpAs(type, IFLT, ifTrue, ifFalse);
 	}
+
 	private void applyCompareNotEquals(TypeInfo type, Runnable ifTrue, Runnable ifFalse) {
-		applyCmpAs(type,IFEQ,ifTrue,ifFalse);
+		applyCmpAs(type, IFEQ, ifTrue, ifFalse);
 	}
+
 	private void applyCompareEquals(TypeInfo type, Runnable ifTrue, Runnable ifFalse) {
-		applyCmpAs(type,IFNE,ifTrue,ifFalse);
+		applyCmpAs(type, IFNE, ifTrue, ifFalse);
 	}
 
 	private void applyCompare(int cmp, Runnable ifTrue, Runnable ifFalse) {
 		Label NEXT = new Label();
-		applyCompare(cmp,ifTrue,new Label(),ifFalse,NEXT);
+		applyCompare(cmp, ifTrue, new Label(), ifFalse, NEXT);
 		mv.visitLabel(NEXT);                // STORE: (return)
 	}
 
 	private void applyCompare(int cmp, Runnable ifTrue, Label FALSE, Runnable ifFalse, Label NEXT) {
 		mv.visitJumpInsn(cmp, ifFalse == null ? NEXT : FALSE);       //  if false goto FALSE;
 		ifTrue.run();                       //  set true
-		mv.visitJumpInsn(GOTO,NEXT);        //  goto STORE;
+		mv.visitJumpInsn(GOTO, NEXT);        //  goto STORE;
 
 		if (ifFalse != null) {
 			mv.visitLabel(FALSE);           //  FALSE:
@@ -801,7 +809,7 @@ public final class FunctionWriter {
 		Expression lv = expr.getLvalue();
 		if (expr.getParentOperator() != null)
 			throw new UnsupportedOperationException(expr.getParentOperator().getOp());
-		loadExpression(expr.getRvalue(),lv.getReturnType());
+		loadExpression(expr.getRvalue(), lv.getReturnType());
 		storeExpression(lv);
 		loadExpression(lv);//assign expr must returns lvalue
 	}
@@ -812,30 +820,31 @@ public final class FunctionWriter {
 
 
 	private static final HashMap<TypeInfo, Map<TypeInfo, int[]>> castTable = new HashMap<>();
+
 	static {
-		registerCast(TypeInfo.PrimitiveTypeInfo.BYTE, TypeInfo.PrimitiveTypeInfo.LONG, 		I2L);
+		registerCast(TypeInfo.PrimitiveTypeInfo.BYTE, TypeInfo.PrimitiveTypeInfo.LONG, I2L);
 		registerCast(TypeInfo.PrimitiveTypeInfo.BYTE, TypeInfo.PrimitiveTypeInfo.INT);
 		registerCast(TypeInfo.PrimitiveTypeInfo.BYTE, TypeInfo.PrimitiveTypeInfo.SHORT);
-		registerCast(TypeInfo.PrimitiveTypeInfo.UBYTE, TypeInfo.PrimitiveTypeInfo.BYTE,     I2B);
+		registerCast(TypeInfo.PrimitiveTypeInfo.UBYTE, TypeInfo.PrimitiveTypeInfo.BYTE, I2B);
 
-		registerCast(TypeInfo.PrimitiveTypeInfo.SHORT, TypeInfo.PrimitiveTypeInfo.LONG, 	I2L);
+		registerCast(TypeInfo.PrimitiveTypeInfo.SHORT, TypeInfo.PrimitiveTypeInfo.LONG, I2L);
 		registerCast(TypeInfo.PrimitiveTypeInfo.SHORT, TypeInfo.PrimitiveTypeInfo.INT);
-		registerCast(TypeInfo.PrimitiveTypeInfo.USHORT, TypeInfo.PrimitiveTypeInfo.SHORT,   I2S);
-		registerCast(TypeInfo.PrimitiveTypeInfo.SHORT, TypeInfo.PrimitiveTypeInfo.BYTE, 	I2B);
-		registerCast(TypeInfo.PrimitiveTypeInfo.SHORT, TypeInfo.PrimitiveTypeInfo.UBYTE, 	I2B);
+		registerCast(TypeInfo.PrimitiveTypeInfo.USHORT, TypeInfo.PrimitiveTypeInfo.SHORT, I2S);
+		registerCast(TypeInfo.PrimitiveTypeInfo.SHORT, TypeInfo.PrimitiveTypeInfo.BYTE, I2B);
+		registerCast(TypeInfo.PrimitiveTypeInfo.SHORT, TypeInfo.PrimitiveTypeInfo.UBYTE, I2B);
 
-		registerCast(TypeInfo.PrimitiveTypeInfo.INT, TypeInfo.PrimitiveTypeInfo.LONG, 		I2L);
-		registerCast(TypeInfo.PrimitiveTypeInfo.INT, TypeInfo.PrimitiveTypeInfo.SHORT, 		I2S);
-		registerCast(TypeInfo.PrimitiveTypeInfo.INT, TypeInfo.PrimitiveTypeInfo.USHORT, 	I2S);
-		registerCast(TypeInfo.PrimitiveTypeInfo.INT, TypeInfo.PrimitiveTypeInfo.BYTE, 		I2B);
-		registerCast(TypeInfo.PrimitiveTypeInfo.INT, TypeInfo.PrimitiveTypeInfo.UBYTE, 		I2B);
+		registerCast(TypeInfo.PrimitiveTypeInfo.INT, TypeInfo.PrimitiveTypeInfo.LONG, I2L);
+		registerCast(TypeInfo.PrimitiveTypeInfo.INT, TypeInfo.PrimitiveTypeInfo.SHORT, I2S);
+		registerCast(TypeInfo.PrimitiveTypeInfo.INT, TypeInfo.PrimitiveTypeInfo.USHORT, I2S);
+		registerCast(TypeInfo.PrimitiveTypeInfo.INT, TypeInfo.PrimitiveTypeInfo.BYTE, I2B);
+		registerCast(TypeInfo.PrimitiveTypeInfo.INT, TypeInfo.PrimitiveTypeInfo.UBYTE, I2B);
 
-		registerCast(TypeInfo.PrimitiveTypeInfo.LONG, TypeInfo.PrimitiveTypeInfo.INT, 		L2I);
-		registerCast(TypeInfo.PrimitiveTypeInfo.LONG, TypeInfo.PrimitiveTypeInfo.UINT, 		L2I);
-		registerCast(TypeInfo.PrimitiveTypeInfo.LONG, TypeInfo.PrimitiveTypeInfo.SHORT, 	L2I, I2S);
-		registerCast(TypeInfo.PrimitiveTypeInfo.LONG, TypeInfo.PrimitiveTypeInfo.USHORT, 	L2I, I2S);
-		registerCast(TypeInfo.PrimitiveTypeInfo.LONG, TypeInfo.PrimitiveTypeInfo.BYTE, 		L2I, I2B);
-		registerCast(TypeInfo.PrimitiveTypeInfo.LONG, TypeInfo.PrimitiveTypeInfo.UBYTE, 	L2I, I2B);
+		registerCast(TypeInfo.PrimitiveTypeInfo.LONG, TypeInfo.PrimitiveTypeInfo.INT, L2I);
+		registerCast(TypeInfo.PrimitiveTypeInfo.LONG, TypeInfo.PrimitiveTypeInfo.UINT, L2I);
+		registerCast(TypeInfo.PrimitiveTypeInfo.LONG, TypeInfo.PrimitiveTypeInfo.SHORT, L2I, I2S);
+		registerCast(TypeInfo.PrimitiveTypeInfo.LONG, TypeInfo.PrimitiveTypeInfo.USHORT, L2I, I2S);
+		registerCast(TypeInfo.PrimitiveTypeInfo.LONG, TypeInfo.PrimitiveTypeInfo.BYTE, L2I, I2B);
+		registerCast(TypeInfo.PrimitiveTypeInfo.LONG, TypeInfo.PrimitiveTypeInfo.UBYTE, L2I, I2B);
 
 		//signed - unsigned
 		registerCastBoth(TypeInfo.PrimitiveTypeInfo.ULONG, TypeInfo.PrimitiveTypeInfo.LONG);
@@ -859,7 +868,7 @@ public final class FunctionWriter {
 
 	private static int[] getCastOpcodes(TypeInfo from, TypeInfo to) {
 		Map<TypeInfo, int[]> fromMap = castTable.get(from);
-		if(fromMap == null) return null;
+		if (fromMap == null) return null;
 		return fromMap.get(to);
 	}
 
@@ -877,16 +886,16 @@ public final class FunctionWriter {
 
 		int[] op = getCastOpcodes(type, expected);
 		if (op == null) {
-			mv.visitMethodInsn(INVOKESTATIC,"c32/extern/Cast",
+			mv.visitMethodInsn(INVOKESTATIC, "c32/extern/Cast",
 					type.getName() + "2" + expected.getName(),
-					"("+asDescriptor(type)+")" + asDescriptor(expected),
+					"(" + asDescriptor(type) + ")" + asDescriptor(expected),
 					false);
 			return;
 		} else {
 			for (int opcode : op) {
 				mv.visitInsn(opcode);
 			}
-			if (true)return;
+			if (true) return;
 		}
 
 		//For removal
@@ -902,7 +911,7 @@ public final class FunctionWriter {
 			} else if (expected == TypeInfo.PrimitiveTypeInfo.SHORT) {
 				return;
 			} else if (expected == TypeInfo.PrimitiveTypeInfo.USHORT) {
-				mv.visitMethodInsn(INVOKESTATIC,"c32/extern/Cast","B2US","(B)S",false);
+				mv.visitMethodInsn(INVOKESTATIC, "c32/extern/Cast", "B2US", "(B)S", false);
 				return;
 			} else if (expected == TypeInfo.PrimitiveTypeInfo.BYTE) {
 				return;
@@ -913,16 +922,16 @@ public final class FunctionWriter {
 			}
 		} else if (type == TypeInfo.PrimitiveTypeInfo.UINT) {
 			if (expected == TypeInfo.PrimitiveTypeInfo.LONG) {
-				mv.visitMethodInsn(INVOKESTATIC,"c32/extern/Cast","UI2L","(B)J",false);
+				mv.visitMethodInsn(INVOKESTATIC, "c32/extern/Cast", "UI2L", "(B)J", false);
 				return;
 			} else if (expected == TypeInfo.PrimitiveTypeInfo.ULONG || expected instanceof TypePointerInfo) {
-				mv.visitMethodInsn(INVOKESTATIC,"c32/extern/Cast","UI2UL","(B)J",false);
+				mv.visitMethodInsn(INVOKESTATIC, "c32/extern/Cast", "UI2UL", "(B)J", false);
 				return;
 			} else if (expected == TypeInfo.PrimitiveTypeInfo.DOUBLE) {
-				mv.visitMethodInsn(INVOKESTATIC,"c32/extern/Cast","UI2D","(B)D",false);
+				mv.visitMethodInsn(INVOKESTATIC, "c32/extern/Cast", "UI2D", "(B)D", false);
 				return;
 			} else if (expected == TypeInfo.PrimitiveTypeInfo.FLOAT) {
-				mv.visitMethodInsn(INVOKESTATIC,"c32/extern/Cast","UI2F","(B)F",false);
+				mv.visitMethodInsn(INVOKESTATIC, "c32/extern/Cast", "UI2F", "(B)F", false);
 				return;
 			} else if (expected == TypeInfo.PrimitiveTypeInfo.INT) {
 				return;
@@ -940,7 +949,7 @@ public final class FunctionWriter {
 				mv.visitInsn(I2L);
 				return;
 			} else if (expected == TypeInfo.PrimitiveTypeInfo.ULONG || expected instanceof TypePointerInfo) {
-				mv.visitMethodInsn(INVOKESTATIC,"c32/extern/Cast","I2UL","(I)J",false);
+				mv.visitMethodInsn(INVOKESTATIC, "c32/extern/Cast", "I2UL", "(I)J", false);
 				return;
 			} else if (expected == TypeInfo.PrimitiveTypeInfo.DOUBLE) {
 				mv.visitInsn(I2D);
@@ -985,9 +994,9 @@ public final class FunctionWriter {
 	private void applyBoolNot() {
 		Label FALSE = new Label();
 		Label RET = new Label();
-		mv.visitJumpInsn(IFNE,FALSE);
+		mv.visitJumpInsn(IFNE, FALSE);
 		mv.visitInsn(ICONST_1);
-		mv.visitJumpInsn(GOTO,RET);
+		mv.visitJumpInsn(GOTO, RET);
 		mv.visitLabel(FALSE);
 		mv.visitInsn(ICONST_0);
 		mv.visitLabel(RET);
@@ -1000,7 +1009,7 @@ public final class FunctionWriter {
 			name[0] = Character.toUpperCase(name[0]);
 			String methodName = "get" + String.valueOf(name);
 			String descriptor = "(J)" + ASMUtils.asDescriptor(returnType);
-			mv.visitMethodInsn(INVOKESTATIC,"c32/extern/Memory", methodName, descriptor, false);
+			mv.visitMethodInsn(INVOKESTATIC, "c32/extern/Memory", methodName, descriptor, false);
 		} else if (returnType instanceof TypeArrayInfo) {
 			TypeArrayInfo arrayType = (TypeArrayInfo) returnType;
 			if (!arrayType.isStaticArray()) throw new UnsupportedOperationException();
@@ -1015,13 +1024,13 @@ public final class FunctionWriter {
 	//endregion
 
 
-
 	private Label writeLabel(Location location) {
-		return writeLabel(new Label(),location);
+		return writeLabel(new Label(), location);
 	}
+
 	private Label writeLabel(Label l, Location location) {
 		mv.visitLabel(l);
-		mv.visitLineNumber(location == null ? -1 : location.getStartLine(),l);
+		mv.visitLineNumber(location == null ? -1 : location.getStartLine(), l);
 		return l;
 	}
 }
